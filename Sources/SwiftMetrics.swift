@@ -36,7 +36,7 @@ public class SwiftMetrics {
     public func start() {
         if (running == 1) {
             running = 0
-            _ = loaderApi.init()
+            _ = loaderApi.initialize()
             loaderApi.setProperty("com.ibm.diagnostics.healthcenter.mqtt", "on")
             loaderApi.start()
         }
