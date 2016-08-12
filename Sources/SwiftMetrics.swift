@@ -17,7 +17,7 @@ public class SwiftMetrics {
         loaderApi.logMessage(info, "Swift Application Metrics")
     }
 
-    private func loadProperties() {
+    private func loadProperties() throws {
        ///look for healthcenter.properties in current directory
        let fm = FileManager.default()
        var propertiesPath = ""
@@ -32,7 +32,7 @@ public class SwiftMetrics {
           if fm.currentDirectoryPath.contains("omr-agentcore") == false {
              ///then we're in the wrong directory - go look for agentcore in the Packages directory
              _ = fm.changeCurrentDirectoryPath("Packages")
-             let dirContents = try fm.contentsOfDirectory(atPath: fm.currentDirectoryPath)
+             dirContents = try fm.contentsOfDirectory(atPath: fm.currentDirectoryPath)
              for dir in dirContents {
                 if dir.contains("omr-agentcore") {
                    ///that's where we want to be!
