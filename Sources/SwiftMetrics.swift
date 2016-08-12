@@ -1,3 +1,5 @@
+import loaderCoreFunctions
+
 public class SwiftMetrics {
 
     let loaderApi: loaderCoreFunctions
