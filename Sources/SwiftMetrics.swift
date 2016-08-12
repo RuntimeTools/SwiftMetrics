@@ -37,7 +37,7 @@ public class SwiftMetrics {
              for dir in dirContents {
                 if dir.contains("omr-agentcore") {
                    ///that's where we want to be!
-                   _ = fm.changeCurrentDirectoryPath
+                   _ = fm.changeCurrentDirectoryPath(dir)
                 }
              }
           }
