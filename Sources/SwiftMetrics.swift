@@ -43,7 +43,7 @@ public class SwiftMetrics {
           }
           propertiesPath = "\(fm.currentDirectoryPath)/properties/healthcenter.properties"
        }
-    
+       print("propertiesPath is \(propertiesPath)")
        _ = loaderApi.loadPropertiesFile(propertiesPath) 
     }
 
