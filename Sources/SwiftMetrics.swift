@@ -1,5 +1,5 @@
 import agentcore
-import Foundataion
+import Foundation
 
 public class SwiftMetrics {
 
