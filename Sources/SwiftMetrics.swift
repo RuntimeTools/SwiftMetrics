@@ -19,7 +19,11 @@ public class SwiftMetrics {
 
     private func loadProperties() throws {
        ///look for healthcenter.properties in current directory
+#if os(Linux)
        let fm = FileManager.default()
+#else
+       let fm = FileManager.default
+#endif
        var propertiesPath = ""
        print("Current directory is \(fm.currentDirectoryPath)")
        var dirContents = try fm.contentsOfDirectory(atPath: fm.currentDirectoryPath)
