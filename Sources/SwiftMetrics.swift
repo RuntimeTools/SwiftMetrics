@@ -1,4 +1,4 @@
-import loaderCoreFunctions
+import agentcore
 
 public class SwiftMetrics {
 
