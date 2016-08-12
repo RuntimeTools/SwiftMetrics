@@ -1,4 +1,5 @@
 import agentcore
+import Foundataion
 
 public class SwiftMetrics {
 
@@ -17,8 +18,32 @@ public class SwiftMetrics {
     }
 
     private func loadProperties() {
+       ///look for healthcenter.properties in current directory
+       let fm = FileManager.default()
+       var propertiesPath = ""
+       var dirContents = try fm.contentsOfDirectory(atPath: fm.currentDirectoryPath)
+       for dir in dirContents {
+          if dir.contains("healthcenter.properties") {
+             propertiesPath = "\(fm.currentDirectoryPath)/\(dir)"
+          }
+       }
+       if propertiesPath.isEmpty {
+          ///need to drill down into the omr-agentcore directory from where we are
+          if fm.currentDirectoryPath.contains("omr-agentcore") == false {
+             ///then we're in the wrong directory - go look for agentcore in the Packages directory
+             _ = fm.changeCurrentDirectoryPath("Packages")
+             let dirContents = try fm.contentsOfDirectory(atPath: fm.currentDirectoryPath)
+             for dir in dirContents {
+                if dir.contains("omr-agentcore") {
+                   ///that's where we want to be!
+                   _ = fm.changeCurrentDirectoryPath
+                }
+             }
+          }
+          propertiesPath = "\(fm.currentDirectoryPath)/properties/healthcenter.properties"
+       }
     
-       _ = loaderApi.loadPropertiesFile("/vagrant/deploy/healthcenter.properties") 
+       _ = loaderApi.loadPropertiesFile(propertiesPath) 
     }
 
     public func spath(path: String) {
