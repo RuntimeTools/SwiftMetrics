@@ -10,7 +10,7 @@ public class SwiftMetrics {
     public init() {
        
         self.loaderApi = loader_entrypoint().pointee
-        self.loadProperties()
+        try self.loadProperties()
         loaderApi.setLogLevels()
         loaderApi.setProperty("agentcore.version", loaderApi.getAgentVersion())
         loaderApi.setProperty("swiftmetrics.version", SWIFTMETRICS_VERSION)
