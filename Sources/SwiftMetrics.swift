@@ -7,7 +7,7 @@ public class SwiftMetrics {
     let SWIFTMETRICS_VERSION = "99.99.99.29991231"
     var running = 1
 
-    public init() {
+    public init() throws{
        
         self.loaderApi = loader_entrypoint().pointee
         try self.loadProperties()
