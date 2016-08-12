@@ -1,5 +1,3 @@
-import CAGENTCORE
-
 public class SwiftMetrics {
 
     let loaderApi: loaderCoreFunctions
