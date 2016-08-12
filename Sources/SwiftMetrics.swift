@@ -21,6 +21,7 @@ public class SwiftMetrics {
        ///look for healthcenter.properties in current directory
        let fm = FileManager.default()
        var propertiesPath = ""
+       print("Current directory is \(fm.currentDirectoryPath)")
        var dirContents = try fm.contentsOfDirectory(atPath: fm.currentDirectoryPath)
        for dir in dirContents {
           if dir.contains("healthcenter.properties") {

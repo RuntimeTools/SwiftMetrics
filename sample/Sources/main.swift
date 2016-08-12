@@ -2,7 +2,7 @@ import SwiftMetrics
 
 print("Initialising SwiftMetrics class")
 
-let sm = SwiftMetrics()
+let sm = try SwiftMetrics()
 
 print("Initialisation successful - starting SwiftMetrics")
 //sm.spath(path: "/vagrant/deploy/plugins")
