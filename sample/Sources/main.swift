@@ -14,6 +14,6 @@ func processMem(mem: MemEvent) {
 monitor.on(eventType: "cpu", processCPU)
 monitor.on(processMem)
 
-print ("Press any key to stop")
+print("Press any key to stop")
 let response = readLine(strippingNewline: true)
 

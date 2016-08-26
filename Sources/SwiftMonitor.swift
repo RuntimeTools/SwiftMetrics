@@ -64,30 +64,45 @@ public class SwiftMonitor {
 
    }
 
-   private func formatCPU(message: String) {
-      swiftMet.loaderApi.logMessage(debug, "formatCPU(): Raising CPU event")
-      //cpu: startCPU@#1412609879696@#0.00499877@#0.137468
-      let values = message.trimmingCharacters(in: NSCharacterSet.whitespacesAndNewlines()).components(separatedBy: "@#")
-      let cpu = CPUEvent(time: Int(values[1])!, process: Float(values[2])!, system: Float(values[3])!)
-      raiseEvent(type: "cpu", data: cpu)
+   private func formatCPU(messages: String) {
+      for message in messages.components(separatedBy: "\n") {
+         if message.contains("@#") {
+            swiftMet.loaderApi.logMessage(debug, "formatCPU(): Raising CPU event")
+            //cpu: startCPU@#1412609879696@#0.00499877@#0.137468
+#if os(Linux)
+            let values = message.trimmingCharacters(in: NSCharacterSet.whitespacesAndNewlines()).components(separatedBy: "@#")
+#else
+            let values = message.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).components(separatedBy: "@#")
+#endif
+            let cpu = CPUEvent(time: Int(values[1])!, process: Float(values[2])!, system: Float(values[3])!)
+            raiseEvent(type: "cpu", data: cpu)
+         }
+      }
    }
 
-   private func formatMemory(message: String) {
-      swiftMet.loaderApi.logMessage(debug, "formatMemory(): Raising Memory event")
-      ///MemorySource,1415976582652,totalphysicalmemory=16725618688,physicalmemory=52428800,privatememory=374747136,virtualmemory=374747136,freephysicalmemory=1591525376
-      let values = message.trimmingCharacters(in: NSCharacterSet.whitespacesAndNewlines()).components(separatedBy: ",")
-      let physicalTotal = Int(values[2].components(separatedBy: "=")[1])!
-      let physicalFree = Int(values[6].components(separatedBy: "=")[1])!
-      let physicalUsed = (physicalTotal >= 0 && physicalFree >= 0) ? (physicalTotal - physicalFree) : -1
-      let memory = MemEvent(time: Int(values[1])!,
-                            physical_total: physicalTotal,
-                            physical_used: physicalUsed,
-                            physical_free: physicalFree,
-                            virtual: Int(values[5].components(separatedBy: "=")[1])!,
-                            private: Int(values[4].components(separatedBy: "=")[1])!,
-                            physical: Int(values[3].components(separatedBy: "=")[1])!)
-      raiseEvent(type: "memory", data: memory)
-      
+   private func formatMemory(messages: String) {
+      for message in messages.components(separatedBy: "\n") {
+         if message.contains(",") {
+            swiftMet.loaderApi.logMessage(debug, "formatMemory(): Raising Memory event")
+            ///MemorySource,1415976582652,totalphysicalmemory=16725618688,physicalmemory=52428800,privatememory=374747136,virtualmemory=374747136,freephysicalmemory=1591525376
+#if os(Linux)
+            let values = message.trimmingCharacters(in: NSCharacterSet.whitespacesAndNewlines()).components(separatedBy: ",")
+#else
+            let values = message.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).components(separatedBy: ",")
+#endif
+            let physicalTotal = Int(values[2].components(separatedBy: "=")[1])!
+            let physicalFree = Int(values[6].components(separatedBy: "=")[1])!
+            let physicalUsed = (physicalTotal >= 0 && physicalFree >= 0) ? (physicalTotal - physicalFree) : -1
+            let memory = MemEvent(time: Int(values[1])!,
+                                  physical_total: physicalTotal,
+                                  physical_used: physicalUsed,
+                                  physical_free: physicalFree,
+                                  virtual: Int(values[5].components(separatedBy: "=")[1])!,
+                                  private: Int(values[4].components(separatedBy: "=")[1])!,
+                                  physical: Int(values[3].components(separatedBy: "=")[1])!)
+            raiseEvent(type: "memory", data: memory)
+         }
+      }
    }
 
    private func formatOSEnv(message: String) {
@@ -168,9 +183,9 @@ public class SwiftMonitor {
       swiftMet.loaderApi.logMessage(debug, "raiseCoreEvent(): Raising core event: topic = \(topic)")
       switch topic {
          case "common_cpu", "cpu":
-            formatCPU(message: message)
+            formatCPU(messages: message)
          case "common_memory", "memory":
-            formatMemory(message: message)
+            formatMemory(messages: message)
          case "common_env":
             formatOSEnv(message: message)
          default:
