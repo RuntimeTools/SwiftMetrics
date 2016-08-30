@@ -20,10 +20,13 @@ public class SwiftMonitor {
    public typealias cpuClosure = (CPUEvent) -> ()
    public typealias memoryClosure = (MemEvent) -> ()
    public typealias genericClosure<T: Event> = (T) -> ()
+   public typealias envClosure = ([ String : String ]) -> ()
 
    final class EventEmitter {
       static var cpuObservers: [cpuClosure] = []
       static var memoryObservers: [memoryClosure] = []
+      static var environmentObservers: [envClosure] = []
+      static var initializedObservers: [envClosure] = []
       static var genericObservers: [String : [genericClosure<GenericEvent>]] = [:]
 
       static func publish(cpuEvent: CPUEvent) {
@@ -35,6 +38,19 @@ public class SwiftMonitor {
       static func publish(memEvent: MemEvent) {
          for process in memoryObservers {
             process(memEvent)
+         }
+      }
+
+      static func publish(envEvent: [ String: String ]) {
+         for process in environmentObservers {
+            process(envEvent)
+         }
+      }
+
+      static func publish(type: String, envEvent: [ String: String ]) {
+         //currently this is only executed by the initialized event
+         for process in initializedObservers {
+            process(envEvent)
          }
       }
 
@@ -52,6 +68,15 @@ public class SwiftMonitor {
 
       static func subscribe(callback: memoryClosure) {
          memoryObservers.append(callback)
+      }
+
+      static func subscribe(callback: envClosure) {
+         environmentObservers.append(callback)
+      }
+
+      static func subscribe(topic: String, callback: envClosure) {
+         ///currently this is only executed by initialized observers
+         initializedObservers.append(callback)
       }
 
       static func subscribe(topic: String, callback: genericClosure<GenericEvent>) {
@@ -128,11 +153,12 @@ public class SwiftMonitor {
          }
       }
       setEnv(env)
+      raiseEvent(type: "environment", data: self.getEnvironment())
       if self.initialized > 0 {
          self.initialized -= 1
-      }
-      if self.initialized == 0 {
-         print(self.environment)
+         if self.initialized == 0 {
+            raiseEvent(type: "initialized", data: self.getEnvironment())
+         }
       }
    }
 
@@ -164,6 +190,21 @@ public class SwiftMonitor {
       EventEmitter.subscribe(callback: callback)
    }
 
+   public func on (eventType: String, _ callback: envClosure) {
+      ///test for envClosure types, otherwise generify
+      switch eventType {
+         case "environment":
+            swiftMet.loaderApi.logMessage(debug, "on(): Subscribing an Environment observer")
+            EventEmitter.subscribe(callback: callback)
+         case "initialized":
+            swiftMet.loaderApi.logMessage(debug, "on(): Subscribing an Initialized observer")
+            EventEmitter.subscribe(topic: eventType, callback: callback)
+         default:
+            swiftMet.loaderApi.logMessage(debug, "on(): Subscribing an observer")
+      }
+   }
+
+
    func raiseEvent<T: Event>(type: String, data: T) {
       swiftMet.loaderApi.logMessage(fine, "raiseEvent(): Raising a \(type) event containing a \(data.dynamicType) object")
       switch data {
@@ -178,6 +219,17 @@ public class SwiftMonitor {
             EventEmitter.publish(topic: type, event: data as! GenericEvent)
       }
    }
+
+   private func raiseEvent(type: String, data: [ String : String ]) {
+      if type == "environment" {
+         swiftMet.loaderApi.logMessage(debug, "raiseEvent(): Publishing an Environment event")
+         EventEmitter.publish(envEvent: data)
+      } else if type == "initialized" {
+         swiftMet.loaderApi.logMessage(debug, "raiseEvent(): Publishing an Initialized event")
+         EventEmitter.publish(type: type, envEvent: data)
+      }
+   }
+         
    
    func raiseCoreEvent(topic: String, message: String) {
       swiftMet.loaderApi.logMessage(debug, "raiseCoreEvent(): Raising core event: topic = \(topic)")
