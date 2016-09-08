@@ -20,7 +20,7 @@ Swift Application Metrics provides the following built-in data collection source
 
 The Swift Application Metrics agent supports the following runtime environments:
 
-* **Swift v3 (development snapshot 07/25 or later) ** on:
+* **Swift v3 (development snapshot 07/25 or later)** on:
   * 64-bit runtime on Linux (Ubuntu 14.04, 15.10)
   * 64-bit runtime on Mac OS X (x64)
 
@@ -28,12 +28,19 @@ The Swift Application Metrics agent supports the following runtime environments:
 ### Installation
 Swift Application Metrics can be installed by adding a dependency into your Package.swift file:
 
-```dependencies: [
-        .Package(url: "https://github.com/IBM-Swift/SwiftMetrics.git", versions: Version(0,0,1)..<Version(2,0,0)),
-    ]
+```swift
+dependencies: [
+   .Package(url: "https://github.com/IBM-Swift/SwiftMetrics.git", versions: Version(0,0,1)..<Version(2,0,0)),
+]
 ```
 
-Swift Package manager will automatically clone the code required and build it during compilation of your program using ```swift build```. 
+Swift Package manager will automatically clone the code required and build it during compilation of your program using 
+```swift
+swift build
+```. For Mac OS X additional parameters are currently required, so you must build your program using the following:
+```swift
+swift build -Xlinker -lc++
+```
 
 <a name="config"></a>
 ### Configuring Swift Application Metrics
@@ -95,7 +102,7 @@ Starts the SwiftMetrics monitoring agent. If the agent is already running this f
 Stops the SwiftMetrics monitoring agent. If the agent is not running this function does nothing.
 
 ### SwiftMetrics.monitor()
-Creates a Swift Application Metrics client instance. This can subsequently be used to get environment data and subscribe to data events. This function will start the SwiftMetrics monitoring agent if it is not already running.
+Creates a Swift Application Metrics local client instance. This can subsequently be used to get environment data and subscribe to data events. This function will start the SwiftMetrics monitoring agent if it is not already running.
 
 ### SwiftMetrics.monitor.getEnvironment()
 Requests an object containing all of the available environment information for the running application.
@@ -150,7 +157,7 @@ Non-release versions of this project (for example on github.com/IBM-Swift/SwiftM
 0.0.5
 
 ## Release History
-
+`0.0.5` - Initial development release.
 
 [1]:https://marketplace.eclipse.org/content/ibm-monitoring-and-diagnostic-tools-health-center
 [2]:http://www.ibm.com/support/knowledgecenter/SS3KLZ/com.ibm.java.diagnostics.healthcenter.doc/topics/connecting.html
