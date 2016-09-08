@@ -4,8 +4,6 @@ Swift Application Metrics monitoring and profiling agent
 Swift Application Metrics instruments the Swift runtime for performance monitoring, providing the monitoring data via an API. 
 Additionally the data can be visualized in an Eclipse IDE using the [IBM Monitoring and Diagnostics Tools - Health Center][1] client.
 
-Wrong typing? [IBM Monitoring and Diagnostic Tools - Health Center][1]
-
 See https://www.ibm.com/developerworks/java/jdk/tools/healthcenter/ for more details.
 
 Swift Application Metrics provides the following built-in data collection sources:
@@ -39,7 +37,8 @@ dependencies: [
 Swift Package manager will automatically clone the code required and build it during compilation of your program using 
 ```swift
 swift build
-```. For Mac OS X additional parameters are currently required, so you must build your program using the following:
+```. 
+For Mac OS X additional parameters are currently required, so you must build your program using the following:
 ```swift
 swift build -Xlinker -lc++
 ```
@@ -160,6 +159,8 @@ Non-release versions of this project (for example on github.com/IBM-Swift/SwiftM
 
 ## Release History
 `0.0.5` - Initial development release.
+
+Test [link][1]
 
 [1]: https://marketplace.eclipse.org/content/ibm-monitoring-and-diagnostic-tools-health-center
 [2]: http://www.ibm.com/support/knowledgecenter/SS3KLZ/com.ibm.java.diagnostics.healthcenter.doc/topics/connecting.html
