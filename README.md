@@ -160,8 +160,6 @@ Non-release versions of this project (for example on github.com/IBM-Swift/SwiftM
 ## Release History
 `0.0.5` - Initial development release.
 
-Test [link][1]
-
 [1]: https://marketplace.eclipse.org/content/ibm-monitoring-and-diagnostic-tools-health-center
 [2]: http://www.ibm.com/support/knowledgecenter/SS3KLZ/com.ibm.java.diagnostics.healthcenter.doc/topics/connecting.html
 [3]: https://github.com/IBM-Swift/SwiftMetrics/wiki
