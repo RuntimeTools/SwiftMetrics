@@ -62,24 +62,24 @@ public class SwiftMonitor {
          }
       }
 
-      static func subscribe(callback: cpuClosure) {
+      static func subscribe(callback: @escaping cpuClosure) {
          cpuObservers.append(callback)
       }
 
-      static func subscribe(callback: memoryClosure) {
+      static func subscribe(callback: @escaping memoryClosure) {
          memoryObservers.append(callback)
       }
 
-      static func subscribe(callback: envClosure) {
+      static func subscribe(callback: @escaping envClosure) {
          environmentObservers.append(callback)
       }
 
-      static func subscribe(topic: String, callback: envClosure) {
+      static func subscribe(topic: String, callback: @escaping envClosure) {
          ///currently this is only executed by initialized observers
          initializedObservers.append(callback)
       }
 
-      static func subscribe(topic: String, callback: genericClosure<GenericEvent>) {
+      static func subscribe(topic: String, callback: @escaping genericClosure<GenericEvent>) {
          if genericObservers[topic] != nil {
             genericObservers[topic]!.append(callback)
          } else {
@@ -94,11 +94,7 @@ public class SwiftMonitor {
          if message.contains("@#") {
             swiftMet.loaderApi.logMessage(debug, "formatCPU(): Raising CPU event")
             //cpu: startCPU@#1412609879696@#0.00499877@#0.137468
-#if os(Linux)
-            let values = message.trimmingCharacters(in: NSCharacterSet.whitespacesAndNewlines()).components(separatedBy: "@#")
-#else
             let values = message.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).components(separatedBy: "@#")
-#endif
             let cpu = CPUEvent(time: Int(values[1])!, process: Float(values[2])!, system: Float(values[3])!)
             raiseEvent(type: "cpu", data: cpu)
          }
@@ -110,11 +106,7 @@ public class SwiftMonitor {
          if message.contains(",") {
             swiftMet.loaderApi.logMessage(debug, "formatMemory(): Raising Memory event")
             ///MemorySource,1415976582652,totalphysicalmemory=16725618688,physicalmemory=52428800,privatememory=374747136,virtualmemory=374747136,freephysicalmemory=1591525376
-#if os(Linux)
-            let values = message.trimmingCharacters(in: NSCharacterSet.whitespacesAndNewlines()).components(separatedBy: ",")
-#else
             let values = message.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).components(separatedBy: ",")
-#endif
             let physicalTotal = Int(values[2].components(separatedBy: "=")[1])!
             let physicalFree = Int(values[6].components(separatedBy: "=")[1])!
             let physicalUsed = (physicalTotal >= 0 && physicalFree >= 0) ? (physicalTotal - physicalFree) : -1
@@ -168,29 +160,29 @@ public class SwiftMonitor {
       }
    }
 
-   public func on<T: Event>(eventType: String, _ callback: (T) -> ()) {
-      swiftMet.loaderApi.logMessage(fine, "on(): Subscriving a \(callback.dynamicType) closure to an \(eventType) event")
+   public func on<T: Event>(eventType: String, _ callback: @escaping (T) -> ()) {
+      swiftMet.loaderApi.logMessage(fine, "on(): Subscriving a \(type(of: callback)) closure to an \(eventType) event")
    }
    
-   public func on(eventType: String, _ callback: cpuClosure) {
+   public func on(eventType: String, _ callback: @escaping cpuClosure) {
       on(callback)
    }
 
-   public func on(_ callback: cpuClosure) {
+   public func on(_ callback: @escaping cpuClosure) {
       swiftMet.loaderApi.logMessage(debug, "on(): Subscribing a CPU observer")
       EventEmitter.subscribe(callback: callback)
    }
 
-   public func on(eventType: String, _ callback: memoryClosure) {
+   public func on(eventType: String, _ callback: @escaping memoryClosure) {
       on(callback)
    }
 
-   public func on(_ callback: memoryClosure) {
+   public func on(_ callback: @escaping memoryClosure) {
       swiftMet.loaderApi.logMessage(debug, "on(): Subscribing a Memory observer")
       EventEmitter.subscribe(callback: callback)
    }
 
-   public func on (eventType: String, _ callback: envClosure) {
+   public func on (eventType: String, _ callback: @escaping envClosure) {
       ///test for envClosure types, otherwise generify
       switch eventType {
          case "environment":
@@ -206,7 +198,7 @@ public class SwiftMonitor {
 
 
    func raiseEvent<T: Event>(type: String, data: T) {
-      swiftMet.loaderApi.logMessage(fine, "raiseEvent(): Raising a \(type) event containing a \(data.dynamicType) object")
+      swiftMet.loaderApi.logMessage(fine, "raiseEvent(): Raising a \(type) event containing a \(type(of: data)) object")
       switch data {
          case let cpu as CPUEvent:
             swiftMet.loaderApi.logMessage(debug, "raiseEvent(): Publishing a CPU event")

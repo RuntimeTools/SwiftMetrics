@@ -34,7 +34,7 @@ public struct GenericEvent: Event {
 private var swiftMon: SwiftMonitor?
 
 
-private func receiveAgentCoreData(cSourceId: UnsafePointer<CChar>, cSize: CUnsignedInt, data: UnsafeMutablePointer<Void>) -> Void {
+private func receiveAgentCoreData(cSourceId: UnsafePointer<CChar>, cSize: CUnsignedInt, data: UnsafeMutableRawPointer) -> Void {
    let size = Int(cSize) 
    if size == 0 {
       return 
@@ -54,7 +54,7 @@ public class SwiftMetrics {
     let SWIFTMETRICS_VERSION = "99.99.99.29991231"
     var running = false
     typealias monitorPushData = @convention(c) (UnsafePointer<CChar>) -> Void
-    typealias monitorSendControl = @convention(c) (UnsafePointer<CChar>, CUnsignedInt, UnsafeMutablePointer<Void>) -> Void
+    typealias monitorSendControl = @convention(c) (UnsafePointer<CChar>, CUnsignedInt, UnsafeMutableRawPointer) -> Void
     typealias monitorRegisterListener = @convention(c) (monitorSendControl) -> Void
     var pushData: monitorPushData? 
     var sendControl: monitorSendControl? 
@@ -78,7 +78,7 @@ public class SwiftMetrics {
 
     private func setDefaultLibraryPath() {
        ///use the directory that the swift program lives in
-       let programPath = Process.arguments[0]
+       let programPath = CommandLine.arguments[0]
        let i = programPath.range(of: "/", options: .backwards)
        let defaultLibraryPath = programPath.substring(to: i!.lowerBound)
        loaderApi.logMessage(fine, "setDefaultLibraryPath(): to \(defaultLibraryPath)")
@@ -87,11 +87,7 @@ public class SwiftMetrics {
 
     private func loadProperties() throws {
        ///look for healthcenter.properties in current directory
-#if os(Linux)
-       let fm = FileManager.default()
-#else
        let fm = FileManager.default
-#endif
        var propertiesPath = ""
        let currentDir = fm.currentDirectoryPath
        var dirContents = try fm.contentsOfDirectory(atPath: currentDir)
@@ -108,7 +104,7 @@ public class SwiftMetrics {
              workingPath = currentDir
           } else {
              ///we're above the Packages directory
-             workingPath = Process.arguments[0]
+             workingPath = CommandLine.arguments[0]
           }
           let i = workingPath.range(of: ".build")
           var packagesPath = workingPath.substring(to: i!.lowerBound)
@@ -196,7 +192,7 @@ public class SwiftMetrics {
        return path + "/" + fileName
     }
     
-    private func getFunctionFromLibrary(libraryPath: String, functionName: String) -> UnsafeMutablePointer<Void>? {
+    private func getFunctionFromLibrary(libraryPath: String, functionName: String) -> UnsafeMutableRawPointer? {
        loaderApi.logMessage(debug, "getFunctionFromLibrary(): Looking for function \(functionName) in library \(libraryPath)")
        let handle = dlopen(libraryPath, RTLD_LAZY)
        if handle == nil {
@@ -216,7 +212,7 @@ public class SwiftMetrics {
        return function
     }
 
-    private func getMonitorApiFunction(pluginPath: String, functionName: String) -> UnsafeMutablePointer<Void>? {
+    private func getMonitorApiFunction(pluginPath: String, functionName: String) -> UnsafeMutableRawPointer? {
 #if os(Linux)
        let libname = "libhcapiplugin.so"
 #else
