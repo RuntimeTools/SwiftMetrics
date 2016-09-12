@@ -171,7 +171,7 @@ public class SwiftMetrics {
       ///this seems to be probe-related - might not be needed
     }
 
-    public func emit<T: Event> (type: String, data: T) {
+    public func emit(type: String, data: Any) {
       if swiftMon != nil {
          swiftMon!.raiseEvent(type: type, data: data)
       }

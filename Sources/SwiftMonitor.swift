@@ -27,6 +27,7 @@ public class SwiftMonitor {
       static var memoryObservers: [memoryClosure] = []
       static var environmentObservers: [envClosure] = []
       static var initializedObservers: [envClosure] = []
+      static var anyObservers : [ String : [(Any) -> ()] ] = [:]
       static var genericObservers: [String : [genericClosure<GenericEvent>]] = [:]
 
       static func publish(cpuEvent: CPUEvent) {
@@ -62,6 +63,14 @@ public class SwiftMonitor {
          }
       }
 
+      static func publish(topic: String, event: Any) {
+         if anyObservers[topic] != nil {
+            for process in anyObservers[topic]! {
+              process(event)
+            }
+         }
+      }
+
       static func subscribe(callback: @escaping cpuClosure) {
          cpuObservers.append(callback)
       }
@@ -84,6 +93,14 @@ public class SwiftMonitor {
             genericObservers[topic]!.append(callback)
          } else {
             genericObservers[topic] = [callback]
+         }
+      }
+
+      static func subscribe(topic: String, callback: @escaping ((Any) -> ())) {
+         if anyObservers[topic] != nil {
+            anyObservers[topic]!.append(callback)
+         } else {
+            anyObservers[topic] = [callback]
          }
       }
 
@@ -195,7 +212,11 @@ public class SwiftMonitor {
             swiftMet.loaderApi.logMessage(debug, "on(): Subscribing an observer")
       }
    }
-
+   
+   public func on(eventType: String, _ callback: @escaping ((Any) -> ())) {
+      swiftMet.loaderApi.logMessage(debug, "on(): Subscribing a \(eventType) observer")
+      EventEmitter.subscribe(topic: eventType, callback: callback)
+   }
 
    func raiseEvent<T: Event>(type: String, data: T) {
       swiftMet.loaderApi.logMessage(fine, "raiseEvent(): Raising a \(type) event containing a \(type(of: data)) object")
@@ -221,6 +242,12 @@ public class SwiftMonitor {
          EventEmitter.publish(type: type, envEvent: data)
       }
    }
+
+   func raiseEvent(type: String, data: Any) {
+      swiftMet.loaderApi.logMessage(debug, "raiseEvent(): Publishing a \(type) event")
+      EventEmitter.publish(topic : type, event: data)
+   }
+      
          
    
    func raiseCoreEvent(topic: String, message: String) {

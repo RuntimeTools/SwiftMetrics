@@ -103,6 +103,9 @@ Sets the directory that Swift Application Metrics will look in for data source /
 ### SwiftMetrics.monitor() -> SwiftMonitor
 Creates a Swift Application Metrics Local Client instance, connected to the Swift Application Metrics Agent specified by 'SwiftMetrics'. This can subsequently be used to get environment data and subscribe to data events. This function will start the Swift Application Metrics Agent if it is not already running.
 
+### SwiftMetrics.emit(type: String, data: Any)
+Allows you to emit a custom Event specifying the type as a string. Data to pass into the event must be cast as an Any object using 'as Any'.
+
 ### SwiftMonitor.getEnvironment() -> [ String : String ]
 Requests a Dictionary object containing all of the available environment information for the running application. If called before the 'initialized' event has been emitted, this will contain either incomplete data or no data.
 
@@ -111,6 +114,9 @@ If you supply a closure that takes a *[CPU or Memory Event Structure](#api-struc
 
 ### SwiftMonitor.on(eventType: String, (Event Struct) -> ())
 Add the closure to the list of closures to be run when an event of type eventType is emitted. *[The Event Struct must be of the same type specified by eventType](#api-structs)*.
+
+### SwiftMonitor.on(eventType: String, (Any) -> ())
+Allows you to add a closure to be run on custom Events of eventType. The eventType must be the same as the type of the event emitted through SwiftMetrics.emit(). Don't forget to unwrap your data using 'as!'
 
 
 <a name="api-structs"></a>
