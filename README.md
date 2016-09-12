@@ -20,7 +20,7 @@ Swift Application Metrics provides the following built-in data collection source
 
 The Swift Application Metrics agent supports the following runtime environments:
 
-* **Swift v3 (development snapshot 07/25 or later)** on:
+* **Swift v3 (development snapshot 09/07 or later)** on:
   * 64-bit runtime on Linux (Ubuntu 14.04, 15.10)
   * 64-bit runtime on Mac OS X (x64)
 
@@ -35,7 +35,7 @@ dependencies: [
 ```
 
 Swift Package manager will automatically clone the code required and build it during compilation of your program using 
-`swift build`. For Mac OS X additional parameters are currently required, so you must build your program using the following:
+`swift build`. *For Mac OS X additional parameters are currently required*, so you must build your program using the following:
 `swift build -Xlinker -lc++`
 
 <a name="config"></a>
@@ -62,7 +62,7 @@ import SwiftMetrics
 let sm = try SwiftMetrics()
 let monitoring = sm.monitor()
 ```
-The call to `sm.monitor()` starts the data collection agent, making the data available via the API and to the Heath Center client via MQTT. 
+SwiftMetrics() returns the Swift Application Metrics Agent - this runs parallel to your code and receives and emits data about your application to any connected clients e.g. A Health Center Eclipse IDE Client connected over MQTT. The `sm.monitor()` call returns a Swift Application Metrics Local Client, connected to the Agent `sm` over a local connection.
 
 You can then use the monitoring object to register callbacks and request information about the application:
 ```swift
@@ -92,34 +92,55 @@ Further information regarding the use of the Health Center client with Swift App
 ## API Documentation
 
 ### SwiftMetrics.start()
-Starts the SwiftMetrics monitoring agent. If the agent is already running this function does nothing.
+Starts the Swift Application Metrics Agent. If the agent is already running this function does nothing.
 
 ### SwiftMetrics.stop()
-Stops the SwiftMetrics monitoring agent. If the agent is not running this function does nothing.
+Stops the Swift Application Metrics Agent. If the agent is not running this function does nothing.
 
-### SwiftMetrics.monitor()
-Creates a Swift Application Metrics local client instance. This can subsequently be used to get environment data and subscribe to data events. This function will start the SwiftMetrics monitoring agent if it is not already running.
+### SwiftMetrics.spath(path: String)
+Sets the directory that Swift Application Metrics will look in for data source / connector plugins.
 
-### SwiftMetrics.monitor.getEnvironment()
-Requests an object containing all of the available environment information for the running application.
+### SwiftMetrics.monitor() -> SwiftMonitor
+Creates a Swift Application Metrics Local Client instance, connected to the Swift Application Metrics Agent specified by 'SwiftMetrics'. This can subsequently be used to get environment data and subscribe to data events. This function will start the Swift Application Metrics Agent if it is not already running.
 
-### Event: 'cpu'
+### SwiftMonitor.getEnvironment() -> [ String : String ]
+Requests a Dictionary object containing all of the available environment information for the running application. If called before the 'initialized' event has been emitted, this will contain either incomplete data or no data.
+
+### SwiftMonitor.on((API Event Struct) -> ())
+If you supply a closure that takes a *[CPU or Memory Event Structure](#api-structs)* and returns nothing, then you can use this shorthand to have that closure run when the API Event in question is emitted.
+
+### SwiftMonitor.on(eventType: String, (Event Struct) -> ())
+Add the closure to the list of closures to be run when an event of type eventType is emitted. *[The Event Struct must be of the same type specified by eventType](#api-structs)*.
+
+
+<a name="api-structs"></a>
+## API Event Structures
+
+### EventType: "cpu"
 Emitted when a CPU monitoring sample is taken.
-* `data` (Object) the data from the CPU sample:
-    * `time` (Number) the milliseconds when the sample was taken. This can be converted to a Date using `new Date(data.time)`.
-    * `process` (Number) the percentage of CPU used by the Node.js application itself. This is a value between 0.0 and 1.0.
-    * `system` (Number) the percentage of CPU used by the system as a whole. This is a value between 0.0 and 1.0.
+* `public struct CPUEvent` 
+    * `time` (Int) the milliseconds when the sample was taken. This can be converted to a Date using `new Date(data.time)`.
+    * `process` (Float) the percentage of CPU used by the Node.js application itself. This is a value between 0.0 and 1.0.
+    * `system` (Float) the percentage of CPU used by the system as a whole. This is a value between 0.0 and 1.0.
 
 ### Event: 'memory'
 Emitted when a memory monitoring sample is taken.
-* `data` (Object) the data from the memory sample:
-    * `time` (Number) the milliseconds when the sample was taken. This can be converted to a Date using `new Date(data.time)`.
-    * `physical_total` (Number) the total amount of RAM available on the system in bytes.
-    * `physical_used` (Number) the total amount of RAM in use on the system in bytes.
-    * `physical_free` (Number) the total amount of free RAM available on the system in bytes.
-    * `virtual` (Number) the memory address space used by the Node.js application in bytes.
-    * `private` (Number) the amount of memory used by the Node.js application that cannot be shared with other processes, in bytes.
-    * `physical` (Number) the amount of RAM used by the Node.js application in bytes.
+* `public struct MemEvent` 
+    * `time` (Int) the milliseconds when the sample was taken. This can be converted to a Date using `new Date(data.time)`.
+    * `physical_total` (Int) the total amount of RAM available on the system in bytes.
+    * `physical_used` (Int) the total amount of RAM in use on the system in bytes.
+    * `physical_free` (Int) the total amount of free RAM available on the system in bytes.
+    * `virtual` (Int) the memory address space used by the Node.js application in bytes.
+    * `private` (Int) the amount of memory used by the Node.js application that cannot be shared with other processes, in bytes.
+    * `physical` (Int) the amount of RAM used by the Node.js application in bytes.
+
+### Event: 'initialized'
+Emitted when all expected environment samples have been received, signalling a complete set of environment variables is available for SwiftMonitor.getEnvironment().
+* `[String: String]` (Dictionary) of environment variable name:value pairs. The contents vary depending on system.
+
+### Event: 'environment'
+Emitted when an environment event sample is taken. The Dictionary obtained with this event may not represent the complete set of environment variables.
+* `[String: String]` (Dictionary) of environment variable name:value pairs. The contents vary depending on system.
 
 ## Troubleshooting
 Find below some possible problem scenarios and corresponding diagnostic steps. Updates to troubleshooting information will be made available on the [appmetrics wiki][3]: [Troubleshooting](https://github.com/RuntimeTools/appmetrics/wiki/Troubleshooting). If these resources do not help you resolve the issue, you can open an issue on the Swift Application Metrics [issue tracker][5].
