@@ -86,7 +86,7 @@ Connecting to the Health Center client requires the additional installation of a
 
 Note that both the API and the Health Center client can be used at the same time and will receive the same data. Use of the API requires application modification (see *[Modifying your application](#run-local)*).
 
-Further information regarding the use of the Health Center client with Swift Application Metrics can be found on the [appmetrics wiki][3]: [Using Node Application Metrics with the Health Center client](https://github.com/RuntimeTools/appmetrics/wiki/Using-Node-Application-Metrics-with-the-Health-Center-client).
+Further information regarding the use of the Health Center client with Swift Application Metrics can be found on the [SwiftMetrics wiki][3]: [Using Swift Application Metrics with the Health Center client](https://github.com/IBM-Swift/SwiftMetrics/wiki/Using-Swift-Application-Metrics-with-the-Health-Center-client).
 
 <a name="api-doc"></a>
 ## API Documentation
@@ -148,8 +148,16 @@ Emitted when all expected environment samples have been received, signalling a c
 Emitted when an environment event sample is taken. The Dictionary obtained with this event may not represent the complete set of environment variables.
 * `[String: String]` (Dictionary) of environment variable name:value pairs. The contents vary depending on system.
 
+##Samples
+
+There are two samples available:
+* `commonSample` demonstrates how to get data from the common events, using the API.
+* `emitSample` demonstrates the use of Custom event emit and receive.
+
+To use either, navigate to their directory and issue `swift build` (on Mac OS X, `swift build -Xlinker -lc++`
+
 ## Troubleshooting
-Find below some possible problem scenarios and corresponding diagnostic steps. Updates to troubleshooting information will be made available on the [appmetrics wiki][3]: [Troubleshooting](https://github.com/RuntimeTools/appmetrics/wiki/Troubleshooting). If these resources do not help you resolve the issue, you can open an issue on the Swift Application Metrics [issue tracker][5].
+Find below some possible problem scenarios and corresponding diagnostic steps. Updates to troubleshooting information will be made available on the [SwiftMetrics wiki][3]: [Troubleshooting](https://github.com/IBM-Swift/SwiftMetrics/wiki/Troubleshooting). If these resources do not help you resolve the issue, you can open an issue on the Swift Application Metrics [issue tracker][5].
 
 ### Checking Swift Application Metrics has started
 By default, a message similar to the following will be written to console output when Swift Application Metrics starts:
@@ -165,7 +173,7 @@ Check:
 * If you have an appropriate version of `libstdc++`installed, ensure it is on the system library path, or use a method (such as setting `LD_LIBRARY_PATH` environment variable on Linux, or LIBPATH environment variable on AIX) to add the library to the search path.
 
 ## Source code
-The source code for Swift Application Metrics is available in the [Swiftmetrics project][6]. Information on working with the source code -- installing from source, developing, contributing -- is available on the [appmetrics wiki][3].
+The source code for Swift Application Metrics is available in the [Swiftmetrics project][6]. Information on working with the source code -- installing from source, developing, contributing -- is available on the [SwiftMetrics wiki][3].
 
 ## License
 This project is released under an Apache 2.0 open source license.  
@@ -174,7 +182,7 @@ This project is released under an Apache 2.0 open source license.
 This project uses a semver-parsable X.0.Z version number for releases, where X is incremented for breaking changes to the public API described in this document and Z is incremented for bug fixes **and** for non-breaking changes to the public API that provide new function.
 
 ### Development versions
-Non-release versions of this project (for example on github.com/IBM-Swift/SwiftMetrics) will use semver-parsable X.0.Z-dev.B version numbers, where X.0.Z is the last release with Z incremented and B is an integer. For further information on the development process go to the  [appmetrics wiki][3]: [Developing](https://github.com/RuntimeTools/appmetrics/wiki/Developing).
+Non-release versions of this project (for example on github.com/IBM-Swift/SwiftMetrics) will use semver-parsable X.0.Z-dev.B version numbers, where X.0.Z is the last release with Z incremented and B is an integer. For further information on the development process go to the  [SwiftMetrics wiki][3]: [Developing](https://github.com/IBM-Swift/SwiftMetrics/wiki/Developing).
 
 ## Version
 0.0.6
