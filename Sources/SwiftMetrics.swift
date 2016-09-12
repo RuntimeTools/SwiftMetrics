@@ -173,7 +173,7 @@ public class SwiftMetrics {
 
     public func emit(type: String, data: Any) {
       if swiftMon != nil {
-         swiftMon!.raiseEvent(type: type, data: data)
+         swiftMon!.raiseLocalEvent(type: type, data: data)
       }
       ///add HC-visual events here
     }

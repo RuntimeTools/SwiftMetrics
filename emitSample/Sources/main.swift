@@ -18,7 +18,7 @@ public class AlarmClock {
    }
 
    public convenience init(time: Date) {
-      self.init(time: time, snooze: 10)
+      self.init(time: time, snooze: 5)
    }
 
    public func stop() {
@@ -58,7 +58,7 @@ public class AlarmClock {
 
 }
 
-let myAC = AlarmClock(time: Date(timeIntervalSinceNow: 10))
+let myAC = AlarmClock(time: Date(timeIntervalSinceNow: 5))
 DispatchQueue.global(qos: .background).async {
    myAC.waitForAlarm()
 }

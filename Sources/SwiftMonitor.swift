@@ -243,7 +243,7 @@ public class SwiftMonitor {
       }
    }
 
-   func raiseEvent(type: String, data: Any) {
+   func raiseLocalEvent(type: String, data: Any) {
       swiftMet.loaderApi.logMessage(debug, "raiseEvent(): Publishing a \(type) event")
       EventEmitter.publish(topic : type, event: data)
    }
