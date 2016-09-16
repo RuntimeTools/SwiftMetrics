@@ -194,20 +194,18 @@ public class SwiftMetrics {
     
     private func getFunctionFromLibrary(libraryPath: String, functionName: String) -> UnsafeMutableRawPointer? {
        loaderApi.logMessage(debug, "getFunctionFromLibrary(): Looking for function \(functionName) in library \(libraryPath)")
-       let handle = dlopen(libraryPath, RTLD_LAZY)
-       if handle == nil {
+       guard let handle = dlopen(libraryPath, RTLD_LAZY) else {
           let error = String(cString: dlerror())
           loaderApi.logMessage(warning, "Failed to open library \(libraryPath): \(error)") 
           return nil 
        }
-       let function = dlsym(handle, functionName)
-       if function == nil {
+       guard let function = dlsym(handle, functionName) else {
           let error = String(cString: dlerror())
           loaderApi.logMessage(warning, "Failed to find symbol \(functionName) in library \(libraryPath): \(error)")
-          dlclose(handle!)
+          dlclose(handle)
           return nil 
        }
-       dlclose(handle!)
+       dlclose(handle)
        loaderApi.logMessage(debug, "getFunctionFromLibrary(): Function found")
        return function
     }
@@ -229,22 +227,19 @@ public class SwiftMetrics {
     private func initMonitorApi() -> Bool {
        let pluginPath = String(cString: loaderApi.getProperty("com.ibm.diagnostics.healthcenter.plugin.path")!)
 
-       let iPushData = getMonitorApiFunction(pluginPath: pluginPath, functionName: "pushData")
-       if iPushData == nil {
+       guard let iPushData = getMonitorApiFunction(pluginPath: pluginPath, functionName: "pushData") else {
           loaderApi.logMessage(debug, "initMonitorApi(): Unable to locate pushData. Returning.")
           return false
        }
        pushData = unsafeBitCast(iPushData, to: monitorPushData.self)
 
-       let iSendControl = getMonitorApiFunction(pluginPath: pluginPath, functionName: "sendControl")
-       if iSendControl == nil {
+       guard let iSendControl = getMonitorApiFunction(pluginPath: pluginPath, functionName: "sendControl") else {
           loaderApi.logMessage(debug, "initMonitorApi(): Unable to locate sendControl. Returning.")
           return false
        }
        sendControl = unsafeBitCast(iSendControl, to: monitorSendControl.self)
 
-       let iRegisterListener = getMonitorApiFunction(pluginPath: pluginPath, functionName: "registerListener")
-       if iRegisterListener == nil {
+       guard let iRegisterListener = getMonitorApiFunction(pluginPath: pluginPath, functionName: "registerListener") else {
           loaderApi.logMessage(debug, "initMonitorApi(): Unable to locate registerListener. Returning.")
           return false
        }
