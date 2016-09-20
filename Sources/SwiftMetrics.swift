@@ -36,7 +36,7 @@ private var swiftMon: SwiftMonitor?
 
 private func receiveAgentCoreData(cSourceId: UnsafePointer<CChar>, cSize: CUnsignedInt, data: UnsafeMutableRawPointer) -> Void {
    let size = Int(cSize) 
-   if size == 0 {
+   if size <= 0 {
       return 
    }
    let source = String(cString: cSourceId)
