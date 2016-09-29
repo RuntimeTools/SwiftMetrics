@@ -68,8 +68,6 @@ public class SwiftMetrics {
         loaderApi.setProperty("agentcore.version", loaderApi.getAgentVersion())
         loaderApi.setProperty("swiftmetrics.version", SWIFTMETRICS_VERSION)
         loaderApi.logMessage(info, "Swift Application Metrics")
-        self.setDefaultLibraryPath()
-        self.start()
     }
 
     deinit {
@@ -145,6 +143,10 @@ public class SwiftMetrics {
         if (!running) {
             loaderApi.logMessage(fine, "start(): Starting Swift Application Metrics")
             running = true
+            let pluginSearchPath = String(cString: loaderApi.getProperty("com.ibm.diagnostics.healthcenter.plugin.path")!)
+            if pluginSearchPath == "" {
+               self.setDefaultLibraryPath()
+            }
             _ = loaderApi.initialize()
             loaderApi.logMessage(debug, "start(): Forcing MQTT Connection on")
             loaderApi.setProperty("com.ibm.diagnostics.healthcenter.mqtt", "on")

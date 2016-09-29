@@ -10,6 +10,7 @@ public class SwiftMonitor {
    init(swiftMet: SwiftMetrics) {
       swiftMet.loaderApi.logMessage(fine, "Creating SwiftMonitor with local connection")
       self.swiftMet = swiftMet
+      swiftMet.start()
       swiftMet.localConnect()
    }
 
