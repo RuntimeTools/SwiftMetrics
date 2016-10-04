@@ -7,7 +7,6 @@ import Darwin
 #endif
 
 public protocol Event {
-   var time: Int { get }
 }
 
 public struct CPUEvent: Event {
@@ -26,9 +25,12 @@ public struct MemEvent: Event {
    public let physical: Int
 }
 
-public struct GenericEvent: Event {
-   public var time: Int
-   public var message: String
+public struct EnvEvent: Event {
+   public let data: [String:String]
+}
+
+public struct InitEvent: Event {
+   public let data: [String:String]
 }
 
 private var swiftMon: SwiftMonitor?
@@ -173,9 +175,9 @@ public class SwiftMetrics {
       ///this seems to be probe-related - might not be needed
     }
 
-    public func emit(type: String, data: Any) {
+    public func emit<T: Event>(data: T) {
       if swiftMon != nil {
-         swiftMon!.raiseLocalEvent(type: type, data: data)
+         swiftMon!.raiseEvent(data: data)
       }
       ///add HC-visual events here
     }
