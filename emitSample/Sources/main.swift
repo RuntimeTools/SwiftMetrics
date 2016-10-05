@@ -30,7 +30,7 @@ public class AlarmClock {
       endAlarm=true
    }
 
-   private func snoozeMessage(data: SnoozeData) -> () {
+   private func snoozeMessage(data: SnoozeData) {
       print("\nAlarm has been ignored for \(data.cycleCount * snoozeInterval) seconds!\n")
    }
 

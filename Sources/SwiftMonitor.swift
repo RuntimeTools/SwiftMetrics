@@ -24,9 +24,9 @@ public class SwiftMonitor {
 
       static func publish<T: Event>(event: T) {
          let index = "\(T.self)"
-         if observers[index] != nil {
-            for process in observers[index]! {
-               (process as! ((T) -> ()))(event)
+         if let closureList = observers[index] {
+            for closure in closureList {
+               (closure as! (T) -> ())(event)
             }
          }
       }
