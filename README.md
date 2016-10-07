@@ -66,18 +66,18 @@ SwiftMetrics() returns the Swift Application Metrics Agent - this runs parallel 
 
 You can then use the monitoring object to register callbacks and request information about the application:
 ```swift
-monitoring.on(eventType: "initialized", { (_: [ String : String ]) in
-   let env = monitoring.getEnvironment();
+monitoring.on(dataType: "initialized", { (_: [ String : String ]) in
+   let env = monitoring.getEnvironmentData();
    for (key, value) in env {
       print("\(key): \(value)\n")
    }
 })
 
 func processCPU(cpu: CPUData) {
-   print("\nThis is a custom CPU event response.\n cpu.time = \(cpu.time),\n cpu.process = \(cpu.process),\n cpu.system = \(cpu.system).\n")
+   print("\nThis is a custom CPU event response.\n cpu.timeOfSample = \(cpu.timeOfSample),\n cpu.percentUsedByApplication = \(cpu.percentUsedByApplication),\n cpu.percentUsedBySystem = \(cpu.percentUsedBySystem).\n")
 }
 
-monitoring.on(eventType: "cpu", processCPU)
+monitoring.on(dataType: "cpu", processCPU)
 ```
 
 ## Health Center Eclipse IDE client
@@ -112,7 +112,7 @@ Requests a Dictionary object containing all of the available environment informa
 ### SwiftMonitor.on((API Data Struct) -> ())
 If you supply a closure that takes a *[CPU or Memory Data Structure](#api-structs)* and returns nothing, then you can use this shorthand to have that closure run when the API Data in question is emitted.
 
-### SwiftMonitor.on(dataType: String, (Event Struct) -> ())
+### SwiftMonitor.on(dataType: String, (API Data Struct) -> ())
 Add the closure to the list of closures to be run when an data of type eventType is emitted. *[The Event Struct must be of the same type specified by eventType](#api-structs)*.
 
 ### SwiftMonitor.on(dataType: String, (Any) -> ())
@@ -133,7 +133,7 @@ Emitted when a CPU monitoring sample is taken.
 Emitted when a memory monitoring sample is taken.
 * `public struct MemData` 
     * `timeOfSample` (Int) the system time in milliseconds since epoch when the sample was taken.
-    * `totalRAMonSystem` (Int) the total amount of RAM available on the system in bytes.
+    * `totalRAMOnSystem` (Int) the total amount of RAM available on the system in bytes.
     * `totalRAMUsed` (Int) the total amount of RAM in use on the system in bytes.
     * `totalRAMFree` (Int) the total amount of free RAM available on the system in bytes.
     * `applicationAddressSpaceSize` (Int) the memory address space used by the Swift application in bytes.
