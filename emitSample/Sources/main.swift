@@ -14,7 +14,7 @@ public class AlarmClock {
    public init(time: Date, snooze: Int) {
       self.snoozeInterval = snooze
       self.alarmTime = time
-      monitoring.on(eventType: "snooze", snoozeMessage)
+      monitoring.on(dataType: "snooze", snoozeMessage)
    }
 
    public convenience init(time: Date) {
@@ -50,7 +50,7 @@ public class AlarmClock {
       var i = 1
       while !endAlarm {
          sleep(UInt32(snoozeInterval))
-         sm.emit(type: "snooze", data: i as Any)  
+         sm.emitData(ofType: "snooze", i as Any)  
          i += 1
       }
       print("Alarm stopped - have a nice day!")

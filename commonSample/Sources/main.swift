@@ -3,12 +3,12 @@ import SwiftMetrics
 let sm = try SwiftMetrics()
 let monitoring = sm.monitor()
 
-func processCPU(cpu: CPUEvent) {
-   print("\nThis is a custom CPU event response.\n cpu.time = \(cpu.time),\n cpu.process = \(cpu.process),\n cpu.system = \(cpu.system).\n")
+func processCPU(cpu: CPUData) {
+   print("\nThis is a custom CPU event response.\n cpu.timeOfSample = \(cpu.timeOfSample), \n cpu.percentUsedByApplication = \(cpu.percentUsedByApplication), \n cpu.percentUsedBySystem = \(cpu.percentUsedBySystem).\n")
 }
 
-func processMem(mem: MemEvent) {
-   print("\nThis is a custom Memory event response.\n mem.time = \(mem.time),\n mem.physical_total = \(mem.physical_total),\n mem.physical_used = \(mem.physical_used),\n mem.physical_free = \(mem.physical_free),\n mem.virtual = \(mem.virtual),\n mem.private = \(mem.private),\n mem.physical = \(mem.physical).\n")
+func processMem(mem: MemData) {
+   print("\nThis is a custom Memory event response.\n mem.timeOfSample = \(mem.timeOfSample), \n mem.totalRAMOnSystem = \(mem.totalRAMOnSystem), \n mem.totalRAMUsed = \(mem.totalRAMUsed), \n mem.totalRAMFree = \(mem.totalRAMFree), \n mem.applicationAddressSpaceSize = \(mem.applicationAddressSpaceSize), \n mem.applicationPrivateSize = \(mem.applicationPrivateSize), \n mem.applicationRAMUsed = \(mem.applicationRAMUsed).\n")
 }
 
 func processEnv(env: [ String : String ]) {
@@ -19,13 +19,13 @@ func processEnv(env: [ String : String ]) {
 }
 
 
-monitoring.on(eventType: "cpu", processCPU)
+monitoring.on(dataType: "cpu", processCPU)
 monitoring.on(processMem)
-monitoring.on(eventType: "environment", processEnv)
+monitoring.on(dataType: "environment", processEnv)
 
-monitoring.on(eventType: "initialized", { (_: [ String : String ]) in
+monitoring.on(dataType: "initialized", { (_: [ String : String ]) in
    print("\n\n+++ Initialized Environment Information +++\n")
-   let env = monitoring.getEnvironment();
+   let env = monitoring.getEnvironmentData();
    for (key, value) in env {
       print("\(key): \(value)\n")
    }

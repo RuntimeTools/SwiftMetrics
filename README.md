@@ -97,7 +97,7 @@ Starts the Swift Application Metrics Agent. If the agent is already running this
 ### SwiftMetrics.stop()
 Stops the Swift Application Metrics Agent. If the agent is not running this function does nothing.
 
-### SwiftMetrics.setPluginSearch(directory: URL)
+### SwiftMetrics.setPluginSearch(toDirectory: URL)
 Sets the directory that Swift Application Metrics will look in for data source / connector plugins.
 
 ### SwiftMetrics.monitor() -> SwiftMonitor

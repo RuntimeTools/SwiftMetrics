@@ -6,28 +6,28 @@ import Glibc
 import Darwin
 #endif
 
-public protocol Event {
-   var time: Int { get }
+public protocol Data {
+   var timeOfSample: Int { get }
 }
 
-public struct CPUEvent: Event {
-   public let time: Int 
-   public let process: Float 
-   public let system: Float
+public struct CPUData: Data {
+   public let timeOfSample: Int 
+   public let percentUsedByApplication: Float 
+   public let percentUsedBySystem: Float
 }   
 
-public struct MemEvent: Event {
-   public let time: Int
-   public let physical_total: Int
-   public let physical_used: Int
-   public let physical_free: Int
-   public let virtual: Int
-   public let `private`: Int
-   public let physical: Int
+public struct MemData: Data {
+   public let timeOfSample: Int
+   public let totalRAMOnSystem: Int
+   public let totalRAMUsed: Int
+   public let totalRAMFree: Int
+   public let applicationAddressSpaceSize: Int
+   public let applicationPrivateSize: Int
+   public let applicationRAMUsed: Int
 }
 
-public struct GenericEvent: Event {
-   public var time: Int
+public struct GenericData: Data {
+   public var timeOfSample: Int
    public var message: String
 }
 
@@ -80,7 +80,7 @@ public class SwiftMetrics {
        let i = programPath.range(of: "/", options: .backwards)
        let defaultLibraryPath = programPath.substring(to: i!.lowerBound)
        loaderApi.logMessage(fine, "setDefaultLibraryPath(): to \(defaultLibraryPath)")
-       self.spath(path: defaultLibraryPath)
+       self.setPluginSearch(toDirectory: URL(fileURLWithPath: defaultLibraryPath, isDirectory: true))
     }
 
     private func loadProperties() throws {
@@ -123,9 +123,13 @@ public class SwiftMetrics {
        _ = loaderApi.loadPropertiesFile(propertiesPath) 
     }
 
-    public func spath(path: String) {
-        loaderApi.logMessage(debug, "spath(): Setting plugin path to \(path)")
-        loaderApi.setProperty("com.ibm.diagnostics.healthcenter.plugin.path", path)
+    public func setPluginSearch(toDirectory: URL) {
+        if toDirectory.isFileURL {
+           loaderApi.logMessage(debug, "setPluginSearch(): Setting plugin path to \(toDirectory.path)")
+           loaderApi.setProperty("com.ibm.diagnostics.healthcenter.plugin.path", toDirectory.path)
+        } else {
+           loaderApi.logMessage(warning, "setPluginSearch(): toDirectory is not a valid File URL")
+        }
     }
 
     public func stop() {
@@ -173,9 +177,9 @@ public class SwiftMetrics {
       ///this seems to be probe-related - might not be needed
     }
 
-    public func emit(type: String, data: Any) {
+    public func emitData(ofType: String, _ data: Any) {
       if swiftMon != nil {
-         swiftMon!.raiseLocalEvent(type: type, data: data)
+         swiftMon!.raiseLocalEvent(type: ofType, data: data)
       }
       ///add HC-visual events here
     }
