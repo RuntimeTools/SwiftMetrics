@@ -171,7 +171,7 @@ There are two samples available:
 * `commonSample` demonstrates how to get data from the common data types, using the API.
 * `emitSample` demonstrates the use of Custom Data emission and collection.
 
-To use either, navigate to their directory and issue `swift build` (on Mac OS X, `swift build -Xlinker -lc++`
+To use either, navigate to their directory and issue `swift build` (on Mac OS X, `swift build -Xlinker -lc++`)
 
 ## Troubleshooting
 Find below some possible problem scenarios and corresponding diagnostic steps. Updates to troubleshooting information will be made available on the [SwiftMetrics wiki][3]: [Troubleshooting](https://github.com/IBM-Swift/SwiftMetrics/wiki/Troubleshooting). If these resources do not help you resolve the issue, you can open an issue on the Swift Application Metrics [issue tracker][5].
