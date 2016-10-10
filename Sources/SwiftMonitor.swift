@@ -14,29 +14,77 @@ public class SwiftMonitor {
       swiftMet.localConnect()
    }
 
-   public func getEnvironment() -> [ String : String ] {
+   public func getEnvironmentData() -> [ String : String ] {
       return self.environment
    }
 
+   public typealias cpuClosure = (CPUData) -> ()
+   public typealias memoryClosure = (MemData) -> ()
+   public typealias envClosure = (EnvData) -> ()
+   public typealias initClosure = (InitData) -> ()
 
    final class EventEmitter {
-      static var observers: [ String : [Any] ] = [:]
+      static var cpuObservers: [cpuClosure] = []
+      static var memoryObservers: [memoryClosure] = []
+      static var environmentObservers: [envClosure] = []
+      static var initializedObservers: [initClosure] = []
+      static var customObservers : [ String : [Any] ] = [:]
 
-      static func publish<T: Event>(event: T) {
+      static func publish(data: CPUData) {
+         for process in cpuObservers {
+            process(data)
+         }
+      }
+
+      static func publish(data: MemData) {
+         for process in memoryObservers {
+            process(data)
+         }
+      }
+
+      static func publish(data: EnvData) {
+         for process in environmentObservers {
+            process(data)
+         }
+      }
+
+      static func publish(data: InitData) {
+         for process in initializedObservers {
+            process(data)
+         }
+      }
+
+      static func publish<T: SMData>(data: T) {
          let index = "\(T.self)"
-         if let closureList = observers[index] {
+         if let closureList = customObservers[index] {
             for closure in closureList {
-               (closure as! (T) -> ())(event)
+              (closure as! (T) -> ())(data)
             }
          }
       }
 
-      static func subscribe<T: Event>(callback: @escaping (T) -> ()) {
+      static func subscribe(callback: @escaping cpuClosure) {
+         cpuObservers.append(callback)
+      }
+
+      static func subscribe(callback: @escaping memoryClosure) {
+         memoryObservers.append(callback)
+      }
+
+      static func subscribe(callback: @escaping envClosure) {
+         environmentObservers.append(callback)
+      }
+
+      static func subscribe(callback: @escaping initClosure) {
+         initializedObservers.append(callback)
+      }
+
+      static func subscribe<T: SMData>(callback: @escaping (T) -> ()) {
          let index = "\(T.self)"
-         if observers[index] != nil {
-            observers[index]!.append(callback as Any)
+         if customObservers[index] != nil {
+            customObservers[index]!.append(callback as Any) 
          } else {
-            observers[index] = [callback as Any]
+            customObservers[index] = [callback as Any]
          }
       }
 
@@ -48,7 +96,8 @@ public class SwiftMonitor {
             swiftMet.loaderApi.logMessage(debug, "formatCPU(): Raising CPU event")
             //cpu: startCPU@#1412609879696@#0.00499877@#0.137468
             let values = message.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).components(separatedBy: "@#")
-            let cpu = CPUEvent(time: Int(values[1])!, process: Float(values[2])!, system: Float(values[3])!)
+            let cpu = CPUData(timeOfSample: Int(values[1])!, percentUsedByApplication: Float(values[2])!,
+                              percentUsedBySystem: Float(values[3])!)
             raiseEvent(data: cpu)
          }
       }
@@ -63,13 +112,13 @@ public class SwiftMonitor {
             let physicalTotal = Int(values[2].components(separatedBy: "=")[1])!
             let physicalFree = Int(values[6].components(separatedBy: "=")[1])!
             let physicalUsed = (physicalTotal >= 0 && physicalFree >= 0) ? (physicalTotal - physicalFree) : -1
-            let memory = MemEvent(time: Int(values[1])!,
-                                  physical_total: physicalTotal,
-                                  physical_used: physicalUsed,
-                                  physical_free: physicalFree,
-                                  virtual: Int(values[5].components(separatedBy: "=")[1])!,
-                                  private: Int(values[4].components(separatedBy: "=")[1])!,
-                                  physical: Int(values[3].components(separatedBy: "=")[1])!)
+            let memory = MemData(timeOfSample: Int(values[1])!,
+                                 totalRAMOnSystem: physicalTotal,
+                                 totalRAMUsed: physicalUsed,
+                                 totalRAMFree: physicalFree,
+                                 applicationAddressSpaceSize: Int(values[5].components(separatedBy: "=")[1])!,
+                                 applicationPrivateSize: Int(values[4].components(separatedBy: "=")[1])!,
+                                 applicationRAMUsed: Int(values[3].components(separatedBy: "=")[1])!)
             raiseEvent(data: memory)
          }
       }
@@ -98,12 +147,12 @@ public class SwiftMonitor {
          }
       }
       setEnv(env)
-      let environment = EnvEvent(data: self.getEnvironment())
+      let environment = EnvData(data: env)
       raiseEvent(data: environment)
       if self.initialized > 0 {
          self.initialized -= 1
          if self.initialized == 0 {
-            let initE = InitEvent(data: self.getEnvironment())
+            let initE = InitData(data: self.getEnvironmentData())
             raiseEvent(data: initE)
          }
       }
@@ -115,19 +164,18 @@ public class SwiftMonitor {
       }
    }
 
-   public func on<T: Event>(_ callback: @escaping (T) -> ()) {
+   public func on<T: SMData>(_ callback: @escaping (T) -> ()) {
       swiftMet.loaderApi.logMessage(fine, "on(): Subscribing a \(type(of: callback)) observer")
       EventEmitter.subscribe(callback: callback)
    }
    
-
-   func raiseEvent<T: Event>(data: T) {
+   func raiseEvent<T: SMData>(data: T) {
       swiftMet.loaderApi.logMessage(fine, "raiseEvent(): Publishing a \(T.self) event")
-      EventEmitter.publish(event: data)
+      EventEmitter.publish(data: data)
    }
-   
+
    func raiseCoreEvent(topic: String, message: String) {
-      swiftMet.loaderApi.logMessage(debug, "raiseCoreEvent(): Formatting core event: topic = \(topic)")
+      swiftMet.loaderApi.logMessage(debug, "raiseCoreEvent(): Raising core event: topic = \(topic)")
       switch topic {
          case "common_cpu", "cpu":
             formatCPU(messages: message)
