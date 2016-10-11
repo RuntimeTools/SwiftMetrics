@@ -6,17 +6,16 @@ import Glibc
 import Darwin
 #endif
 
-public protocol Data {
-   var timeOfSample: Int { get }
+public protocol SMData {
 }
 
-public struct CPUData: Data {
+public struct CPUData: SMData {
    public let timeOfSample: Int 
    public let percentUsedByApplication: Float 
    public let percentUsedBySystem: Float
 }   
 
-public struct MemData: Data {
+public struct MemData: SMData {
    public let timeOfSample: Int
    public let totalRAMOnSystem: Int
    public let totalRAMUsed: Int
@@ -26,9 +25,12 @@ public struct MemData: Data {
    public let applicationRAMUsed: Int
 }
 
-public struct GenericData: Data {
-   public var timeOfSample: Int
-   public var message: String
+public struct EnvData: SMData {
+   public let data: [String:String]
+}
+
+public struct InitData: SMData {
+   public let data: [String:String]
 }
 
 private var swiftMon: SwiftMonitor?
@@ -177,9 +179,9 @@ public class SwiftMetrics {
       ///this seems to be probe-related - might not be needed
     }
 
-    public func emitData(ofType: String, _ data: Any) {
+    public func emitData<T: SMData>(_ data: T) {
       if swiftMon != nil {
-         swiftMon!.raiseLocalEvent(type: ofType, data: data)
+         swiftMon!.raiseEvent(data: data)
       }
       ///add HC-visual events here
     }

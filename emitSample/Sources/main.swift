@@ -11,10 +11,18 @@ public class AlarmClock {
    private var snoozeInterval : Int
    private var endAlarm = false
 
+   private struct SnoozeData: SMData {
+      let cycleCount: Int
+   }
+
+   private func snoozeMessage(data: SnoozeData) {
+      print("\nAlarm has been ignored for \(data.cycleCount * snoozeInterval) seconds!\n")
+   }
+
    public init(time: Date, snooze: Int) {
       self.snoozeInterval = snooze
       self.alarmTime = time
-      monitoring.on(dataType: "snooze", snoozeMessage)
+      monitoring.on(snoozeMessage)
    }
 
    public convenience init(time: Date) {
@@ -24,10 +32,6 @@ public class AlarmClock {
    public func stop() {
       print("Stopping alarm")
       endAlarm=true
-   }
-
-   private func snoozeMessage(data: Any) -> () {
-      print("\nAlarm has been ignored for \(data as! Int * snoozeInterval) seconds!\n")
    }
 
    public func waitForAlarm() {
@@ -50,7 +54,7 @@ public class AlarmClock {
       var i = 1
       while !endAlarm {
          sleep(UInt32(snoozeInterval))
-         sm.emitData(ofType: "snooze", i as Any)  
+         sm.emitData(SnoozeData(cycleCount: i)) 
          i += 1
       }
       print("Alarm stopped - have a nice day!")

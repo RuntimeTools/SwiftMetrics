@@ -11,19 +11,19 @@ func processMem(mem: MemData) {
    print("\nThis is a custom Memory event response.\n mem.timeOfSample = \(mem.timeOfSample), \n mem.totalRAMOnSystem = \(mem.totalRAMOnSystem), \n mem.totalRAMUsed = \(mem.totalRAMUsed), \n mem.totalRAMFree = \(mem.totalRAMFree), \n mem.applicationAddressSpaceSize = \(mem.applicationAddressSpaceSize), \n mem.applicationPrivateSize = \(mem.applicationPrivateSize), \n mem.applicationRAMUsed = \(mem.applicationRAMUsed).\n")
 }
 
-func processEnv(env: [ String : String ]) {
+func processEnv(env: EnvData) {
    print("\nThis is a custom Environment event response.")
-   for (key, value) in env {
+   for (key, value) in env.data {
       print(" \(key) = \(value)")
    }
 }
 
 
-monitoring.on(dataType: "cpu", processCPU)
+monitoring.on(processCPU)
 monitoring.on(processMem)
-monitoring.on(dataType: "environment", processEnv)
+monitoring.on(processEnv)
 
-monitoring.on(dataType: "initialized", { (_: [ String : String ]) in
+monitoring.on({ (_: InitData) in
    print("\n\n+++ Initialized Environment Information +++\n")
    let env = monitoring.getEnvironmentData();
    for (key, value) in env {
