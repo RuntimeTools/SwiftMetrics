@@ -1,10 +1,7 @@
 # Swift Application Metrics
 Swift Application Metrics monitoring and profiling agent
 
-Swift Application Metrics instruments the Swift runtime for performance monitoring, providing the monitoring data via an API. 
-Additionally the data can be visualized in an Eclipse IDE using the [IBM Monitoring and Diagnostics Tools - Health Center][1] client.
-
-See https://www.ibm.com/developerworks/java/jdk/tools/healthcenter/ for more details.
+Swift Application Metrics instruments the Swift runtime for performance monitoring, providing the monitoring data programatically via an API or visually with [an Eclipse Client][1].
 
 Swift Application Metrics provides the following built-in data collection sources:
 
@@ -47,9 +44,9 @@ Swift Application Metrics will attempt to load `healthcenter.properties` from on
 1. the current working directory
 2. the Packages directory
 
-The default configuration has minimal logging enabled, will attempt to send data to a local MQTT server on the default port.
+The default configuration has minimal logging enabled and will attempt to send data to a local MQTT server on the default port.
 
-Many of the options provide configuration of the Health Center core agent library and are documented in the Health Center documentation: [Health Center configuration properties](https://www-01.ibm.com/support/knowledgecenter/SS3KLZ/com.ibm.java.diagnostics.healthcenter.doc/topics/configproperties.html).
+Many of the options provide configuration of the Health Center core agent library and are documented in the [Health Center documentation](https://www-01.ibm.com/support/knowledgecenter/SS3KLZ/com.ibm.java.diagnostics.healthcenter.doc/topics/configproperties.html).
 
 ## Running Swift Application Metrics
 <a name="run-local"></a>
@@ -94,14 +91,6 @@ sm.emitData(SnoozeData(cycleCount: 40))
 
 //prints "Alarm has been ignored for 40 seconds!"
 ```
-
-## Health Center Eclipse IDE client
-### Connecting to the client
-Connecting to the Health Center client requires the additional installation of a MQTT broker. The Swift Application Metrics agent sends data to the MQTT broker specified in the `healthcenter.properties` file. Installation and configuration documentation for the Health Center client is available from the [Health Center documentation in IBM Knowledge Center][2].
-
-Note that both the API and the Health Center client can be used at the same time and will receive the same data. Use of the API requires application modification (see *[Modifying your application](#run-local)*).
-
-Further information regarding the use of the Health Center client with Swift Application Metrics can be found on the [SwiftMetrics wiki][3]: [Using Swift Application Metrics with the Health Center client](https://github.com/IBM-Swift/SwiftMetrics/wiki/Using-Swift-Application-Metrics-with-the-Health-Center-client).
 
 <a name="api-doc"></a>
 ## API Documentation
@@ -173,6 +162,14 @@ There are two samples available:
 
 To use either, navigate to their directory and issue `swift build` (on macOS, `swift build -Xlinker -lc++`)
 
+## Health Center Eclipse IDE client
+### Connecting to the client
+Connecting to the Health Center client requires the additional installation of a MQTT broker. The Swift Application Metrics agent sends data to the MQTT broker specified in the `healthcenter.properties` file. Installation and configuration documentation for the Health Center client is available from the [Health Center documentation in IBM Knowledge Center][2].
+
+Note that both the API and the Health Center client can be used at the same time and will receive the same data. Use of the API requires application modification (see *[Modifying your application](#run-local)*).
+
+Further information regarding the use of the Health Center client with Swift Application Metrics can be found on the [SwiftMetrics wiki][3]: [Using Swift Application Metrics with the Health Center client](https://github.com/IBM-Swift/SwiftMetrics/wiki/Using-Swift-Application-Metrics-with-the-Health-Center-client).
+
 
 ## Troubleshooting
 Find below some possible problem scenarios and corresponding diagnostic steps. Updates to troubleshooting information will be made available on the [SwiftMetrics wiki][3]: [Troubleshooting](https://github.com/IBM-Swift/SwiftMetrics/wiki/Troubleshooting). If these resources do not help you resolve the issue, you can open an issue on the Swift Application Metrics [issue tracker][5].
@@ -203,10 +200,10 @@ This project uses a semver-parsable X.0.Z version number for releases, where X i
 Non-release versions of this project (for example on github.com/IBM-Swift/SwiftMetrics) will use semver-parsable X.0.Z-dev.B version numbers, where X.0.Z is the last release with Z incremented and B is an integer. For further information on the development process go to the  [SwiftMetrics wiki][3]: [Developing](https://github.com/IBM-Swift/SwiftMetrics/wiki/Developing).
 
 ## Version
-0.0.8
+0.0.9
 
 ## Release History
-`0.0.8` - Initial development release.
+`0.0.9` - Initial development release.
 
 [1]: https://marketplace.eclipse.org/content/ibm-monitoring-and-diagnostic-tools-health-center
 [2]: http://www.ibm.com/support/knowledgecenter/SS3KLZ/com.ibm.java.diagnostics.healthcenter.doc/topics/connecting.html
