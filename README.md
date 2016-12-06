@@ -10,6 +10,7 @@ Swift Application Metrics provides the following built-in data collection source
  Environment        | Machine and runtime environment information
  CPU                | Process and system CPU
  Memory             | Process and system memory usage
+ HTTP               | HTTP metric information
 
 
 ## Getting Started
@@ -143,6 +144,15 @@ Emitted when a memory monitoring sample is taken.
     * `applicationAddressSpaceSize` (Int) the memory address space used by the Swift application in bytes.
     * `applicationPrivateSize` (Int) the amount of memory used by the Swift application that cannot be shared with other processes, in bytes.
     * `applicationRAMUsed` (Int) the amount of RAM used by the Swift application in bytes.
+
+### HTTP data structure
+Emitted when an HTTP monitoring sample is taken.
+* `public struct HTTPata: SMData` 
+    * `timeOfRequest` (Int) the system time in milliseconds since epoch when the request was made.
+    * `url` (String) the request url.
+    * `duration` (Double) the duration the request took.
+    * `statusCode` (HTTPStatusCode) the HTTP status code of the request.
+    * `requestMethod` (String) the method {GET SET} of the request.
 
 ### Initialized data structure
 Emitted when all expected environment samples have been received, signalling a complete set of environment variables is available for SwiftMonitor.getEnvironmentData().

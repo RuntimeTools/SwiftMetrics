@@ -50,7 +50,7 @@ private func receiveAgentCoreData(cSourceId: UnsafePointer<CChar>, cSize: CUnsig
    }
 }
 
-public class SwiftMetrics {
+open class SwiftMetrics {
 
     let loaderApi: loaderCoreFunctions
     let SWIFTMETRICS_VERSION = "99.99.99.29991231"

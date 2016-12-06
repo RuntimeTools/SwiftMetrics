@@ -23,7 +23,7 @@ public class SwiftMonitor {
    public typealias envClosure = (EnvData) -> ()
    public typealias initClosure = (InitData) -> ()
 
-   final class EventEmitter {
+   final public class EventEmitter {
       static var cpuObservers: [cpuClosure] = []
       static var memoryObservers: [memoryClosure] = []
       static var environmentObservers: [envClosure] = []
