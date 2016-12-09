@@ -147,7 +147,7 @@ Emitted when a memory monitoring sample is taken.
 
 ### HTTP data structure
 Emitted when an HTTP monitoring sample is taken.
-* `public struct HTTPata: SMData` 
+* `public struct HTTPData: SMData` 
     * `timeOfRequest` (Int) the system time in milliseconds since epoch when the request was made.
     * `url` (String) the request url.
     * `duration` (Double) the duration the request took.
