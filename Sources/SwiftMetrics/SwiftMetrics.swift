@@ -80,7 +80,10 @@ open class SwiftMetrics {
        ///use the directory that the swift program lives in
        let programPath = CommandLine.arguments[0]
        let i = programPath.range(of: "/", options: .backwards)
-       let defaultLibraryPath = programPath.substring(to: i!.lowerBound)
+       var defaultLibraryPath = "."
+       if i != nil {
+         defaultLibraryPath = programPath.substring(to: i!.lowerBound)
+       }
        loaderApi.logMessage(fine, "setDefaultLibraryPath(): to \(defaultLibraryPath)")
        self.setPluginSearch(toDirectory: URL(fileURLWithPath: defaultLibraryPath, isDirectory: true))
     }
@@ -106,8 +109,15 @@ open class SwiftMetrics {
              ///we're above the Packages directory
              workingPath = CommandLine.arguments[0]
           }
+          
           let i = workingPath.range(of: ".build")
-          var packagesPath = workingPath.substring(to: i!.lowerBound)
+          var packagesPath = ""
+          if i == nil {
+			 // we could be in bluemix
+		     packagesPath="/home/vcap/app"
+		  } else {
+             packagesPath = workingPath.substring(to: i!.lowerBound)
+          }
           packagesPath.append("Packages")
           _ = fm.changeCurrentDirectoryPath(packagesPath)
           ///omr-agentcore has a version number in it, so search for it
@@ -167,7 +177,7 @@ open class SwiftMetrics {
 
     public func enable(type: String, config: Any? = nil) {
        if config != nil {
-          setConfig(type: type, config: config)
+          setConfig(type: type, config: config as Any)
        }
     }
 
