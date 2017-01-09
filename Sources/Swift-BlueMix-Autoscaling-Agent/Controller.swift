@@ -48,6 +48,7 @@ fileprivate struct ThroughputStats {
 }
 
 fileprivate struct Metrics {
+	//holds the metrics we use for updates and used to create the metrics we send to the auto-scaling service
 	fileprivate var httpStats: HttpStats = HttpStats()
 	fileprivate var memoryStats: MemoryStats = MemoryStats()
 	fileprivate var cpuStats: CPUStats = CPUStats()
@@ -55,6 +56,7 @@ fileprivate struct Metrics {
 }
 
 fileprivate struct AverageMetrics {
+	//Stores averages of metrics to send to the auto-scaling service
 	fileprivate var responseTime: Float = 0
 	fileprivate var memory: Float = 0
 	fileprivate var cpu: Float = 0
@@ -64,15 +66,22 @@ fileprivate struct AverageMetrics {
 public class AutoScalar {
 
 	var reportIntervalID: Int = 0
-	var refreshIntervalID: Int = 0
+	// the thread id for the reporting thread, so we can cancel it. May not be required in Swift.
 	var reportInterval: Int = 30000
+	// the number of ms to wait between report thread runs
+	var refreshIntervalID: Int = 0
+	//the thread id for the refresh, or heartbeat, thread, so we can cancel it. May not be required in Swift. 
 	var refreshInterval: Int = 60000
+	// the number of ms to wait between refresh thead runs
 	var isAgentEnabled: Bool = true
+	// can be turned off from the auto-scaling service in the refresh thread
 	var enabledMetrics: [String] = []
+	// list of metrics to collect (CPU, Memory, HTTP etc. Can be altered by the auto-scaling service in the refresh thread.
 	let autoScalingRegex = "Auto(.*)Scaling"
+	// used to find the AutoScaling service from the Cloud Foundry Application Environment
 	let sm: SwiftMetrics
 	let monitor: SwiftMonitor
-	fileprivate var metrics: Metrics = Metrics()
+	fileprivate var metrics: Metrics = Metrics() //initialises to defaults above
 
 	public init(metricsToEnable: [String]) throws{
 		enabledMetrics = metricsToEnable
@@ -88,6 +97,8 @@ public class AutoScalar {
 	}
 
 	private func setMonitors() {
+		//incomplete, will need HTTP monitoring adding
+		//see lib/agent.js and lib/calculator.js in node auto-scaling agent
 		monitor.on({(mem: MemData) -> () in
 			self.metrics.memoryStats.count += 1
 			self.metrics.memoryStats.sum += Float(mem.totalRAMUsed)
@@ -112,14 +123,14 @@ public class AutoScalar {
 			}
 			let metricsToSend = calculateAverageMetrics()
 			_ = constructSendObject(metricsToSend: metricsToSend)
-			//sendMetrics(sendObject)
+			//sendMetrics(output of constructSendObject)
 			//report thread ends here
 		} catch {
 			print("[Auto-Scaling Agent] Unable to determine if the auto-scaling service is bound!")
 			return
 		}
 		//heartbeat thread starts here
-			//refreshHeartBeat()
+			refreshHeartBeat()
 		//heartbeat thread ends here
 	}
 
@@ -156,6 +167,18 @@ public class AutoScalar {
 	}
 
 	private func createMetricObject() {
+		//from lib/agent.js in node auto-scaling agent
+		//agentObj.createMetricsObj = function(category, group, name, value, unit, desc, timestamp) {
+    		//var obj = new Object();
+    		//obj.category = category;
+    		//obj.group = group;
+    		//obj.name = name;
+    		//obj.value = value;
+    		//obj.unit = unit;
+    		//obj.desc = desc;
+    		//obj.timestamp = timestamp;
+    		//return obj;
+  		//}
 	}
 
 	private func constructSendObject(metricsToSend: AverageMetrics) {
@@ -163,9 +186,96 @@ public class AutoScalar {
 		//for metric in enabledMetrics {
 			//switch (metric) {
 			//	case "CPU":
-			//		print("")
+			//		create a CPU object: from lib/agent.js in node auto-scaling agent
+			//		var cpuObj = agentObj.createMetricsObj(metricCategory, 'ProcessCpuLoad',
+			//		 'ProcessCpuLoad', avgMetricData.cpu * 100, '%%', '', timestamp);
+			//		put it in an array
 			//}
-		//}	
+		//}
+
+		//construct the send object - will probably need a new struct at the top of the file
+		// from lib/agent.js in node auto-scaling agent
+		//obj.appId = appEnv['application_id'];
+    		//obj.appName = appEnv['application_name'];
+    		//obj.appType = 'nodejs';
+    		//obj.serviceId = serviceEnv['service_id'];
+    		//obj.instanceIndex = appEnv['instance_index'];
+    		//obj.instanceId = appEnv['instance_id'];
+    		//obj.timestamp = timestamp;
+   		// obj.metrics = array of metrics from previous	
+
+		//return struct
+	}
+
+	private func sendMetrics() { // will need to take an argument from constructSendObject()
+		do {
+			let appEnv = try CloudFoundryEnv.getAppEnv()
+		
+			var serviceEnv: [String:Any] = [:]
+			var agentUsername = "", agentPassword = "", appID = ""
+			guard let autoScalingService = appEnv.getServiceCreds(spec: autoScalingRegex) else {
+				print("[Auto-Scaling Agent] sendMetrics:serviceEnv is not found or empty")
+				return
+			}
+			serviceEnv = autoScalingService
+			guard let aU = autoScalingService["agentUsername"] else {
+				print("[Auto-Scaling Agent] sendMetrics:serviceEnv.agentUsername is not found or empty")
+				return
+			}
+			agentUsername = aU as! String
+			guard let ap = autoScalingService["agentPassword"] else {
+				print("[Auto-Scaling Agent] sendMetrics:serviceEnv.agentPassword is not found or empty")
+				return
+			}
+			agentPassword = ap as! String
+			guard let aI = autoScalingService["app_id"] else {
+				print("[Auto-Scaling Agent] sendMetrics:serviceEnv.app_id is not found or empty")
+				return
+			}
+			appID = aI as! String
+		
+			let host = serviceEnv["url"]!
+			let auth = "\(agentUsername):\(agentPassword)"
+			Log.info("[Auto-scaling Agent] Authorisation: \(auth)")
+			let authorization = Data(auth.utf8).base64EncodedString()
+			
+			let serviceID = serviceEnv["service_id"]!
+			let sendMetricsPath = "\(host):443/services/agent/report"
+			Log.info("[Auto-scaling Agent] Attempting to send metrics to \(sendMetricsPath)")
+			KituraRequest.request(.post,
+					sendMetricsPath,
+					//replace parameters Dictionary[String:String] with constructSendObject() output
+					parameters: ["appId":appID,
+						     "appName":appEnv.getApp()!.id,
+				    		     "appName":appEnv.getApp()!.name,
+				    		     "appType":"nodejs", //change to swift when supported
+				    		     "serviceId":serviceID,
+				    		     "instanceIndex":appEnv.getApp()!.instanceIndex,
+				    		     "instanceId":appEnv.getApp()!.instanceId,
+				    		     "timestamp": NSDate().timeIntervalSince1970,
+				    		     "metrics": [
+				         		"category":"nodejs",  //change to swift when supported
+				            		"group":"ProcessCPULoad",
+				            		"name":"ProcessCPULoad",
+				            		"value": 87.9,
+				            		"unit": "%",
+							"desc": "",
+				            		"timestamp": NSDate().timeIntervalSince1970
+							]
+						    ],
+					encoding: JSONEncoding.default,
+					headers: ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
+					).response {
+				request, response, data, error in
+					Log.info("[Auto-scaling Agent] sendMetrics:Request: \(request!)")
+					Log.info("[Auto-scaling Agent] sendMetrics:Response: \(response!)")
+					Log.info("[Auto-scaling Agent] sendMetrics:Data: \(data!)")
+					Log.info("[Auto-scaling Agent] sendMetrics:Error: \(error)")
+			}
+		} catch {
+			print("[Auto-Scaling Agent] sendMetrics:Unable to acquire Bluemix Environment!")
+			return
+		}
 	}
 
 	private func notifyStatus() {
@@ -230,6 +340,66 @@ public class AutoScalar {
 				Log.info("[Auto-scaling Agent] requestConfig:Body: \(String(data: data!, encoding: .utf8))")
 		}
 		
+	}
+
+	private func refreshHeartBeat() {
+		var serviceEnv: [String:Any] = [:]
+		var agentUsername = "", agentPassword = "", appID = ""
+		do {
+			guard let autoScalingService = try CloudFoundryEnv.getAppEnv().getServiceCreds(spec: autoScalingRegex) else {
+				print("[Auto-Scaling Agent] notifyStatus:serviceEnv is not found or empty")
+				return
+			}
+			serviceEnv = autoScalingService
+			guard let aU = autoScalingService["agentUsername"] else {
+				print("[Auto-Scaling Agent] notifyStatus:serviceEnv.agentUsername is not found or empty")
+				return
+			}
+			agentUsername = aU as! String
+			guard let ap = autoScalingService["agentPassword"] else {
+				print("[Auto-Scaling Agent] notifyStatus:serviceEnv.agentPassword is not found or empty")
+				return
+			}
+			agentPassword = ap as! String
+			guard let aI = autoScalingService["app_id"] else {
+				print("[Auto-Scaling Agent] notifyStatus:serviceEnv.app_id is not found or empty")
+				return
+			}
+			appID = aI as! String
+		} catch {
+			print("[Auto-Scaling Agent] notifyStatus:Unable to determine if the auto-scaling service is bound!")
+			return
+		}
+
+		let host = serviceEnv["url"]!
+		let auth = "\(agentUsername):\(agentPassword)"
+		Log.info("[Auto-scaling Agent] Authorisation: \(auth)")
+		let authorization = Data(auth.utf8).base64EncodedString()
+		
+		let serviceID = serviceEnv["service_id"]!
+		let refreshConfigPath = "\(host):443/v1/agent/config/\(serviceID)/\(appID)?appType=nodejs" //change to swift when supported
+		Log.info("[Auto-scaling Agent] Attempting requestConfig request to \(refreshConfigPath)")
+		KituraRequest.request(.get,
+				refreshConfigPath,
+				headers: ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
+				).response {
+			request, response, data, error in
+				Log.info("[Auto-scaling Agent] requestConfig:Request: \(request!)")
+				Log.info("[Auto-scaling Agent] requestConfig:Response: \(response!)")
+				Log.info("[Auto-scaling Agent] requestConfig:Data: \(data!)")
+				Log.info("[Auto-scaling Agent] requestConfig:Error: \(error)")
+
+				Log.info("[Auto-scaling Agent] requestConfig:Body: \(String(data: data!, encoding: .utf8))")
+				self.refreshConfiguration(responseString: String(data: data!, encoding: .utf8)!)
+		}
+	}
+
+	private func refreshConfiguration(responseString: String) {
+		//JSON parse the response string and update the configuration
+		//responseString looks like '"reportInterval":100,"metricsConfig":{"agent":["CPU","MEMORY"]}'
+		//(might be better to keep this as Data depending on how SwiftyJSON parses??)
+		//if there is no metricsConfig, agent, or an empty array of enabled metrics,
+		//set isAgentEnabled to false
 	}
 		
 }
