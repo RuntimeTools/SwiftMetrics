@@ -4,11 +4,11 @@ let package = Package(
     name: "SwiftMetrics",
     targets: [
         Target(name: "SwiftMetricsKitura", dependencies: ["SwiftMetrics"]),
-        Target(name: "Swift-BlueMix-Autoscaling-Agent", dependencies: ["SwiftMetrics"])
+        Target(name: "Swift-BlueMix-Autoscaling-Agent", dependencies: ["SwiftMetricsKitura"])
     ],
     dependencies: [
       .Package(url: "https://github.com/IBM-Swift/Kitura.git", majorVersion: 1),
-      .Package(url: "https://github.com/mattcolegate/Kitura-Request.git", majorVersion: 0),
+      .Package(url: "https://github.com/IBM-Swift/Kitura-Request.git", majorVersion: 0),
       .Package(url: "https://github.com/IBM-Swift/HeliumLogger.git", majorVersion: 1),
       .Package(url: "https://github.com/IBM-Swift/Swift-cfenv.git", majorVersion: 1),
       .Package(url: "https://github.com/RuntimeTools/omr-agentcore.git", majorVersion: 3),
