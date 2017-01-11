@@ -67,13 +67,13 @@ fileprivate struct AverageMetrics {
 
 public class AutoScalar {
     
-    var reportInterval: Int = 30
+    var reportInterval: Int = 10
     // the number of ms to wait between report thread runs
     
-    var refreshIntervalID: Int = 0
+    var configRefreshIntervalID: Int = 0
     //the thread id for the refresh, or heartbeat, thread, so we can cancel it. May not be required in Swift.
      
-    var refreshInterval: Int = 60
+    var configRefreshInterval: Int = 60
     // the number of ms to wait between refresh thread runs
     
     var isAgentEnabled: Bool = true
@@ -109,12 +109,13 @@ public class AutoScalar {
         }
         self.setMonitors()
         self.notifyStatus()
+        self.refreshConfig()
         
         DispatchQueue.global(qos: .background).async {
             self.snoozeStartReport()
         }
         DispatchQueue.global(qos: .background).async {
-            self.snoozeRefreshHeartBeat()
+            self.snoozeRefreshConfig()
         }
     }
 
@@ -184,11 +185,11 @@ public class AutoScalar {
     }
 
 
-    private func snoozeRefreshHeartBeat() {
-        sleep(UInt32(refreshInterval))
-        self.refreshHeartBeat()
+    private func snoozeRefreshConfig() {
+        sleep(UInt32(configRefreshInterval))
+        self.refreshConfig()
         DispatchQueue.global(qos: .background).async {
-            self.snoozeRefreshHeartBeat()
+            self.snoozeRefreshConfig()
         }
     }
 
@@ -346,23 +347,11 @@ public class AutoScalar {
                 Log.info("[Auto-scaling Agent] notifyStatus:Error: \(error)")
         }
         
-        let refreshConfigPath = "\(host):443/v1/agent/config/\(serviceID)/\(appID)?appType=nodejs"
-        Log.info("[Auto-scaling Agent] Attempting requestConfig request to \(refreshConfigPath)")
-        KituraRequest.request(.get,
-                refreshConfigPath,
-                headers: ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
-                ).response {
-            request, response, data, error in
-                Log.info("[Auto-scaling Agent] requestConfig:Request: \(request!)")
-                Log.info("[Auto-scaling Agent] requestConfig:Response: \(response!)")
-                Log.info("[Auto-scaling Agent] requestConfig:Data: \(data!)")
-                Log.info("[Auto-scaling Agent] requestConfig:Error: \(error)")
-                Log.info("[Auto-scaling Agent] requestConfig:Body: \(String(data: data!, encoding: .utf8))")
-        }
-        
     }
 
-    private func refreshHeartBeat() {
+
+    // Read the config from the autoscaling service to see if any changes have been made    
+    private func refreshConfig() {
         let refreshConfigPath = "\(host):443/v1/agent/config/\(serviceID)/\(appID)?appType=nodejs" //change to swift when supported
         Log.info("[Auto-scaling Agent] Attempting requestConfig request to \(refreshConfigPath)")
         KituraRequest.request(.get,
@@ -376,16 +365,23 @@ public class AutoScalar {
                 Log.info("[Auto-scaling Agent] requestConfig:Error: \(error)")
 
                 Log.info("[Auto-scaling Agent] requestConfig:Body: \(String(data: data!, encoding: .utf8))")
-                self.refreshConfiguration(responseString: String(data: data!, encoding: .utf8)!)
+                self.updateConfiguration(response: data!)
         }
     }
 
-    private func refreshConfiguration(responseString: String) {
-        //JSON parse the response string and update the configuration
-        //responseString looks like '"reportInterval":100,"metricsConfig":{"agent":["CPU","MEMORY"]}'
-        //(might be better to keep this as Data depending on how SwiftyJSON parses??)
-        //if there is no metricsConfig, agent, or an empty array of enabled metrics,
-        //set isAgentEnabled to false
+    // Update local config from autoscaling service
+    private func updateConfiguration(response: Data) {
+
+            let jsonData = JSON(data: response)
+            if (jsonData == nil) {
+                isAgentEnabled = false
+            }
+            if (jsonData["metricsConfig"]["agent"] == nil) {
+                isAgentEnabled = false
+            }            
+            enabledMetrics=jsonData["metricsConfig"]["agent"].arrayValue.map({$0.stringValue})
+            reportInterval=jsonData["reportInterval"].intValue
+      
     }
         
 }
@@ -421,11 +417,47 @@ public class Controller {
     // Serve static content from "public"
     router.all("/", middleware: StaticFileServer())
 
+    // Basic GET request
+    router.get("/hello", handler: getHello)
+
+    // Basic POST request
+    router.post("/hello", handler: postHello)
+
+    // JSON Get request
+    router.get("/json", handler: getJSON)
+
     // JSON Get request
     router.get("/autoparams", handler: getAutoParams)
 
   }
 
+  public func getHello(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
+    Log.debug("GET - /hello route handler...")
+    response.headers["Content-Type"] = "text/plain; charset=utf-8"
+    try response.status(.OK).send("Hello from Kitura-Starter!").end()
+  }
+
+  public func postHello(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
+    Log.debug("POST - /hello route handler...")
+    response.headers["Content-Type"] = "text/plain; charset=utf-8"
+    if let name = try request.readString() {
+      try response.status(.OK).send("Hello \(name), from Kitura-Starter!").end()
+    } else {
+      try response.status(.OK).send("Kitura-Starter received a POST request!").end()
+    }
+  }
+
+  public func getJSON(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
+    Log.debug("GET - /json route handler...")
+    response.headers["Content-Type"] = "application/json; charset=utf-8"
+    var jsonResponse = JSON([:])
+    jsonResponse["framework"].stringValue = "Kitura"
+    jsonResponse["applicationName"].stringValue = "Kitura-Starter"
+    jsonResponse["company"].stringValue = "IBM"
+    jsonResponse["organization"].stringValue = "Swift @ IBM"
+    jsonResponse["location"].stringValue = "Austin, Texas"
+    try response.status(.OK).send(json: jsonResponse).end()
+  }
 
   public func getAutoParams(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
     Log.debug("GET - /autoparams route handler...")
