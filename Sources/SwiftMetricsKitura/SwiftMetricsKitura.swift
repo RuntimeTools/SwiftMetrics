@@ -2,15 +2,6 @@ import KituraNet
 import SwiftMetrics
 import Foundation
 
-// This is the structure of the data to emit
-public struct HTTPData: SMData {
-	public let timeOfRequest: Int
-	public let url: String
-	public let duration: Double
-	public let statusCode: HTTPStatusCode?
-	public let requestMethod: String
-}
-
 // This structure stores a request and its associated request time
 struct requests {
 	var request:ServerRequest
