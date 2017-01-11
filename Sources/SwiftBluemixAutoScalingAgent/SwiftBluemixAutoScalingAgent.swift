@@ -14,15 +14,13 @@
 * limitations under the License.
 **/
 
-import Kitura
 import KituraRequest
-import SwiftyJSON
 import LoggerAPI
 import CloudFoundryEnv
+import Dispatch
+import Foundation
 import SwiftMetrics
 import SwiftMetricsKitura
-import Foundation
-import Dispatch
 
 fileprivate struct HttpStats {
     fileprivate var count: Double = 0
@@ -124,36 +122,36 @@ public class AutoScalar {
             let appEnv = try CloudFoundryEnv.getAppEnv() 
             
             guard let autoScalingService =  appEnv.getServiceCreds(spec: autoScalingRegex) else {
-                print("[Auto-Scaling Agent] Please bind auto-scaling service!")
+                Log.info("[Auto-Scaling Agent] Please bind auto-scaling service!")
                 return false
             }
 
             guard let aU = autoScalingService["agentUsername"] else {
-                print("[Auto-Scaling Agent] sendMetrics:serviceEnv.agentUsername is not found or empty")
+                Log.info("[Auto-Scaling Agent] sendMetrics:serviceEnv.agentUsername is not found or empty")
                 return false
             }
             agentUsername = aU as! String
             guard let ap = autoScalingService["agentPassword"] else {
-                print("[Auto-Scaling Agent] sendMetrics:serviceEnv.agentPassword is not found or empty")
+                Log.info("[Auto-Scaling Agent] sendMetrics:serviceEnv.agentPassword is not found or empty")
                 return false
             }
             agentPassword = ap as! String
             guard let aI = autoScalingService["app_id"] else {
-                print("[Auto-Scaling Agent] sendMetrics:serviceEnv.app_id is not found or empty")
+                Log.info("[Auto-Scaling Agent] sendMetrics:serviceEnv.app_id is not found or empty")
                 return false
             }
 
             appID = aI as! String
        
             guard let hostTemp = autoScalingService["url"] else {
-                print("[Auto-Scaling Agent] sendMetrics:serviceEnv.url is not found or empty")
+                Log.info("[Auto-Scaling Agent] sendMetrics:serviceEnv.url is not found or empty")
                 return false
             }
 
             host = hostTemp as! String
             
             guard let serviceIDTemp = autoScalingService["service_id"] else {
-                print("[Auto-Scaling Agent] sendMetrics:serviceEnv.url is not found or empty")
+                Log.info("[Auto-Scaling Agent] sendMetrics:serviceEnv.url is not found or empty")
                 return false
             }
        
@@ -169,7 +167,7 @@ public class AutoScalar {
             Log.info("[Auto-scaling Agent] Authorisation: \(auth)")
             authorization = Data(auth.utf8).base64EncodedString()
         } catch {
-            print("[Auto-Scaling Agent] CloudFoundryEnv.getAppEnv() threw exception")
+            Log.info("[Auto-Scaling Agent] CloudFoundryEnv.getAppEnv() threw exception")
             return false
         }
         
@@ -217,7 +215,7 @@ public class AutoScalar {
 
     private func startReport() {
         if (!isAgentEnabled) {
-            print("[Auto-Scaling Agent] Agent is disabled by server")
+            Log.info("[Auto-Scaling Agent] Agent is disabled by server")
             return
         }
          
@@ -261,12 +259,12 @@ public class AutoScalar {
 
     private func constructSendObject(metricsToSend: AverageMetrics) -> [String:Any] {
         let timestamp = NSDate().timeIntervalSince1970
-        var metricDict = [String:Any]()
-        var metricsArray = [metricDict]
+        var metricsArray: [[String:Any]] = []
         
         for metric in enabledMetrics {
             switch (metric) {
                 case "CPU":
+		    var metricDict = [String:Any]()
                     metricDict["category"] = "nodejs"
                     metricDict["group"] = "ProcessCpuLoad"
                     metricDict["name"] = "ProcessCpuLoad"
@@ -275,6 +273,7 @@ public class AutoScalar {
                     metricDict["desc"] = ""
                     metricsArray.append(metricDict)
               case "Memory":
+		    var metricDict = [String:Any]()
                     metricDict["category"] = "nodejs"
                     metricDict["group"] = "memory"
                     metricDict["name"] = "memory"
@@ -283,6 +282,7 @@ public class AutoScalar {
                     metricDict["desc"] = ""
                     metricsArray.append(metricDict)
               case "Throughput":
+		    var metricDict = [String:Any]()
                     metricDict["category"] = "nodejs"
                     metricDict["group"] = "Web"
                     metricDict["name"] = "throughput"
@@ -329,7 +329,7 @@ public class AutoScalar {
                             Log.info("[Auto-scaling Agent] sendMetrics:Error: \(error)")}
             }
         } catch {
-            print("[Auto-Scaling Agent] \(error.localizedDescription)")
+            Log.info("[Auto-Scaling Agent] \(error.localizedDescription)")
         }
     }
 
@@ -386,21 +386,7 @@ public class AutoScalar {
         
 }
 
-public class Controller {
-
-  let router: Router
-  let appEnv: AppEnv
-  let asa   : AutoScalar?
-
-  var port: Int {
-    get { return appEnv.port }
-  }
-
-  var url: String {
-    get { return appEnv.url }
-  }
-
-  init() throws {
+/**
     appEnv = try CloudFoundryEnv.getAppEnv()
 
     if (!appEnv.isLocal) {
@@ -410,64 +396,5 @@ public class Controller {
         Log.info("[Auto-scaling Agent] Local connection - not starting")
         asa = nil
     }
+**/
 
-    // All web apps need a Router instance to define routes
-    router = Router()
-
-    // Serve static content from "public"
-    router.all("/", middleware: StaticFileServer())
-
-    // Basic GET request
-    router.get("/hello", handler: getHello)
-
-    // Basic POST request
-    router.post("/hello", handler: postHello)
-
-    // JSON Get request
-    router.get("/json", handler: getJSON)
-
-    // JSON Get request
-    router.get("/autoparams", handler: getAutoParams)
-
-  }
-
-  public func getHello(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
-    Log.debug("GET - /hello route handler...")
-    response.headers["Content-Type"] = "text/plain; charset=utf-8"
-    try response.status(.OK).send("Hello from Kitura-Starter!").end()
-  }
-
-  public func postHello(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
-    Log.debug("POST - /hello route handler...")
-    response.headers["Content-Type"] = "text/plain; charset=utf-8"
-    if let name = try request.readString() {
-      try response.status(.OK).send("Hello \(name), from Kitura-Starter!").end()
-    } else {
-      try response.status(.OK).send("Kitura-Starter received a POST request!").end()
-    }
-  }
-
-  public func getJSON(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
-    Log.debug("GET - /json route handler...")
-    response.headers["Content-Type"] = "application/json; charset=utf-8"
-    var jsonResponse = JSON([:])
-    jsonResponse["framework"].stringValue = "Kitura"
-    jsonResponse["applicationName"].stringValue = "Kitura-Starter"
-    jsonResponse["company"].stringValue = "IBM"
-    jsonResponse["organization"].stringValue = "Swift @ IBM"
-    jsonResponse["location"].stringValue = "Austin, Texas"
-    try response.status(.OK).send(json: jsonResponse).end()
-  }
-
-  public func getAutoParams(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws {
-    Log.debug("GET - /autoparams route handler...")
-    response.headers["Content-Type"] = "application/json; charset=utf-8"
-    var jsonResponse = JSON([:])
-    jsonResponse["getApplicationEnv"].stringValue = "\(appEnv)"
-    let regex = "Auto(.*)Scaling"
-    jsonResponse["getServiceEnv"].stringValue = "\(appEnv.getServiceCreds(spec: regex))"
-    jsonResponse["parseUrlToHostPort"].stringValue = "\(appEnv.url):\(appEnv.port)"
-    try response.status(.OK).send(json: jsonResponse).end()
-  }
-
-}

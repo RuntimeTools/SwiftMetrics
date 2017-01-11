@@ -35,7 +35,6 @@ public struct InitData: SMData {
 
 private var swiftMon: SwiftMonitor?
 
-
 private func receiveAgentCoreData(cSourceId: UnsafePointer<CChar>, cSize: CUnsignedInt, data: UnsafeMutableRawPointer) -> Void {
    let size = Int(cSize) 
    if size <= 0 {
