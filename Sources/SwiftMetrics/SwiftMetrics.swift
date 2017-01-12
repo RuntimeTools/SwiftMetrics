@@ -682,19 +682,23 @@ public class AutoScalar {
         }
     }
 
+
     // Update local config from autoscaling service
     private func updateConfiguration(response: Data) {
 
             let jsonData = JSON(data: response)
+			Log.debug("[Auto-scaling Agent] attempting to update configuration with \(jsonData)")
             if (jsonData == nil) {
                 isAgentEnabled = false
+				return
             }
-            if (jsonData["metricsConfig"]["agent"] == nil) {
+            if (jsonData["metricsConfig"]["poller"] == nil) {
                 isAgentEnabled = false
+				return
             }            
-            enabledMetrics=jsonData["metricsConfig"]["agent"].arrayValue.map({$0.stringValue})
+            enabledMetrics=jsonData["metricsConfig"]["poller"].arrayValue.map({$0.stringValue})
             reportInterval=jsonData["reportInterval"].intValue
-      
+      		Log.exit("[Auto-scaling Agent] Updated configuration - enabled metrics: \(enabledMetrics), report interval: \(reportInterval) seconds")
     }
         
 }
