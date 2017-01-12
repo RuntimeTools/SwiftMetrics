@@ -23,10 +23,9 @@ monitoring.on(processCPU)
 monitoring.on(processMem)
 monitoring.on(processEnv)
 
-monitoring.on({ (_: InitData) in
+monitoring.on({ (in: InitData) in
    print("\n\n+++ Initialized Environment Information +++\n")
-   let env = monitoring.getEnvironmentData();
-   for (key, value) in env {
+   for (key, value) in in.data {
       print("\(key): \(value)\n")
    }
    print("\n+++ End of Initialized Environment Information +++\n")
