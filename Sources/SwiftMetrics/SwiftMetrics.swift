@@ -140,12 +140,23 @@ open class SwiftMetrics {
     }
 
     private func setDefaultLibraryPath() {
-       ///use the directory that the swift program lives in
-       let programPath = CommandLine.arguments[0]
-       let i = programPath.range(of: "/", options: .backwards)
-       var defaultLibraryPath = "."
-       if i != nil {
-         defaultLibraryPath = programPath.substring(to: i!.lowerBound)
+	   var defaultLibraryPath = "."
+       var isLocal = true
+	   do {
+	       isLocal = try CloudFoundryEnv.getAppEnv().isLocal
+       } catch {
+	       loaderApi.logMessage(debug, "setDefaultLibraryPath(): unable to get CF env, defaulting to local")
+       }
+       //if we're in Bluemix, use the path the swift-buildpack saves libraries to
+	   if (!isLocal) {
+		   defaultLibraryPath = "/home/vcap/app/.swift-lib"
+       } else {
+           ///use the directory that the swift program lives in
+           let programPath = CommandLine.arguments[0]
+           let i = programPath.range(of: "/", options: .backwards)
+           if i != nil {
+              defaultLibraryPath = programPath.substring(to: i!.lowerBound)
+           }
        }
        loaderApi.logMessage(fine, "setDefaultLibraryPath(): to \(defaultLibraryPath)")
        self.setPluginSearch(toDirectory: URL(fileURLWithPath: defaultLibraryPath, isDirectory: true))
