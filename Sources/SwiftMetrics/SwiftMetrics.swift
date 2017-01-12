@@ -560,7 +560,7 @@ public class AutoScalar {
             switch (metric) {
                 case "CPU":
 		    var metricDict = [String:Any]()
-                    metricDict["category"] = "nodejs"
+                    metricDict["category"] = "swift"
                     metricDict["group"] = "ProcessCpuLoad"
                     metricDict["name"] = "ProcessCpuLoad"
                     metricDict["value"] = Double(metricsToSend.cpu) * 100.0
@@ -569,7 +569,7 @@ public class AutoScalar {
                     metricsArray.append(metricDict)
               case "Memory":
 		    var metricDict = [String:Any]()
-                    metricDict["category"] = "nodejs"
+                    metricDict["category"] = "swift"
                     metricDict["group"] = "memory"
                     metricDict["name"] = "memory"
                     metricDict["value"] = Double(metricsToSend.memory)
@@ -578,7 +578,7 @@ public class AutoScalar {
                     metricsArray.append(metricDict)
               case "Throughput":
 		    var metricDict = [String:Any]()
-                    metricDict["category"] = "nodejs"
+                    metricDict["category"] = "swift"
                     metricDict["group"] = "Web"
                     metricDict["name"] = "throughput"
                     metricDict["value"] = Double(metricsToSend.throughput)
@@ -593,7 +593,7 @@ public class AutoScalar {
         var dict = [String:Any]()
         dict["appId"] = appID
         dict["appName"] = appName
-        dict["appType"] = "nodejs"
+        dict["appType"] = "swift"
         dict["serviceId"] = serviceID
         dict["instanceIndex"] = instanceIndex
         dict["instanceId"] = instanceId
@@ -647,7 +647,7 @@ public class AutoScalar {
 
     // Read the config from the autoscaling service to see if any changes have been made    
     private func refreshConfig() {
-        let refreshConfigPath = "\(host):443/v1/agent/config/\(serviceID)/\(appID)?appType=nodejs" //change to swift when supported
+        let refreshConfigPath = "\(host):443/v1/agent/config/\(serviceID)/\(appID)?appType=swift" //change to swift when supported
         Log.info("[Auto-scaling Agent] Attempting requestConfig request to \(refreshConfigPath)")
         KituraRequest.request(.get,
                 refreshConfigPath,
