@@ -394,6 +394,7 @@ public class AutoScalar {
     var instanceId = ""
 
     public init(metricsToEnable: [String]) throws{
+		Log.entry("[Auto-Scaling Agent] initialization(\(metricsToEnable))")
         enabledMetrics = metricsToEnable
         if !self.initCredentials() {
             return
@@ -417,36 +418,36 @@ public class AutoScalar {
             let appEnv = try CloudFoundryEnv.getAppEnv() 
             
             guard let autoScalingService =  appEnv.getServiceCreds(spec: autoScalingRegex) else {
-                Log.info("[Auto-Scaling Agent] Please bind auto-scaling service!")
+                Log.error("[Auto-Scaling Agent] Please bind auto-scaling service!")
                 return false
             }
 
             guard let aU = autoScalingService["agentUsername"] else {
-                Log.info("[Auto-Scaling Agent] sendMetrics:serviceEnv.agentUsername is not found or empty")
+                Log.warning("[Auto-Scaling Agent] sendMetrics:serviceEnv.agentUsername is not found or empty")
                 return false
             }
             agentUsername = aU as! String
             guard let ap = autoScalingService["agentPassword"] else {
-                Log.info("[Auto-Scaling Agent] sendMetrics:serviceEnv.agentPassword is not found or empty")
+                Log.warning("[Auto-Scaling Agent] sendMetrics:serviceEnv.agentPassword is not found or empty")
                 return false
             }
             agentPassword = ap as! String
             guard let aI = autoScalingService["app_id"] else {
-                Log.info("[Auto-Scaling Agent] sendMetrics:serviceEnv.app_id is not found or empty")
+                Log.warning("[Auto-Scaling Agent] sendMetrics:serviceEnv.app_id is not found or empty")
                 return false
             }
 
             appID = aI as! String
        
             guard let hostTemp = autoScalingService["url"] else {
-                Log.info("[Auto-Scaling Agent] sendMetrics:serviceEnv.url is not found or empty")
+                Log.warning("[Auto-Scaling Agent] sendMetrics:serviceEnv.url is not found or empty")
                 return false
             }
 
             host = hostTemp as! String
             
             guard let serviceIDTemp = autoScalingService["service_id"] else {
-                Log.info("[Auto-Scaling Agent] sendMetrics:serviceEnv.url is not found or empty")
+                Log.warning("[Auto-Scaling Agent] sendMetrics:serviceEnv.url is not found or empty")
                 return false
             }
        
@@ -459,10 +460,10 @@ public class AutoScalar {
             instanceId = appEnv.getApp()!.instanceId 
        
             auth = "\(agentUsername):\(agentPassword)"
-            Log.info("[Auto-scaling Agent] Authorisation: \(auth)")
+            Log.debug("[Auto-scaling Agent] Authorisation: \(auth)")
             authorization = Data(auth.utf8).base64EncodedString()
         } catch {
-            Log.info("[Auto-Scaling Agent] CloudFoundryEnv.getAppEnv() threw exception")
+            Log.warning("[Auto-Scaling Agent] Unable to get Cloud Foundary Environment")
             return false
         }
         
@@ -470,8 +471,9 @@ public class AutoScalar {
     }
 
     private func snoozeSetMonitors() {
-        sleep(UInt32(reportInterval))
-	if swiftMon == nil {
+		Log.debug("[Auto-Scaling Agent] waiting to setMonitors() for \(availableMonitorInterval) seconds...")
+        sleep(UInt32(availableMonitorInterval))
+	    if swiftMon == nil {
           DispatchQueue.global(qos: .background).async {
             self.snoozeSetMonitors()
           }
@@ -481,6 +483,7 @@ public class AutoScalar {
     }
     
     private func snoozeStartReport() {
+		Log.debug("[Auto-Scaling Agent] waiting to startReport() for \(reportInterval) seconds...")
         sleep(UInt32(reportInterval))
         self.startReport()
         DispatchQueue.global(qos: .background).async {
@@ -490,6 +493,7 @@ public class AutoScalar {
 
 
     private func snoozeRefreshConfig() {
+		Log.debug("[Auto-Scaling Agent] waiting to refreshConfig() for \(configRefreshInterval) seconds...")
         sleep(UInt32(configRefreshInterval))
         self.refreshConfig()
         DispatchQueue.global(qos: .background).async {
@@ -521,13 +525,13 @@ public class AutoScalar {
 
     private func startReport() {
         if (!isAgentEnabled) {
-            Log.info("[Auto-Scaling Agent] Agent is disabled by server")
+            Log.verbose("[Auto-Scaling Agent] Agent is disabled by server")
             return
         }
          
         let metricsToSend = calculateAverageMetrics()
-        _ = constructSendObject(metricsToSend: metricsToSend)
-        sendMetrics(asOBJ : constructSendObject(metricsToSend: metricsToSend))
+        let sendObject = constructSendObject(metricsToSend: metricsToSend)
+        sendMetrics(asOBJ : sendObject)
 
     }
 
@@ -556,11 +560,13 @@ public class AutoScalar {
         }
         metrics.throughputStats.requestCount = 0
 
-        return AverageMetrics(responseTime: metrics.httpStats.average,
+        let metricsToSend = AverageMetrics(responseTime: metrics.httpStats.average,
                     memory: metrics.memoryStats.average,
                     cpu: metrics.cpuStats.average,
                     throughput: metrics.throughputStats.throughput
         )
+		Log.exit("[Auto-Scaling Agent] Average Metrics = \(metricsToSend)")
+		return metricsToSend
     }
 
     private func constructSendObject(metricsToSend: AverageMetrics) -> [String:Any] {
@@ -611,12 +617,13 @@ public class AutoScalar {
         dict["timestamp"] = timestamp
         dict["metrics"] = metricsArray
 
+		Log.exit("[Auto-Scaling Agent] sendObject = \(dict)")
         return dict
     }
 
     private func sendMetrics(asOBJ : [String:Any]) { 
         let sendMetricsPath = "\(host):443/services/agent/report"
-        Log.info("[Auto-scaling Agent] Attempting to send metrics to \(sendMetricsPath)")
+        Log.verbose("[Auto-scaling Agent] Attempting to send metrics to \(sendMetricsPath)")
 
         do {
             let jsonData = try JSONSerialization.data(withJSONObject: asOBJ, options: .prettyPrinted)
@@ -629,28 +636,28 @@ public class AutoScalar {
                             headers: ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
                         ).response {
                             request, response, data, error in
-                            Log.info("[Auto-scaling Agent] sendMetrics:Request: \(request!)")
-                            Log.info("[Auto-scaling Agent] sendMetrics:Response: \(response!)")
-                            Log.info("[Auto-scaling Agent] sendMetrics:Data: \(data!)")
-                            Log.info("[Auto-scaling Agent] sendMetrics:Error: \(error)")}
+                            Log.debug("[Auto-scaling Agent] sendMetrics:Request: \(request!)")
+                            Log.debug("[Auto-scaling Agent] sendMetrics:Response: \(response!)")
+                            Log.debug("[Auto-scaling Agent] sendMetrics:Data: \(data!)")
+                            Log.debug("[Auto-scaling Agent] sendMetrics:Error: \(error)")}
             }
         } catch {
-            Log.info("[Auto-Scaling Agent] \(error.localizedDescription)")
+            Log.warning("[Auto-Scaling Agent] \(error.localizedDescription)")
         }
     }
 
     private func notifyStatus() {
         let notifyStatusPath = "\(host):443/services/agent/status/\(appID)"
-        Log.info("[Auto-scaling Agent] Attempting notifyStatus request to \(notifyStatusPath)")
+        Log.verbose("[Auto-scaling Agent] Attempting notifyStatus request to \(notifyStatusPath)")
         KituraRequest.request(.put,
                 notifyStatusPath,
                 headers: ["Authorization":"Basic \(authorization)"]
                 ).response {
             request, response, data, error in
-                Log.info("[Auto-scaling Agent] notifyStatus:Request: \(request!)")
-                Log.info("[Auto-scaling Agent] notifyStatus:Response: \(response!)")
-                Log.info("[Auto-scaling Agent] notifyStatus:Data: \(data)")
-                Log.info("[Auto-scaling Agent] notifyStatus:Error: \(error)")
+                Log.debug("[Auto-scaling Agent] notifyStatus:Request: \(request!)")
+                Log.debug("[Auto-scaling Agent] notifyStatus:Response: \(response!)")
+                Log.debug("[Auto-scaling Agent] notifyStatus:Data: \(data)")
+                Log.debug("[Auto-scaling Agent] notifyStatus:Error: \(error)")
         }
         
     }
@@ -659,18 +666,18 @@ public class AutoScalar {
     // Read the config from the autoscaling service to see if any changes have been made    
     private func refreshConfig() {
         let refreshConfigPath = "\(host):443/v1/agent/config/\(serviceID)/\(appID)?appType=swift" //change to swift when supported
-        Log.info("[Auto-scaling Agent] Attempting requestConfig request to \(refreshConfigPath)")
+        Log.verbose("[Auto-scaling Agent] Attempting requestConfig request to \(refreshConfigPath)")
         KituraRequest.request(.get,
                 refreshConfigPath,
                 headers: ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
                 ).response {
             request, response, data, error in
-                Log.info("[Auto-scaling Agent] requestConfig:Request: \(request!)")
-                Log.info("[Auto-scaling Agent] requestConfig:Response: \(response!)")
-                Log.info("[Auto-scaling Agent] requestConfig:Data: \(data!)")
-                Log.info("[Auto-scaling Agent] requestConfig:Error: \(error)")
+                Log.debug("[Auto-scaling Agent] requestConfig:Request: \(request!)")
+                Log.debug("[Auto-scaling Agent] requestConfig:Response: \(response!)")
+                Log.debug("[Auto-scaling Agent] requestConfig:Data: \(data!)")
+                Log.debug("[Auto-scaling Agent] requestConfig:Error: \(error)")
 
-                Log.info("[Auto-scaling Agent] requestConfig:Body: \(String(data: data!, encoding: .utf8))")
+                Log.verbose("[Auto-scaling Agent] requestConfig:Body: \(String(data: data!, encoding: .utf8))")
                 self.updateConfiguration(response: data!)
         }
     }
