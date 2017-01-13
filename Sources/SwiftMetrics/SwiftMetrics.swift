@@ -377,7 +377,7 @@ public class AutoScalar {
     var enabledMetrics: [String] = []
     // list of metrics to collect (CPU, Memory, HTTP etc. Can be altered by the auto-scaling service in the refresh thread.
     
-    let autoScalingRegex = "Auto(.*)Scaling"
+    let autoScalingLabelPrefix = "Auto-Scaling"
     // used to find the AutoScaling service from the Cloud Foundry Application Environment
     
     fileprivate var metrics: Metrics = Metrics() //initialises to defaults above
@@ -415,38 +415,49 @@ public class AutoScalar {
 
     private func initCredentials() ->  Bool {
         do {
-            let appEnv = try CloudFoundryEnv.getAppEnv() 
-            
-            guard let autoScalingService =  appEnv.getServiceCreds(spec: autoScalingRegex) else {
+            let appEnv = try CloudFoundryEnv.getAppEnv()
+	    let appEnvServices = appEnv.getServices() //Dictionary [ServiceNameString: ServiceObject]
+	    Log.debug("[Auto-Scaling Agent] App services: \(appEnvServices)")
+	    var autoScalingServiceCreds: [String:Any] = [:]
+	    for (_, service) in appEnvServices {
+		if service.label.hasPrefix(autoScalingLabelPrefix) {
+			Log.debug("[Auto-Scaling Agent] Found bound auto-scaling service")
+			autoScalingServiceCreds = service.credentials!
+			break
+		}	
+	    }
+	    Log.debug("[Auto-Scaling Agent] Auto-scaling service credentials: \(autoScalingServiceCreds)")
+
+	    if autoScalingServiceCreds.isEmpty {
                 Log.error("[Auto-Scaling Agent] Please bind auto-scaling service!")
                 return false
             }
 
-            guard let aU = autoScalingService["agentUsername"] else {
+            guard let aU = autoScalingServiceCreds["agentUsername"] else {
                 Log.warning("[Auto-Scaling Agent] sendMetrics:serviceEnv.agentUsername is not found or empty")
                 return false
             }
             agentUsername = aU as! String
-            guard let ap = autoScalingService["agentPassword"] else {
+            guard let ap = autoScalingServiceCreds["agentPassword"] else {
                 Log.warning("[Auto-Scaling Agent] sendMetrics:serviceEnv.agentPassword is not found or empty")
                 return false
             }
             agentPassword = ap as! String
-            guard let aI = autoScalingService["app_id"] else {
+            guard let aI = autoScalingServiceCreds["app_id"] else {
                 Log.warning("[Auto-Scaling Agent] sendMetrics:serviceEnv.app_id is not found or empty")
                 return false
             }
 
             appID = aI as! String
        
-            guard let hostTemp = autoScalingService["url"] else {
+            guard let hostTemp = autoScalingServiceCreds["url"] else {
                 Log.warning("[Auto-Scaling Agent] sendMetrics:serviceEnv.url is not found or empty")
                 return false
             }
 
             host = hostTemp as! String
             
-            guard let serviceIDTemp = autoScalingService["service_id"] else {
+            guard let serviceIDTemp = autoScalingServiceCreds["service_id"] else {
                 Log.warning("[Auto-Scaling Agent] sendMetrics:serviceEnv.url is not found or empty")
                 return false
             }
@@ -626,7 +637,7 @@ public class AutoScalar {
 
     private func sendMetrics(asOBJ : [String:Any]) { 
         let sendMetricsPath = "\(host):443/services/agent/report"
-        Log.verbose("[Auto-scaling Agent] Attempting to send metrics to \(sendMetricsPath)")
+        Log.debug("[Auto-scaling Agent] Attempting to send metrics to \(sendMetricsPath)")
 
         do {
             let jsonData = try JSONSerialization.data(withJSONObject: asOBJ, options: .prettyPrinted)
@@ -651,7 +662,7 @@ public class AutoScalar {
 
     private func notifyStatus() {
         let notifyStatusPath = "\(host):443/services/agent/status/\(appID)"
-        Log.verbose("[Auto-scaling Agent] Attempting notifyStatus request to \(notifyStatusPath)")
+        Log.debug("[Auto-scaling Agent] Attempting notifyStatus request to \(notifyStatusPath)")
         KituraRequest.request(.put,
                 notifyStatusPath,
                 headers: ["Authorization":"Basic \(authorization)"]
@@ -669,7 +680,7 @@ public class AutoScalar {
     // Read the config from the autoscaling service to see if any changes have been made    
     private func refreshConfig() {
         let refreshConfigPath = "\(host):443/v1/agent/config/\(serviceID)/\(appID)?appType=swift" //change to swift when supported
-        Log.verbose("[Auto-scaling Agent] Attempting requestConfig request to \(refreshConfigPath)")
+        Log.debug("[Auto-scaling Agent] Attempting requestConfig request to \(refreshConfigPath)")
         KituraRequest.request(.get,
                 refreshConfigPath,
                 headers: ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
@@ -680,7 +691,7 @@ public class AutoScalar {
                 Log.debug("[Auto-scaling Agent] requestConfig:Data: \(data!)")
                 Log.debug("[Auto-scaling Agent] requestConfig:Error: \(error)")
 
-                Log.verbose("[Auto-scaling Agent] requestConfig:Body: \(String(data: data!, encoding: .utf8))")
+                Log.debug("[Auto-scaling Agent] requestConfig:Body: \(String(data: data!, encoding: .utf8))")
                 self.updateConfiguration(response: data!)
         }
     }
