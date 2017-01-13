@@ -75,7 +75,7 @@ fileprivate struct CPUStats {
 
 fileprivate struct ThroughputStats {
     fileprivate var duration: Double = 0
-    fileprivate var lastCalculateTime: Double = NSDate().timeIntervalSince1970
+    fileprivate var lastCalculateTime: Double = Date().timeIntervalSince1970 * 1000
     fileprivate var requestCount: Double = 0
     fileprivate var throughput: Double = 0
 }
@@ -394,7 +394,7 @@ public class AutoScalar {
     var instanceId = ""
 
     public init(metricsToEnable: [String]) throws{
-		Log.entry("[Auto-Scaling Agent] initialization(\(metricsToEnable))")
+	Log.entry("[Auto-Scaling Agent] initialization(\(metricsToEnable))")
         enabledMetrics = metricsToEnable
         if !self.initCredentials() {
             return
@@ -549,7 +549,7 @@ public class AutoScalar {
         metrics.cpuStats.sum = 0;
 
         if (metrics.throughputStats.requestCount > 0) {
-            let currentTime = NSDate().timeIntervalSince1970
+            let currentTime = Date().timeIntervalSince1970 * 1000
             let duration = currentTime - metrics.throughputStats.lastCalculateTime
             metrics.throughputStats.throughput = metrics.throughputStats.requestCount / (duration / 1000)
             metrics.throughputStats.lastCalculateTime = currentTime
@@ -570,7 +570,7 @@ public class AutoScalar {
     }
 
     private func constructSendObject(metricsToSend: AverageMetrics) -> [String:Any] {
-        let timestamp = NSDate().timeIntervalSince1970
+        let timestamp = Date().timeIntervalSince1970 * 1000
         var metricsArray: [[String:Any]] = []
         
         for metric in enabledMetrics {
