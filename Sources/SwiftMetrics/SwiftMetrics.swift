@@ -583,6 +583,7 @@ public class AutoScalar {
                     metricDict["value"] = Double(metricsToSend.cpu) * 100.0
                     metricDict["unit"] = "%%"
                     metricDict["desc"] = ""
+                    metricDict["timestamp"] = timestamp
                     metricsArray.append(metricDict)
               case "Memory":
 		    var metricDict = [String:Any]()
@@ -592,6 +593,7 @@ public class AutoScalar {
                     metricDict["value"] = Double(metricsToSend.memory)
                     metricDict["unit"] = "Bytes"
                     metricDict["desc"] = ""
+                    metricDict["timestamp"] = timestamp
                     metricsArray.append(metricDict)
               case "Throughput":
 		    var metricDict = [String:Any]()
@@ -601,6 +603,7 @@ public class AutoScalar {
                     metricDict["value"] = Double(metricsToSend.throughput)
                     metricDict["unit"] = ""
                     metricDict["desc"] = ""
+                    metricDict["timestamp"] = timestamp
                     metricsArray.append(metricDict)
               default:
                     break
