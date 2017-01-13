@@ -520,12 +520,12 @@ public class AutoScalar {
 
     private func setMonitors() {
         swiftMon!.on({(mem: MemData) -> () in
-            self.metrics.memoryStats.count += 1
-            self.metrics.memoryStats.sum += Float(mem.totalRAMUsed)
-        })
+	    self.metrics.memoryStats.count += 1
+	    self.metrics.memoryStats.sum += Float(mem.applicationRAMUsed)
+	})
         swiftMon!.on({(cpu: CPUData) -> () in
-            self.metrics.cpuStats.count += 1
-            self.metrics.cpuStats.sum += cpu.percentUsedByApplication * 100;
+	    self.metrics.cpuStats.count += 1
+	    self.metrics.cpuStats.sum += cpu.percentUsedByApplication * 100;
         })
         swiftMon!.on({(http: HTTPData) -> () in
             self.metrics.httpStats.count += 1
