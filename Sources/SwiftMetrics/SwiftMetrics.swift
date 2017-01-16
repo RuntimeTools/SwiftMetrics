@@ -701,18 +701,23 @@ public class AutoScalar {
     private func updateConfiguration(response: Data) {
 
             let jsonData = JSON(data: response)
-			Log.debug("[Auto-scaling Agent] attempting to update configuration with \(jsonData)")
+	    Log.debug("[Auto-scaling Agent] attempting to update configuration with \(jsonData)")
             if (jsonData == nil) {
                 isAgentEnabled = false
-				return
+		return
             }
-            if (jsonData["metricsConfig"]["poller"] == nil) {
-                isAgentEnabled = false
-				return
-            }            
-            enabledMetrics=jsonData["metricsConfig"]["poller"].arrayValue.map({$0.stringValue})
-            reportInterval=jsonData["reportInterval"].intValue
-      		Log.exit("[Auto-scaling Agent] Updated configuration - enabled metrics: \(enabledMetrics), report interval: \(reportInterval) seconds")
+            if (jsonData["metricsConfig"]["agent"] == nil) {
+		if (jsonData["metricsConfig"]["poller"] == nil) {
+                    isAgentEnabled = false
+		    return
+		} else {
+		    enabledMetrics=jsonData["metricsConfig"]["poller"].arrayValue.map({$0.stringValue})
+      		}
+            } else {
+                enabledMetrics=jsonData["metricsConfig"]["agent"].arrayValue.map({$0.stringValue})
+            }
+	    reportInterval=jsonData["reportInterval"].intValue
+	    Log.exit("[Auto-scaling Agent] Updated configuration - enabled metrics: \(enabledMetrics), report interval: \(reportInterval) seconds")
     }
         
 }
