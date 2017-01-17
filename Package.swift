@@ -3,7 +3,7 @@ import PackageDescription
 let package = Package(
     name: "SwiftMetrics",
     targets: [
-	Target(name: "SwiftMetricsKitura", dependencies: ["SwiftMetrics"])
+	   Target(name: "SwiftMetricsKitura", dependencies: ["SwiftMetrics"])
     ],
     dependencies: [
       .Package(url: "https://github.com/IBM-Swift/Kitura-Request.git", majorVersion: 0, minor: 6),
