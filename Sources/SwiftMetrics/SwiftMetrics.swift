@@ -377,7 +377,7 @@ public class AutoScalar {
   var enabledMetrics: [String] = []
   // list of metrics to collect (CPU, Memory, HTTP etc. Can be altered by the auto-scaling service in the refresh thread.
 
-  let autoScalingServiceLabel = "Auto-Scaling"
+  let autoScalingServiceLabelPrefix = "Auto-Scaling"
   // used to find the AutoScaling service from the Cloud Foundry Application Environment
 
   fileprivate var metrics: Metrics = Metrics() //initialises to defaults above
@@ -420,7 +420,7 @@ public class AutoScalar {
       // Find auto-scaling service using convenience method
       let appEnvServices = appEnv.getServices()
       for (_, service) in appEnvServices {
-        if service.label.hasPrefix(autoScalingLabelPrefix) {
+        if service.label.hasPrefix(autoScalingServiceLabelPrefix) {
           Log.debug("[Auto-Scaling Agent] Found Auto-Scaling service: \(service.name)")
           autoScalingServiceCreds = service.credentials ?? [:]
           break
