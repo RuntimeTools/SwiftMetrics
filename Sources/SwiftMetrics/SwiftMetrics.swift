@@ -416,16 +416,15 @@ public class AutoScalar {
   private func initCredentials() -> Bool {
     do {
       let appEnv = try CloudFoundryEnv.getAppEnv()
-      let autoScalingServiceCreds: [String:Any]
+      let autoScalingServiceCreds: [String:Any] = [:]
       // Find auto-scaling service using convenience method
-      let autoScalingServs: [Service] = appEnv.getServices(type: autoScalingServiceLabel)
-      if autoScalingServs.count > 0 {
-        let serv = autoScalingServs[0]
-        Log.debug("[Auto-Scaling Agent] Found Auto-Scaling service: \(serv.name)")
-        autoScalingServiceCreds = serv.credentials ?? [:]
-      } else {
-        Log.debug("[Auto-Scaling Agent] Could not find Auto-Scaling service.")
-        autoScalingServiceCreds = [:]
+      let appEnvServices = appEnv.getServices()
+      for (_, service) in appEnvServices {
+        if service.label.hasPrefix(autoScalingLabelPrefix) {
+          Log.debug("[Auto-Scaling Agent] Found Auto-Scaling service: \(service.name)")
+          autoScalingServiceCreds = service.credentials ?? [:]
+          break
+        } 
       }
       Log.debug("[Auto-Scaling Agent] Auto-scaling service credentials: \(autoScalingServiceCreds)")
 
