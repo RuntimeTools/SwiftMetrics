@@ -10,6 +10,11 @@ Swift Application Metrics provides the following built-in data collection source
  Environment        | Machine and runtime environment information
  CPU                | Process and system CPU
  Memory             | Process and system memory usage
+ 
+ SwiftMetricsKitura adds the additional collection source:
+ 
+ Source             | Description
+:-------------------|:-------------------------------------------
  HTTP               | HTTP metric information
 
 
@@ -28,7 +33,7 @@ Swift Application Metrics can be installed by adding a dependency into your Pack
 
 ```swift
 dependencies: [
-   .Package(url: "https://github.com/IBM-Swift/SwiftMetrics.git", versions: Version(0,0,1)..<Version(2,0,0)),
+   .Package(url: "https://github.com/IBM-Swift/SwiftMetrics.git", majorVersion: 0,
 ]
 ```
 
@@ -53,19 +58,29 @@ Many of the options provide configuration of the Health Center core agent librar
 <a name="run-local"></a>
 ### Modifying your application 
 
-To load `SwiftMetrics` and get the monitoring API object, add the following to the start-up code for your application:
+To load `SwiftMetrics` and get the base monitoring API, add the following to the start-up code for your application:
 ```swift
 import SwiftMetrics
 
 let sm = try SwiftMetrics()
 let monitoring = sm.monitor()
 ```
+
+If you would like to monitor Kitura HTTP data as well, then use the following instead:
+```swift
+import SwiftMetrics
+import SwiftMetricsKitura
+
+let sm = try SwiftMetrics()
+SwiftMetricsKitura(swiftmetricsinstance: sm)
+let monitoring = sm.monitor()
+```
+
 SwiftMetrics() returns the Swift Application Metrics Agent - this runs parallel to your code and receives and emits data about your application to any connected clients e.g. A Health Center Eclipse IDE Client connected over MQTT. The `sm.monitor()` call returns a Swift Application Metrics Local Client, connected to the Agent `sm` over a local connection.
 
 You can then use the monitoring object to register callbacks and request information about the application:
 ```swift
-monitoring.on({ (_: InitData) in
-   let env = monitoring.getEnvironmentData();
+monitoring.on({ (env: InitData) in
    for (key, value) in env {
       print("\(key): \(value)\n")
    }
@@ -87,6 +102,8 @@ private struct SnoozeData: SMData {
 private func snoozeMessage(data: SnoozeData) {
    print("\nAlarm has been ignored for \(data.cycleCount) seconds!\n")
 }
+
+monitoring.on(snoozeMessage)
 
 sm.emitData(SnoozeData(cycleCount: 40))
 
@@ -145,7 +162,7 @@ Emitted when a memory monitoring sample is taken.
     * `applicationPrivateSize` (Int) the amount of memory used by the Swift application that cannot be shared with other processes, in bytes.
     * `applicationRAMUsed` (Int) the amount of RAM used by the Swift application in bytes.
 
-### HTTP data structure
+### HTTP data structure (when including SwiftMetricsKitura)
 Emitted when an HTTP monitoring sample is taken.
 * `public struct HTTPData: SMData` 
     * `timeOfRequest` (Int) the system time in milliseconds since epoch when the request was made.
@@ -210,9 +227,12 @@ This project uses a semver-parsable X.0.Z version number for releases, where X i
 Non-release versions of this project (for example on github.com/IBM-Swift/SwiftMetrics) will use semver-parsable X.0.Z-dev.B version numbers, where X.0.Z is the last release with Z incremented and B is an integer. For further information on the development process go to the  [SwiftMetrics wiki][3]: [Developing](https://github.com/IBM-Swift/SwiftMetrics/wiki/Developing).
 
 ## Version
-0.0.9
+0.0.12
 
 ## Release History
+`0.0.12` - BlueMix AutoScaling support.
+`0.0.11` - BlueMix support.
+`0.0.10` - Addition of Kitura HTTP collection source.
 `0.0.9` - Initial development release.
 
 [1]: https://marketplace.eclipse.org/content/ibm-monitoring-and-diagnostic-tools-health-center
