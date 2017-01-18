@@ -416,7 +416,7 @@ public class AutoScalar {
   private func initCredentials() -> Bool {
     do {
       let appEnv = try CloudFoundryEnv.getAppEnv()
-      let autoScalingServiceCreds: [String:Any] = [:]
+      var autoScalingServiceCreds: [String:Any] = [:]
       // Find auto-scaling service using convenience method
       let appEnvServices = appEnv.getServices()
       for (_, service) in appEnvServices {
