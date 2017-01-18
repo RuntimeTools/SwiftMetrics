@@ -32,9 +32,9 @@ dependencies: [
 ]
 ```
 
-Swift Package manager will automatically clone the code required and build it during compilation of your program using 
-`swift build`. *For macOS additional parameters are currently required*, so you must build your program using the following:
-`swift build -Xlinker -lc++`
+Swift Package manager will automatically clone the code required and build it during compilation of your program:
+  * Linux: `swift build`
+  * macOS: `swift build -Xlinker -lc++`
 
 <a name="config"></a>
 ### Configuring Swift Application Metrics
