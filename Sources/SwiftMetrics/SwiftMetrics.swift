@@ -354,7 +354,7 @@ open class SwiftMetrics {
 
   public func monitor() -> SwiftMonitor {
     if swiftMon == nil {
-      swiftMon = SwiftMonitor(swiftMet: self)
+      swiftMon = SwiftMonitor(swiftMetrics: self)
     }
     return swiftMon!
   }
@@ -424,7 +424,7 @@ public class AutoScalar {
           Log.debug("[Auto-Scaling Agent] Found Auto-Scaling service: \(service.name)")
           autoScalingServiceCreds = service.credentials ?? [:]
           break
-        } 
+        }
       }
       Log.debug("[Auto-Scaling Agent] Auto-scaling service credentials: \(autoScalingServiceCreds)")
 

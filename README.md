@@ -72,7 +72,7 @@ import SwiftMetrics
 import SwiftMetricsKitura
 
 let sm = try SwiftMetrics()
-SwiftMetricsKitura(swiftmetricsinstance: sm)
+SwiftMetricsKitura(swiftMetricsInstance: sm)
 let monitoring = sm.monitor()
 ```
 

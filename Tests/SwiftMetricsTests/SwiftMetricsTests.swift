@@ -8,7 +8,6 @@ class SwiftMetricsTests: XCTestCase {
         XCTAssertEqual(SwiftMetrics().text, "Hello, World!")
     }
 
-
     static var allTests : [(String, (SwiftMetricsTests) -> () throws -> Void)] {
         return [
             ("testExample", testExample),
