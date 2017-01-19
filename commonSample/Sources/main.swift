@@ -23,9 +23,9 @@ monitoring.on(processCPU)
 monitoring.on(processMem)
 monitoring.on(processEnv)
 
-monitoring.on({ (in: InitData) in
+monitoring.on({ (indata: InitData) in
    print("\n\n+++ Initialized Environment Information +++\n")
-   for (key, value) in in.data {
+   for (key, value) in indata.data {
       print("\(key): \(value)\n")
    }
    print("\n+++ End of Initialized Environment Information +++\n")
