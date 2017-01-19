@@ -230,10 +230,11 @@ Non-release versions of this project (for example on github.com/IBM-Swift/SwiftM
 0.0.12
 
 ## Release History
-`0.0.12` - BlueMix AutoScaling support.
-`0.0.11` - BlueMix support.
-`0.0.10` - Addition of Kitura HTTP collection source.
-`0.0.9` - Initial development release.
+`0.0.12` - BlueMix AutoScaling support.  
+`0.0.11` - BlueMix support.  
+`0.0.10` - Addition of Kitura HTTP collection source.  
+`0.0.9` - Initial development release.  
+
 
 [1]: https://marketplace.eclipse.org/content/ibm-monitoring-and-diagnostic-tools-health-center
 [2]: http://www.ibm.com/support/knowledgecenter/SS3KLZ/com.ibm.java.diagnostics.healthcenter.doc/topics/connecting.html
