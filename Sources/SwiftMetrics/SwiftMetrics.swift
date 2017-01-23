@@ -599,85 +599,85 @@ public class AutoScalar {
           metricDict["desc"] = ""
           metricDict["timestamp"] = timestamp
           metricsArray.append(metricDict)
-          case "Memory":
-            var metricDict = [String:Any]()
-            metricDict["category"] = "swift"
-            metricDict["group"] = "memory"
-            metricDict["name"] = "memory"
-            metricDict["value"] = Double(metricsToSend.memory)
-            metricDict["unit"] = "Bytes"
-            metricDict["desc"] = ""
-            metricDict["timestamp"] = timestamp
-            metricsArray.append(metricDict)
-          case "Throughput":
-            var metricDict = [String:Any]()
-            metricDict["category"] = "swift"
-            metricDict["group"] = "Web"
-            metricDict["name"] = "throughput"
-            metricDict["value"] = Double(metricsToSend.throughput)
-            metricDict["unit"] = ""
-            metricDict["desc"] = ""
-            metricDict["timestamp"] = timestamp
-            metricsArray.append(metricDict)
-					case "ResponseTime":
-						var metricDict = [String:Any]()
-            metricDict["category"] = "swift"
-            metricDict["group"] = "Web"
-            metricDict["name"] = "responseTime"
-            metricDict["value"] = Double(metricsToSend.responseTime)
-            metricDict["unit"] = "ms"
-            metricDict["desc"] = ""
-            metricDict["timestamp"] = timestamp
-            metricsArray.append(metricDict)
-          default:
-            break
-          }
+        case "Memory":
+          var metricDict = [String:Any]()
+          metricDict["category"] = "swift"
+          metricDict["group"] = "memory"
+          metricDict["name"] = "memory"
+          metricDict["value"] = Double(metricsToSend.memory)
+          metricDict["unit"] = "Bytes"
+          metricDict["desc"] = ""
+          metricDict["timestamp"] = timestamp
+          metricsArray.append(metricDict)
+        case "Throughput":
+          var metricDict = [String:Any]()
+          metricDict["category"] = "swift"
+          metricDict["group"] = "Web"
+          metricDict["name"] = "throughput"
+          metricDict["value"] = Double(metricsToSend.throughput)
+          metricDict["unit"] = ""
+          metricDict["desc"] = ""
+          metricDict["timestamp"] = timestamp
+          metricsArray.append(metricDict)
+        case "ResponseTime":
+          var metricDict = [String:Any]()
+          metricDict["category"] = "swift"
+          metricDict["group"] = "Web"
+          metricDict["name"] = "responseTime"
+          metricDict["value"] = Double(metricsToSend.responseTime)
+          metricDict["unit"] = "ms"
+          metricDict["desc"] = ""
+          metricDict["timestamp"] = timestamp
+          metricsArray.append(metricDict)
+        default:
+          break
+      }
+    }
+
+    var dict = [String:Any]()
+    dict["appId"] = appID
+    dict["appName"] = appName
+    dict["appType"] = "swift"
+    dict["serviceId"] = serviceID
+    dict["instanceIndex"] = instanceIndex
+    dict["instanceId"] = instanceId
+    dict["timestamp"] = timestamp
+    dict["metrics"] = metricsArray
+
+    Log.exit("[Auto-Scaling Agent] sendObject = \(dict)")
+    return dict
+  }
+
+  private func sendMetrics(asOBJ : [String:Any]) {
+    let sendMetricsPath = "\(host):443/services/agent/report"
+    Log.debug("[Auto-scaling Agent] Attempting to send metrics to \(sendMetricsPath)")
+
+    do {
+      let jsonData = try JSONSerialization.data(withJSONObject: asOBJ, options: .prettyPrinted)
+      let decoded = try JSONSerialization.jsonObject(with: jsonData, options: [])
+      if let dictFromJSON = decoded as? [String:Any] {
+        KituraRequest.request(.post,
+          sendMetricsPath,
+          parameters: dictFromJSON,
+          encoding: JSONEncoding.default,
+          headers: ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
+        ).response {
+          request, response, data, error in
+            Log.debug("[Auto-scaling Agent] sendMetrics:Request: \(request!)")
+            Log.debug("[Auto-scaling Agent] sendMetrics:Response: \(response!)")
+            Log.debug("[Auto-scaling Agent] sendMetrics:Data: \(data!)")
+            Log.debug("[Auto-scaling Agent] sendMetrics:Error: \(error)")}
         }
+    } catch {
+      Log.warning("[Auto-Scaling Agent] \(error.localizedDescription)")
+    }
+  }
 
-            var dict = [String:Any]()
-            dict["appId"] = appID
-            dict["appName"] = appName
-            dict["appType"] = "swift"
-            dict["serviceId"] = serviceID
-            dict["instanceIndex"] = instanceIndex
-            dict["instanceId"] = instanceId
-            dict["timestamp"] = timestamp
-            dict["metrics"] = metricsArray
-
-            Log.exit("[Auto-Scaling Agent] sendObject = \(dict)")
-            return dict
-          }
-
-          private func sendMetrics(asOBJ : [String:Any]) {
-            let sendMetricsPath = "\(host):443/services/agent/report"
-            Log.debug("[Auto-scaling Agent] Attempting to send metrics to \(sendMetricsPath)")
-
-            do {
-              let jsonData = try JSONSerialization.data(withJSONObject: asOBJ, options: .prettyPrinted)
-              let decoded = try JSONSerialization.jsonObject(with: jsonData, options: [])
-              if let dictFromJSON = decoded as? [String:Any] {
-                KituraRequest.request(.post,
-                  sendMetricsPath,
-                  parameters: dictFromJSON,
-                  encoding: JSONEncoding.default,
-                  headers: ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
-                ).response {
-                  request, response, data, error in
-                  Log.debug("[Auto-scaling Agent] sendMetrics:Request: \(request!)")
-                  Log.debug("[Auto-scaling Agent] sendMetrics:Response: \(response!)")
-                  Log.debug("[Auto-scaling Agent] sendMetrics:Data: \(data!)")
-                  Log.debug("[Auto-scaling Agent] sendMetrics:Error: \(error)")}
-                }
-              } catch {
-                Log.warning("[Auto-Scaling Agent] \(error.localizedDescription)")
-              }
-            }
-
-            private func notifyStatus() {
-              let notifyStatusPath = "\(host):443/services/agent/status/\(appID)"
-              Log.debug("[Auto-scaling Agent] Attempting notifyStatus request to \(notifyStatusPath)")
-              KituraRequest.request(.put,
-                notifyStatusPath,
+  private func notifyStatus() {
+    let notifyStatusPath = "\(host):443/services/agent/status/\(appID)"
+    Log.debug("[Auto-scaling Agent] Attempting notifyStatus request to \(notifyStatusPath)")
+    KituraRequest.request(.put,
+      notifyStatusPath,
                 headers: ["Authorization":"Basic \(authorization)"]
               ).response {
                 request, response, data, error in
