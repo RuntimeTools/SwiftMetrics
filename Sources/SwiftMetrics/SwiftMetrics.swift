@@ -518,7 +518,7 @@ public class AutoScalar {
   }
 
   public convenience init() throws {
-    try self.init(metricsToEnable: ["CPU", "Memory", "Throughput"])
+    try self.init(metricsToEnable: ["CPU", "Memory", "Throughput", "ResponseTime"])
   }
 
   private func setMonitors() {
@@ -609,20 +609,30 @@ public class AutoScalar {
             metricDict["desc"] = ""
             metricDict["timestamp"] = timestamp
             metricsArray.append(metricDict)
-            case "Throughput":
-              var metricDict = [String:Any]()
-              metricDict["category"] = "swift"
-              metricDict["group"] = "Web"
-              metricDict["name"] = "throughput"
-              metricDict["value"] = Double(metricsToSend.throughput)
-              metricDict["unit"] = ""
-              metricDict["desc"] = ""
-              metricDict["timestamp"] = timestamp
-              metricsArray.append(metricDict)
-              default:
-                break
-              }
-            }
+          case "Throughput":
+            var metricDict = [String:Any]()
+            metricDict["category"] = "swift"
+            metricDict["group"] = "Web"
+            metricDict["name"] = "throughput"
+            metricDict["value"] = Double(metricsToSend.throughput)
+            metricDict["unit"] = ""
+            metricDict["desc"] = ""
+            metricDict["timestamp"] = timestamp
+            metricsArray.append(metricDict)
+					case "ResponseTime":
+						var metricDict = [String:Any]()
+            metricDict["category"] = "swift"
+            metricDict["group"] = "Web"
+            metricDict["name"] = "responseTime"
+            metricDict["value"] = Double(metricsToSend.responseTime)
+            metricDict["unit"] = "ms"
+            metricDict["desc"] = ""
+            metricDict["timestamp"] = timestamp
+            metricsArray.append(metricDict)
+          default:
+            break
+          }
+        }
 
             var dict = [String:Any]()
             dict["appId"] = appID
