@@ -26,7 +26,7 @@ Swift Application Metrics can be installed by adding a dependency into your Pack
 
 ```swift
 dependencies: [
-   .Package(url: "https://github.com/IBM-Swift/SwiftMetrics.git", majorVersion: 0),
+   .Package(url: "https://github.com/RuntimeTools/SwiftMetrics.git", majorVersion: 0),
 ]
 ```
 
