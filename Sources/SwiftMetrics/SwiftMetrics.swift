@@ -49,7 +49,7 @@ public struct InitData: SMData {
   public let data: [String:String]
 }
 
-private var swiftMon: SwiftMonitor?
+public var swiftMon: SwiftMonitor?
 
 
 private func receiveAgentCoreData(cSourceId: UnsafePointer<CChar>, cSize: CUnsignedInt, data: UnsafeMutableRawPointer) -> Void {
