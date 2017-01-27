@@ -98,6 +98,7 @@ public class SwiftMonitor {
       let index = "\(T.self)"
       if var observer = customObservers[index] {
         observer.append(callback as Any)
+        customObservers[index] = observer
       } else {
         customObservers[index] = [callback as Any]
       }
@@ -188,9 +189,49 @@ public class SwiftMonitor {
     }
   }
 
-  public func on<T: SMData>(_ callback: @escaping (T) -> ()) {
-    swiftMetrics.loaderApi.logMessage(fine, "on(): Subscribing a \(type(of: callback)) observer")
+  public func on(_ callback: @escaping cpuClosure) {
+    swiftMetrics.loaderApi.logMessage(fine, "on(): Subscribing a CPUData observer")
     EventEmitter.subscribe(callback: callback)
+  }
+
+  public func on(_ callback: @escaping memoryClosure) {
+    swiftMetrics.loaderApi.logMessage(fine, "on(): Subscribing a MemData observer")
+    EventEmitter.subscribe(callback: callback)
+  }
+
+  public func on(_ callback: @escaping envClosure) {
+    swiftMetrics.loaderApi.logMessage(fine, "on(): Subscribing an EnvData observer")
+    EventEmitter.subscribe(callback: callback)
+  }
+
+  public func on(_ callback: @escaping initClosure) {
+    swiftMetrics.loaderApi.logMessage(fine, "on(): Subscribing an InitData observer")
+    EventEmitter.subscribe(callback: callback)
+  }
+
+  public func on<T: SMData>(_ callback: @escaping (T) -> ()) {
+    swiftMetrics.loaderApi.logMessage(fine, "on(): Subscribing a \(T.self)) observer")
+    EventEmitter.subscribe(callback: callback)
+  }
+
+  func raiseEvent(data: CPUData) {
+    swiftMetrics.loaderApi.logMessage(fine, "raiseEvent(): Publishing a CPUData event")
+    EventEmitter.publish(data: data)
+  }
+
+  func raiseEvent(data: MemData) {
+    swiftMetrics.loaderApi.logMessage(fine, "raiseEvent(): Publishing a MemData event")
+    EventEmitter.publish(data: data)
+  }
+
+  func raiseEvent(data: EnvData) {
+    swiftMetrics.loaderApi.logMessage(fine, "raiseEvent(): Publishing an EnvData event")
+    EventEmitter.publish(data: data)
+  }
+
+  func raiseEvent(data: InitData) {
+    swiftMetrics.loaderApi.logMessage(fine, "raiseEvent(): Publishing an InitData event")
+    EventEmitter.publish(data: data)
   }
 
   func raiseEvent<T: SMData>(data: T) {
