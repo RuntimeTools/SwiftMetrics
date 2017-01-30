@@ -62,6 +62,7 @@ private class HttpMonitor: ServerMonitor {
 public typealias httpClosure = (HTTPData) -> ()
 
 public extension SwiftMonitor.EventEmitter {
+
     static var httpObservers: [httpClosure] = []
 
     static func publish(data: HTTPData) {
@@ -73,6 +74,29 @@ public extension SwiftMonitor.EventEmitter {
     static func subscribe(callback: @escaping httpClosure) {
         httpObservers.append(callback)
     }
+
+}
+
+public extension SwiftMonitor {
+
+  public func on(_ callback: @escaping httpClosure) {
+    EventEmitter.subscribe(callback: callback)
+  }
+
+  func raiseEvent(data: HTTPData) {
+    EventEmitter.publish(data: data)
+  }
+
+}
+
+public extension SwiftMetrics {
+
+  public func emitData(_ data: HTTPData) {
+    if let monitor = swiftMon {
+      monitor.raiseEvent(data: data)
+    }
+  }
+
 }
 
 public class SwiftMetricsKitura {
