@@ -16,9 +16,6 @@
 
 // Line chart for displaying average http request response time at a given point in time
 
-// data storage
-var httpRate = [];
-
 //set the scale dimensions to the size of the graph
 var httpTP_xScale = d3.time.scale().range([0, graphWidth]);
 var httpTP_yScale = d3.scale.linear().range([tallerGraphHeight, 0]);
@@ -87,42 +84,25 @@ httpThroughPutChart.append("text")
     .text("HTTP Throughput");
 
 function updateThroughPutData() {
+    // Re-scale the x range to the new time interval
+    httpTP_xScale.domain(d3.extent(httpRate, function(d) {
+        return d.time;
+    }));
 
-    request = "http://" + myurl + "/httpRate";
-    d3.json(request, function(error, data) {
-        if (error) return console.warn(error);
-        if (data == null) return;
+    // Re-scale the y range to the new maximum http rate
+    httpTP_yScale.domain([0, d3.max(httpRate, function(d) {
+        return d.httpRate;
+    })]);
 
-        // store incoming data
-        httpRate.push(data)
+    // update the data and axes lines to the new data values
+    var selection = d3.select(".httpThroughPutChart");
+    selection.select(".line")
+        .attr("d", httpThroughPutline(httpRate));
+    selection.select(".xAxis")
+        .call(httpTP_xAxis);
+    selection.select(".yAxis")
+        .call(httpTP_yAxis);
 
-        // Only keep 30 minutes of data
-        var currentTime = Date.now()
-        var d = httpRate[0]
-        while (d.hasOwnProperty('time') && d.time.valueOf() + 1800000 < currentTime) {
-            httpRate.shift()
-            d = httpRate[0]
-        }
-
-        // Re-scale the x range to the new time interval
-        httpTP_xScale.domain(d3.extent(httpRate, function(d) {
-            return d.time;
-        }));
-
-        // Re-scale the y range to the new maximum http rate
-        httpTP_yScale.domain([0, d3.max(httpRate, function(d) {
-            return d.httpRate;
-        })]);
-
-        // update the data and axes lines to the new data values
-        var selection = d3.select(".httpThroughPutChart");
-        selection.select(".line")
-            .attr("d", httpThroughPutline(httpRate));
-        selection.select(".xAxis")
-            .call(httpTP_xAxis);
-        selection.select(".yAxis")
-            .call(httpTP_yAxis);
-    });
 }
 
 function resizeHttpThroughputChart() {
