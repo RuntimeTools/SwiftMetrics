@@ -28,7 +28,7 @@ var cpu_xAxis = d3.svg.axis()
     .scale(cpu_xScale)
     .orient("bottom")
     .ticks(3)
-    .tickFormat(d3.time.format("%H:%M:%S"));
+    .tickFormat(getTimeFormat());
 
 var cpu_yAxis = d3.svg.axis()
     .scale(cpu_yScale)
@@ -44,9 +44,6 @@ var cpuData = [];
 var cpuProcessLatest = 0;
 var cpuSystemLatest = 0;
 
-
-// Set input domain for y scale only (no data yet)
-cpu_yScale.domain([0, 100]);
 
 // Define the system CPU usage line
 var systemline = d3.svg.line().interpolate("basis")
@@ -67,76 +64,84 @@ var processline = d3.svg.line().interpolate("basis")
     });
 
 // Define the cpuChart
-var cpuChart = d3.select("#cpuDiv1")
-        .append("svg")
-        .attr("width", canvasWidth)
-        .attr("height", canvasHeight)
-        .attr("class", "cpuChart")
-        .append("g")
-        .attr("class", "cpuGroup")
-        .attr("transform",
-            "translate(" + margin.left + "," + margin.top + ")");
+var cpuSVG = d3.select("#cpuDiv1")
+    .append("svg")
+    .attr("width", canvasWidth)
+    .attr("height", canvasHeight)
+    .attr("class", "cpuChart")
+
+var cpuTitleBox = cpuSVG.append("rect")
+    .attr("width", canvasWidth)
+    .attr("height", 30)
+    .attr("class", "titlebox")
+
+var cpuChart = cpuSVG.append("g")
+    .attr("class", "cpuGroup")
+    .attr("transform",
+        "translate(" + margin.left + "," + margin.top + ")");
+
+// Set the input domain for the y axis (fixed)
+cpu_yScale.domain([0, 100]);
 
 // Add the systemline path.
 cpuChart.append("path")
-        .attr("class", "systemLine")
-        .attr("d", systemline(cpuData));
+    .attr("class", "systemLine")
+    .attr("d", systemline(cpuData));
 
 // Add the processline path.
 cpuChart.append("path")
-        .attr("class", "processLine")
-        .style("stroke", "#8cd211")
-        .attr("d", processline(cpuData));
+    .attr("class", "processLine")
+    .attr("d", processline(cpuData));
 
 // Add the X Axis
 cpuChart.append("g")
-        .attr("class", "xAxis")
-        .attr("transform", "translate(0," + graphHeight + ")")
-        .call(cpu_xAxis);
+    .attr("class", "xAxis")
+    .attr("transform", "translate(0," + graphHeight + ")")
+    .call(cpu_xAxis);
 
 // Add the Y Axis
 cpuChart.append("g")
-        .attr("class", "yAxis")
-        .call(cpu_yAxis);
+    .attr("class", "yAxis")
+    .call(cpu_yAxis);
 
 // Add the title
 cpuChart.append("text")
-        .attr("x", -20)
-        .attr("y", 0 - (margin.top * 0.75))
-        .attr("text-anchor", "left")
-        .style("font-size", "18px")
-        .text("CPU Usage");
+    .attr("x", 7 - margin.left)
+    .attr("y", 15 - margin.top)
+    .attr("dominant-baseline", "central")
+    .style("font-size", "18px")
+    .text("CPU");
+
+// Add the system colour box
+cpuChart.append("rect")
+    .attr("x", 0) 
+    .attr("y", graphHeight + margin.bottom - 15)
+    .attr("class", "colourbox1")
+    .attr("width", 10)
+    .attr("height", 10)
 
 // Add the SYSTEM label
-cpuChart.append("text")
-        .attr("x", 0) 
-        .attr("y", 0 - (margin.top / 8))
-        .attr("class", "lineLabel") 
-        .style("fill", "#6eedd8")
-        .text("SYSTEM");
+var cpuSystemLabel = cpuChart.append("text")
+    .attr("x", 15) 
+    .attr("y", graphHeight + margin.bottom - 5)
+    .attr("text-anchor", "start")
+    .attr("class", "lineLabel")
+    .text("System");
+
+// Add the process colour box
+cpuChart.append("rect")
+    .attr("x", cpuSystemLabel.node().getBBox().width + 45) 
+    .attr("y", graphHeight + margin.bottom - 15)
+    .attr("width", 10)
+    .attr("height", 10)
+    .attr("class", "colourbox2")
 
 // Add the PROCESS label
 cpuChart.append("text")
-        .attr("x", graphWidth / 2) 
-        .attr("y", 0 - (margin.top / 8))
-        .style("fill", "#8cd211")
-        .attr("class", "processlatestlabel")
-        .text("SWIFT PROCESS");
-
-// Add the text element for systemlatest
-cpuChart.append("text")
-    .attr("x", 0) 
-    .attr("y", 0 - (margin.top * 3 / 8))
-    .attr("class", "systemlatest")
-    .style("font-size", "32px");
-
-// Add the text element for processlatest
-cpuChart.append("text")
-        .attr("x", graphWidth / 2) 
-        .attr("y", 0 - (margin.top * 3 / 8))
-        .attr("class", "processlatest")
-        .style("font-size", "32px");
-
+    .attr("x", cpuSystemLabel.node().getBBox().width + 60) 
+    .attr("y", graphHeight + margin.bottom - 5)
+    .attr("class", "lineLabel2")
+    .text("Node Process");
 
 function resizeCPUChart() {
     var chart = d3.select(".cpuChart");
@@ -146,10 +151,10 @@ function resizeCPUChart() {
         .scale(cpu_xScale)
         .orient("bottom")
         .ticks(3)
-        .tickFormat(d3.time.format("%H:%M:%S"));
+        .tickFormat(getTimeFormat());
     cpu_yAxis.tickSize(-graphWidth, 0, 0);
-    chart.select(".processlatest").attr("x", graphWidth / 2) 
-    chart.select(".processlatestlabel").attr("x", graphWidth / 2)
+
+    cpuTitleBox.attr("width", canvasWidth)
 
     // Redraw lines and axes
     cpu_xScale.domain(d3.extent(cpuData, function(d) {
@@ -188,25 +193,28 @@ function updateCPUData() {
                     cpuProcessLatest = _processLatest;
                     cpuSystemLatest = Math.round(d.system);
                 }
-                cpuData.push(d)
+                cpuData.push(d);
             }
         }
 
         // Only keep 30 minutes of data
-        var currentTime = Date.now()
-        var d = cpuData[0]
+        var currentTime = Date.now();
+        var d = cpuData[0];
         if (d === null)
             return
 
         while (d.hasOwnProperty('date') && d.date.valueOf() + 1800000 < currentTime) {
-            cpuData.shift()
-            d = cpuData[0]
+            cpuData.shift();
+            d = cpuData[0];
         }
-        // Set the input domain for the x axis (y is fixed)
+        // Set the input domain for the x axis
         cpu_xScale.domain(d3.extent(cpuData, function(d) {
             return d.date;
         }));
 
+        cpu_xAxis.tickFormat(getTimeFormat());
+
+        // Select the CPU chart svg element to apply changes
         var selection = d3.select(".cpuChart");
         selection.select(".systemLine") 
             .attr("d", systemline(cpuData));
@@ -216,10 +224,6 @@ function updateCPUData() {
             .call(cpu_xAxis);
         selection.select(".yAxis") 
             .call(cpu_yAxis);
-        selection.select(".processlatest")
-            .text(cpuProcessLatest + "%");
-        selection.select(".systemlatest")
-            .text(cpuSystemLatest + "%");
     });
 }
 
