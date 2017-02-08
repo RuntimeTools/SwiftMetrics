@@ -72,13 +72,12 @@
 <script type="text/javascript" src="js/httpTop5.js"></script>
 <script type="text/javascript" src="js/memChart.js"></script>
 
-
 <script>
     window.addEventListener('resize', resize); 
 
     function resize() {
         canvasWidth = $("#cpuDiv1").width() - 8,
-        httpCanvasWidth = $("#httpDiv1").width() -8,
+        httpCanvasWidth = $("#httpDiv1").width() - 8,
         graphWidth = canvasWidth - margin.left - margin.right,
         httpGraphWidth = httpCanvasWidth - margin.left - margin.right;
         resizeCPUChart();

@@ -172,7 +172,7 @@ function updateHttpData() {
 
 function resizeHttpChart() {
     var chart = d3.select(".httpChart")
-	chart.attr("width", httpCanvasWidth);
+    chart.attr("width", httpCanvasWidth);
     http_xScale = d3.time.scale()
         .range([0, httpGraphWidth]);
     http_xAxis = d3.svg.axis()
@@ -186,7 +186,7 @@ function resizeHttpChart() {
     http_xScale.domain(d3.extent(httpData, function(d) {
         return d.date;
     }));
-    
+
     chart.selectAll("circle").remove();
 
     chart.select(".httpline")

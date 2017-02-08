@@ -28,7 +28,7 @@ var httpTP_yScale = d3.scale.linear().range([tallerGraphHeight, 0]);
 var httpTP_xAxis = d3.svg.axis().scale(httpTP_xScale)
     .orient("bottom")
     .ticks(3)
-    .tickFormat(d3.time.format("%H:%M:%S"));
+    .tickFormat(getTimeFormat());
 
 // y axis format, in requests per second
 var httpTP_yAxis = d3.svg.axis().scale(httpTP_yScale)
@@ -126,7 +126,7 @@ function resizeHttpThroughputChart() {
     chart.attr("width", httpDiv2CanvasWidth);
     httpTP_xScale = d3.time.scale().range([0, httpDiv2GraphWidth]);
     httpTP_xAxis = d3.svg.axis().scale(httpTP_xScale)
-        .orient("bottom").ticks(3).tickFormat(d3.time.format("%H:%M:%S"));
+        .orient("bottom").ticks(3).tickFormat(getTimeFormat());
 
     httpThroughPutTitleBox.attr("width", httpDiv2CanvasWidth)
 

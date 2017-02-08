@@ -42,7 +42,7 @@ var httpTop5Chart = httpTop5SVG.append("g")
 
 // Add the title
 httpTop5Chart.append("text")
-     .attr("x", 7 - margin.left)
+    .attr("x", 7 - margin.left)
     .attr("y", 15 - margin.top)
     .attr("dominant-baseline", "central")
     .style("font-size", "18px")

@@ -27,8 +27,10 @@ var mem_xAxis = d3.svg.axis().scale(mem_xScale)
     .tickFormat(getTimeFormat());
 
 var mem_yAxis = d3.svg.axis().scale(mem_yScale)
-    .orient("left").ticks(8).tickFormat(function(d) {
-        return d + "MB";
+    .orient("left")
+    .ticks(8)
+    .tickFormat(function(d) {
+        return d3.format(".2s")(d * 1024 * 1024)
     });
 
 // Memory data storage
@@ -211,20 +213,19 @@ function updateMemData() {
         var selection = d3.select(".memChart");
 
         // Make the changes
-        selection.select(".systemLine") 
+        selection.select(".systemLine")
             .attr("d", mem_systemLine(memData));
-        selection.select(".processLine") 
+        selection.select(".processLine")
             .attr("d", mem_processLine(memData));
-        selection.select(".xAxis") 
+        selection.select(".xAxis")
             .call(mem_xAxis);
-        selection.select(".yAxis") 
+        selection.select(".yAxis")
             .call(mem_yAxis);
-//        selection.select(".processLatest") 
-//           .text(memProcessLatest + "MB");
-//        selection.select(".systemLatest") 
+//        selection.select(".processLatest")
+//            .text(memProcessLatest + "MB");
+//        selection.select(".systemLatest")
 //            .text(memSystemLatest + "MB");
     });
 }
-
 
 setInterval(updateMemData, 2000);

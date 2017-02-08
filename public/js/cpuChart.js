@@ -175,8 +175,7 @@ function updateCPUData() {
     var cpuRequest = "http://" + myurl + "/cpuRequest";
     d3.json(cpuRequest, function(error, cpuRequestData) {
         if (error) return console.warn(error);
-        if (!cpuRequestData || cpuRequestData.length === 0)
-            return
+        if (!cpuRequestData || cpuRequestData.length === 0) return;
 
         for (var i = 0, len = cpuRequestData.length; i < len; i++) {
             var d = cpuRequestData[i];
@@ -216,13 +215,13 @@ function updateCPUData() {
 
         // Select the CPU chart svg element to apply changes
         var selection = d3.select(".cpuChart");
-        selection.select(".systemLine") 
+        selection.select(".systemLine")
             .attr("d", systemline(cpuData));
         selection.select(".processLine") 
             .attr("d", processline(cpuData));
-        selection.select(".xAxis") 
+        selection.select(".xAxis")
             .call(cpu_xAxis);
-        selection.select(".yAxis") 
+        selection.select(".yAxis")
             .call(cpu_yAxis);
     });
 }
