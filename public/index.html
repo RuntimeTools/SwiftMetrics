@@ -10,19 +10,18 @@
 </head>
 
 <body>
-    <h1>Application Metrics Dashboard for Swift (Tech Preview)</h1>
+    <!--<h1>Application Metrics Dashboard for Swift (Tech Preview)</h1>-->
     <!-- load the d3.js library -->
     <script src="d3/d3.v3.min.js"></script>
     <script src="jquery/jquery-3.1.1.min.js"></script>
     <script src="bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="js/gauge.js"></script>
 
-<div class="row">
-    <div class="col-md-9">
+    <div class="container-fluid">
         <div class="row">
-            <div class="col-md-4" id="cpuDiv1"></div>
-            <div class="col-md-4" id="memDiv1"></div>
-            <div class="col-md-4" id="httpDiv2"></div>
+            <div class="col-md-3" id="cpuDiv1"></div>
+            <div class="col-md-3" id="memDiv1"></div>
+            <div class="col-md-3" id="httpDiv2"></div>
+            <div class="col-md-3" id="envDiv"></div>
         </div>
 
         <div class="row">
@@ -30,34 +29,41 @@
             <div class="col-md-6" id="httpDiv3"></div>
         </div>
     </div>
-<div class="col-md-3" id="envDiv"></div>
-</div>
 
 <script>
+    var monitoringStartTime = new Date();
     // Initialise graph and canvas dimensions
     var margin = {
-         top: 120,
-         shortTop: 60,
+         top: 50,
          right: 20,
-         bottom: 30,
+         bottom: 50,
+         shortBottom: 30,
          left: 60
     },
-    canvasWidth = $("#cpuDiv1").width(),
-    httpCanvasWidth = $("#httpDiv1").width(),
+    canvasWidth = $("#cpuDiv1").width() - 8, // -8 for margins and borders
+    httpCanvasWidth = $("#httpDiv1").width() - 8,
     graphWidth = canvasWidth - margin.left - margin.right,
     httpGraphWidth = httpCanvasWidth - margin.left - margin.right,
-    canvasHeight = 300,
-    tallerGraphHeight = 300 - margin.shortTop - margin.bottom,
+    canvasHeight = 250,
+    tallerGraphHeight = canvasHeight - margin.top - margin.shortBottom,
     graphHeight = canvasHeight - margin.top - margin.bottom;
      
     var myurl = location.host;
 
-        var myurl = location.host;
+    // set up http variables to hold data for top 5 and averages.
+    var httpRate = [];
+    var httpAverages = new Object;
 
-        // set up http variables to hold data for top 5 and averages.
-        var httpRate = [];
-        var httpAverages = new Object;
-    </script>
+    function getTimeFormat() {
+        var currentTime = new Date()
+        if(currentTime.getMinutes() - monitoringStartTime.getMinutes() >= 3
+            || currentTime.getHours() > monitoringStartTime.getHours()) {
+            return d3.time.format("%H:%M");
+        } else {
+            return d3.time.format("%H:%M:%S");
+        }
+    }
+</script>
 
 <script type="text/javascript" src="js/envTable.js"></script>
 <script type="text/javascript" src="js/cpuChart.js"></script>
@@ -66,22 +72,20 @@
 <script type="text/javascript" src="js/httpTop5.js"></script>
 <script type="text/javascript" src="js/memChart.js"></script>
 
-
 <script>
     window.addEventListener('resize', resize); 
 
     function resize() {
-        canvasWidth = $("#cpuDiv1").width(),
-        httpCanvasWidth = $("#httpDiv1").width(),
+        canvasWidth = $("#cpuDiv1").width() - 8,
+        httpCanvasWidth = $("#httpDiv1").width() - 8,
         graphWidth = canvasWidth - margin.left - margin.right,
         httpGraphWidth = httpCanvasWidth - margin.left - margin.right;
         resizeCPUChart();
         resizeHttpChart();
         resizeHttpThroughputChart();
-        updateThroughPutData();
         resizeHttpTop5Chart();
         resizeMemChart();
-        updateMemData();
+        resizeEnvTable();
     }
 
 </script>

@@ -18,53 +18,75 @@
 
 var request = "http://" + myurl + "/envRequest";
 
-d3.select('#envDiv').append('p')
-		.style("font-size", "18px")
-        .style("padding-left", "45px")
-        .style("padding-top", "20px")
-        .style("padding-bottom", "5px")
-		.text("Environment");
-var paragraph = d3.select('#envDiv').append('p')
-        .style("padding-left", "40px")
-var table = paragraph.append('table')
-		.style("font-size", "14px");
-var thead = table.append('thead')
-var tbody = table.append('tbody');
+var tableRowHeight = 30;
+var tableRowWidth = 170;
 
-			
+// Define the environment chart space
+var envSVG = d3.select("#envDiv")
+    .append("svg")
+    .attr("width", canvasWidth)
+    .attr("height", canvasHeight)
+    .attr("class", "envData")
+
+var envTitleBox = envSVG.append("rect")
+    .attr("width", canvasWidth)
+    .attr("height", 30)
+    .attr("class", "titlebox")
+
+envSVG.append("text")
+    .attr("x", 7)
+    .attr("y", 15)
+    .attr("dominant-baseline", "central")
+    .style("font-size", "18px")
+    .text("Environment");
+
+var paragraph = envSVG.append("g")
+    .attr("class", "envGroup")
+    .attr("transform",
+        "translate(" + 20 + "," + (margin.top + 10) + ")");
 
 function populateEnvTable() {
-	d3.json(request, function (error,data) {
-		if (error) return console.warn(error);
+    d3.json(request, function (error,data) {
 
-        if (data == null)
-        	return
-  		function tabulate(data) {
+        if (error) return console.warn(error);
+        if (data == null) return
 
-			// create a row for each object in the data
-			var rows = tbody.selectAll('tr')
-			  .data(data)
-			  .enter()
-			  .append('tr');
+        function tabulate(data) {
 
-			// create a cell in each row for each column
-			var cells = rows.selectAll('td')
-			  .data(function (row) {
-			    return ['Parameter', 'Value'].map(function (column) {
-			      return {column: column, value: row[column]};
-			    });
-			  })
-			  .enter()
-			  .append('td')
-			    .text(function (d) { return d.value; });
+            // create a row for each object in the data
+            var rows = paragraph.selectAll('text')
+                .data(data)
+                .enter()
+                .append('text')
+                .style('font-size', '14px')
+                .attr("transform", function(d, i) {
+                    return "translate(0," + (i * tableRowHeight) + ")";
+                });
+
+            // create a cell in each row for each column
+            var cells = rows.selectAll('tspan')
+                .data(function (row) {
+                    return ['Parameter', 'Value'].map(function (column) {
+                        return {column: column, value: row[column]};
+                    });
+                })
+                .enter()
+                .append('tspan')
+                .attr("x", function(d, i) {
+                    return i * tableRowWidth; // indent second element for each row
+                })
+                .text(function (d) { return d.value; });
+        }
 	
-		  return table;
-		}
-	
-		// render the table(s)
-		tabulate(data); // 2 column table
+        // render the table(s)
+        tabulate(data); // 2 column table
 
-	});
+    });
+}
+
+function resizeEnvTable() {
+    envSVG.attr("width", canvasWidth);
+    envTitleBox.attr("width", canvasWidth)
 }
 
 setTimeout(setInterval(populateEnvTable(), 1200000), 3000);
