@@ -46,10 +46,10 @@ var paragraph = envSVG.append("g")
         "translate(" + 20 + "," + (margin.top + 10) + ")");
 
 function populateEnvTable() {
-    d3.json(request, function (error,data) {
+    d3.json(request, function (error,envRequestData) {
 
         if (error) return console.warn(error);
-        if (data == null) return
+        if (envRequestData == null) return
 
         function tabulate(data) {
 
@@ -79,7 +79,7 @@ function populateEnvTable() {
         }
 	
         // render the table(s)
-        tabulate(data); // 2 column table
+        tabulate(envRequestData); // 2 column table
 
     });
 }

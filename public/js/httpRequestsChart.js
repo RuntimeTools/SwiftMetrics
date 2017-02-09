@@ -92,13 +92,13 @@ httpChart.append("text")
 
 function updateHttpData() {
     request = "http://" + myurl + "/httpRequest";
-    d3.json(request, function(error, data) {
+    d3.json(request, function(error, httpRequestData) {
 
         if (error) return console.warn(error);
-        if (data == null) return;
+        if (httpRequestData == null) return;
 
-        for (var i = 0, len = data.length; i < len; i++) {
-            var d = data[i];
+        for (var i = 0, len = httpRequestData.length; i < len; i++) {
+            var d = httpRequestData[i];
             if (d != null && d.hasOwnProperty('time')) {
                 d.date = new Date(+d.time);
                 d.responseTime = Math.round(+d.duration)
