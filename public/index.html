@@ -76,8 +76,8 @@
     window.addEventListener('resize', resize);
 
     function resize() {
-        canvasWidth = $("#cpuDiv1").width() - 8,
-        httpCanvasWidth = $("#httpDiv1").width() - 8,
+        canvasWidth = $("#cpuDiv").width() - 8,
+        httpCanvasWidth = $("#httpResponseDiv").width() - 8,
         graphWidth = canvasWidth - margin.left - margin.right,
         httpGraphWidth = httpCanvasWidth - margin.left - margin.right;
         resizeCPUChart();

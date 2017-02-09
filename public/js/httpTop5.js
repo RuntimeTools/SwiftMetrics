@@ -134,7 +134,7 @@ function updateURLData() {
 }
 
 function resizeHttpTop5Chart() {
-    httpDiv3CanvasWidth = $("#httpDiv3").width() - 8;
+    httpDiv3CanvasWidth = $("#httpTop5Div").width() - 8;
     httpDiv3GraphWidth = httpDiv3CanvasWidth - margin.left - margin.right;
     httpTop5_xScale = d3.scale.linear().range([0, httpDiv3GraphWidth]);
     var chart = d3.select(".httpTop5Chart")

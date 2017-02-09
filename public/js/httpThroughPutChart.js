@@ -118,7 +118,7 @@ function updateThroughPutData() {
 }
 
 function resizeHttpThroughputChart() {
-    httpDiv2CanvasWidth = $("#httpDiv2").width() - 8;
+    httpDiv2CanvasWidth = $("#httpThroughPutDiv").width() - 8;
     httpDiv2GraphWidth = httpDiv2CanvasWidth - margin.left - margin.right;
 
     // only altering the horizontal for the moment
