@@ -10,6 +10,13 @@ Swift Application Metrics provides the following built-in data collection source
  Environment        | Machine and runtime environment information
  CPU                | Process and system CPU
  Memory             | Process and system memory usage
+ 
+ SwiftMetricsKitura adds the additional collection source:
+ 
+ Source             | Description
+:-------------------|:-------------------------------------------
+ HTTP               | HTTP metric information
+
 
 ## Getting Started
 ### Prerequisites
@@ -56,6 +63,16 @@ To load `SwiftMetrics` and get the base monitoring API, add the following to the
 import SwiftMetrics
 
 let sm = try SwiftMetrics()
+let monitoring = sm.monitor()
+```
+
+If you would like to monitor Kitura HTTP data as well, then use the following instead:
+```swift
+import SwiftMetrics
+import SwiftMetricsKitura
+
+let sm = try SwiftMetrics()
+SwiftMetricsKitura(swiftMetricsInstance: sm)
 let monitoring = sm.monitor()
 ```
 
@@ -144,6 +161,15 @@ Emitted when a memory monitoring sample is taken.
     * `applicationAddressSpaceSize` (Int) the memory address space used by the Swift application in bytes.
     * `applicationPrivateSize` (Int) the amount of memory used by the Swift application that cannot be shared with other processes, in bytes.
     * `applicationRAMUsed` (Int) the amount of RAM used by the Swift application in bytes.
+
+### HTTP data structure (when including SwiftMetricsKitura)
+Emitted when an HTTP monitoring sample is taken.
+* `public struct HTTPData: SMData` 
+    * `timeOfRequest` (Int) the system time in milliseconds since epoch when the request was made.
+    * `url` (String) the request url.
+    * `duration` (Double) the duration the request took.
+    * `statusCode` (HTTPStatusCode) the HTTP status code of the request.
+    * `requestMethod` (String) the method {GET SET} of the request.
 
 ### Initialized data structure
 Emitted when all expected environment samples have been received, signalling a complete set of environment variables is available for SwiftMonitor.getEnvironmentData().
