@@ -197,7 +197,9 @@ public class AutoScalar {
   private func setMonitors(monitor: SwiftMonitor) {
     monitor.on({(mem: MemData) -> () in
       self.metrics.memoryStats.count += 1
-      self.metrics.memoryStats.sum += Float(mem.applicationPrivateSize)
+      let memValue = Float(mem.applicationPrivateSize)
+      Log.debug("[Auto-scaling Agent] Memory value received \(memValue) bytes")
+      self.metrics.memoryStats.sum += memValue
     })
     monitor.on({(cpu: CPUData) -> () in
       self.metrics.cpuStats.count += 1
@@ -206,6 +208,7 @@ public class AutoScalar {
     monitor.on({(http: HTTPData) -> () in
       self.metrics.httpStats.count += 1
       self.metrics.httpStats.duration += http.duration;
+      Log.debug("[Auto-scaling Agent] Http response time received \(http.duration) ")
       self.metrics.throughputStats.requestCount += 1;
     })
   }
