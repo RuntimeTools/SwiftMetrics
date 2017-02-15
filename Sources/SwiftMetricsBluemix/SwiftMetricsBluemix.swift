@@ -383,6 +383,7 @@ public class AutoScalar {
         enabledMetrics=jsonData["metricsConfig"]["poller"].arrayValue.map({$0.stringValue})
       }
     } else {
+      isAgentEnabled = true
       enabledMetrics=jsonData["metricsConfig"]["agent"].arrayValue.map({$0.stringValue})
     }
     reportInterval=jsonData["reportInterval"].intValue
