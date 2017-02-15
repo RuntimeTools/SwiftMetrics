@@ -143,4 +143,4 @@ function resizeHttpTop5Chart() {
     updateChart();
 }
 
-setInterval(updateURLData, 2000);
+d3.timer(updateURLData, 2000);

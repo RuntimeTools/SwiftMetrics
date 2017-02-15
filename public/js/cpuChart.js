@@ -227,4 +227,4 @@ function updateCPUData() {
 }
 
 // Update data every 2 seconds
-setInterval(updateCPUData, 2000);
+d3.timer(updateCPUData, 2000);

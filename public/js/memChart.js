@@ -228,4 +228,4 @@ function updateMemData() {
     });
 }
 
-setInterval(updateMemData, 2000);
+d3.timer(updateMemData, 2000);

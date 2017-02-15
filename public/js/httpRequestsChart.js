@@ -211,4 +211,4 @@ function resizeHttpChart() {
 // Call update to initialize graph
 updateHttpData()
 
-setInterval(updateHttpData, 2000);
+d3.timer(updateHttpData, 2000);
