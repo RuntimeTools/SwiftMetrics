@@ -376,12 +376,8 @@ public class AutoScalar {
       return
     }
     if (jsonData["metricsConfig"]["agent"] == nil) {
-      if (jsonData["metricsConfig"]["poller"] == nil) {
-        isAgentEnabled = false
-        return
-      } else {
-        enabledMetrics=jsonData["metricsConfig"]["poller"].arrayValue.map({$0.stringValue})
-      }
+      isAgentEnabled = false
+      return
     } else {
       isAgentEnabled = true
       enabledMetrics=jsonData["metricsConfig"]["agent"].arrayValue.map({$0.stringValue})
