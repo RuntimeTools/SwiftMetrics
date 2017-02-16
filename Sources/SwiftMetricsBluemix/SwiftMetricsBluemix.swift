@@ -197,7 +197,7 @@ public class AutoScalar {
   private func setMonitors(monitor: SwiftMonitor) {
     monitor.on({(mem: MemData) -> () in
       self.metrics.memoryStats.count += 1
-      let memValue = Float(mem.applicationPrivateSize)
+      let memValue = Float(mem.applicationRAMUsed)
       Log.debug("[Auto-scaling Agent] Memory value received \(memValue) bytes")
       self.metrics.memoryStats.sum += memValue
     })
