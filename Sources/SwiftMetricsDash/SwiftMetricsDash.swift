@@ -93,6 +93,7 @@ public class SwiftMetricsDash {
         router.get("/httpRequest", handler: gethttpRequest)
         if createServer {
             try Kitura.addHTTPServer(onPort: CloudFoundryEnv.getAppEnv().port, with: router)
+            try print("SwiftMetricsDash : Starting on port \(CloudFoundryEnv.getAppEnv().port)")
             Kitura.run()
         }
  	}
