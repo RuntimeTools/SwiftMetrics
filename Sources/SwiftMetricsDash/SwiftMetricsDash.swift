@@ -85,7 +85,7 @@ public class SwiftMetricsDash {
                 packagesPath.append("\(dir)/public")
             }
         }
-        router.all("/swiftdash", middleware: StaticFileServer(path: packagesPath))
+        router.all("/swiftmetrics-dash", middleware: StaticFileServer(path: packagesPath))
         router.get("/cpuRequest", handler: getcpuRequest)
         router.get("/memRequest", handler: getmemRequest)
         router.get("/envRequest", handler: getenvRequest)
