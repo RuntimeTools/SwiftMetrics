@@ -1,5 +1,5 @@
 import XCTest
-@testable import SwiftMetricsTestSuite
+@testable import SwiftMetricsTests
 
 XCTMain([
      testCase(SwiftMetricsTests.allTests),
