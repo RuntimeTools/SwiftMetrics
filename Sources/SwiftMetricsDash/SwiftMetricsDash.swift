@@ -21,7 +21,8 @@ import SwiftMetrics
 import SwiftyJSON
 import KituraNet
 import Foundation
-import CloudFoundryEnv
+import Configuration
+import CloudFoundryConfig
 import Dispatch
 
 public class SwiftMetricsDash {
@@ -92,8 +93,10 @@ public class SwiftMetricsDash {
         router.get("/cpuAverages", handler: getcpuAverages)
         router.get("/httpRequest", handler: gethttpRequest)
         if createServer {
-            try Kitura.addHTTPServer(onPort: CloudFoundryEnv.getAppEnv().port, with: router)
-            try print("SwiftMetricsDash : Starting on port \(CloudFoundryEnv.getAppEnv().port)")
+            let configMgr = ConfigurationManager()
+            configMgr.load(.environmentVariables)
+            Kitura.addHTTPServer(onPort: configMgr.port, with: router)
+            print("SwiftMetricsDash : Starting on port \(configMgr.port)")
             Kitura.run()
         }
  	}
@@ -117,7 +120,7 @@ public class SwiftMetricsDash {
 		}
 		return cpuLine
 	}
-	
+
 
     func storeHTTP(myhttp: HTTPData) {
     	let currentTime = NSDate().timeIntervalSince1970
@@ -183,27 +186,27 @@ public class SwiftMetricsDash {
         cpuQueue.async {
             do {
                if tempArray.count > 0 {
-                   try response.status(.OK).send(json: JSON(tempArray)).end()	        
+                   try response.status(.OK).send(json: JSON(tempArray)).end()
                    self.cpuDataStore.removeAll()
                } else {
-    		       try response.status(.OK).send(json: JSON([])).end()	        
+    		       try response.status(.OK).send(json: JSON([])).end()
                }
             } catch {
                 print("SwiftMetricsDash ERROR : problem sending cpuRequest data")
             }
         }
     }
-    
+
     public func getmemRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
        	response.headers["Content-Type"] = "application/json"
         let tempArray = self.memDataStore
         memQueue.async {
             do {
                 if tempArray.count > 0 {
-	    	        try response.status(.OK).send(json: JSON(tempArray)).end()	        
+	    	        try response.status(.OK).send(json: JSON(tempArray)).end()
                	    self.memDataStore.removeAll()
                 } else {
-       			    try response.status(.OK).send(json: JSON([])).end()	        
+       			    try response.status(.OK).send(json: JSON([])).end()
                 }
             } catch {
                 print("SwiftMetricsDash ERROR : problem sending memRequest data")
@@ -233,7 +236,7 @@ public class SwiftMetricsDash {
 			}
         }
         do {
-		    try response.status(.OK).send(json: JSON(responseData)).end()	        
+		    try response.status(.OK).send(json: JSON(responseData)).end()
         } catch {
             print("SwiftMetricsDash ERROR : problem sending environment data")
         }
@@ -246,25 +249,25 @@ public class SwiftMetricsDash {
 	    } catch {
 	        print("SwiftMetricsDash ERROR : problem sending averageCPU data")
         }
-	               
+
     }
 
 	public func gethttpRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void)  {
         response.headers["Content-Type"] = "application/json"
         let tempArray = self.httpDataStore
         httpQueue.async {
-            do { 
+            do {
                 if tempArray.count > 0 {
-                    try response.status(.OK).send(json: JSON(tempArray)).end()	        
+                    try response.status(.OK).send(json: JSON(tempArray)).end()
               	    self.httpDataStore.removeAll()
                 } else {
-			        try response.status(.OK).send(json: JSON([])).end()	        
+			        try response.status(.OK).send(json: JSON([])).end()
                 }
             } catch {
                 print("SwiftMetricsDash ERROR : problem sending httpRequest data")
             }
-            
+
         }
     }
-        
+
 }
