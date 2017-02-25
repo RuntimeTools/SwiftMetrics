@@ -101,8 +101,7 @@ public class AutoScalar {
   }
 
   private func initCredentials() -> Bool {
-    let configMgr = ConfigurationManager()
-    configMgr.load(.environmentVariables)
+    let configMgr = ConfigurationManager().load(.environmentVariables)
     // Find auto-scaling service using convenience method
     let autoScalingServs: [Service] = configMgr.getServices(type: autoScalingServiceLabel)
     if autoScalingServs.count == 0 {
@@ -110,12 +109,31 @@ public class AutoScalar {
       return false
     }
 
+/*
     guard let autoScalingService = AutoScalingService(withService: autoScalingServs[0]) else {
       Log.error("[Auto-Scaling Agent] Could not create instance of Auto-Scaling service.")
       return false
+    }*/
+
+    ////
+    var scalingServ: Service? = nil
+    let services = configMgr.getServices()
+    for (_, service) in services {
+       if service.label.hasPrefix(autoScalingServiceLabel) {
+         Log.debug("[Auto-Scaling Agent] Found Auto-Scaling service: \(service.name)")
+         scalingServ = service
+         break
+       }
     }
 
+    guard let serv = scalingServ, let autoScalingService = AutoScalingService(withService: serv) else {
+      Log.error("[Auto-Scaling Agent] Could not create instance of Auto-Scaling service.")
+      return false
+    }
+    ////
+
     Log.debug("[Auto-Scaling Agent] Found Auto-Scaling service: \(autoScalingService.name)")
+
     // Assign unwrapped values
     self.host = autoScalingService.url
     self.serviceID = autoScalingService.serviceID
@@ -124,7 +142,7 @@ public class AutoScalar {
     self.agentUsername = autoScalingService.username
 
     guard let app = configMgr.getApp() else {
-      Log.warning("[Auto-Scaling Agent] sendMetrics:serviceEnv.url is not found or empty.")
+      Log.error("[Auto-Scaling Agent] Could not get Cloud Foundry app metadata.")
       return false
     }
 
