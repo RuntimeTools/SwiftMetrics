@@ -103,33 +103,31 @@ public class AutoScalar {
   private func initCredentials() -> Bool {
     let configMgr = ConfigurationManager().load(.environmentVariables)
     // Find auto-scaling service using convenience method
-    let autoScalingServs: [Service] = configMgr.getServices(type: autoScalingServiceLabel)
-    if autoScalingServs.count == 0 {
-      Log.debug("[Auto-Scaling Agent] Could not find Auto-Scaling service.")
-      return false
-    }
-
-/*
-    guard let autoScalingService = AutoScalingService(withService: autoScalingServs[0]) else {
-      Log.error("[Auto-Scaling Agent] Could not create instance of Auto-Scaling service.")
-      return false
-    }*/
-
-    ////
-    var scalingServ: Service? = nil
-    let services = configMgr.getServices()
-    for (_, service) in services {
-       if service.label.hasPrefix(autoScalingServiceLabel) {
-         Log.debug("[Auto-Scaling Agent] Found Auto-Scaling service: \(service.name)")
-         scalingServ = service
-         break
-       }
-    }
-
+    let scalingServ: Service? = configMgr.getServices(type: autoScalingServiceLabel).first
     guard let serv = scalingServ, let autoScalingService = AutoScalingService(withService: serv) else {
-      Log.error("[Auto-Scaling Agent] Could not create instance of Auto-Scaling service.")
+      Log.error("[Auto-Scaling Agent] Could not find Auto-Scaling service.")
       return false
     }
+
+    //// Wondering if the logic commented out below is indeed needed.
+    //// We added the configMgr.getServices(type: String) method so
+    /// this library can look up the auto-scaling service by type instead of having to
+    //// use the logic here below. Any reason why we cannot use the logic above?
+    ////
+    // var scalingServ: Service? = nil
+    // let services = configMgr.getServices()
+    // for (_, service) in services {
+    //    if service.label.hasPrefix(autoScalingServiceLabel) {
+    //      Log.debug("[Auto-Scaling Agent] Found Auto-Scaling service: \(service.name)")
+    //      scalingServ = service
+    //      break
+    //    }
+    // }
+    //
+    // guard let serv = scalingServ, let autoScalingService = AutoScalingService(withService: serv) else {
+    //   Log.error("[Auto-Scaling Agent] Could not create instance of Auto-Scaling service.")
+    //   return false
+    // }
     ////
 
     Log.debug("[Auto-Scaling Agent] Found Auto-Scaling service: \(autoScalingService.name)")
