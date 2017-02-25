@@ -109,10 +109,10 @@ public class AutoScalar {
       return false
     }
 
-    //// Wondering if the logic commented out below is indeed needed.
-    //// We added the configMgr.getServices(type: String) method so
-    /// this library can look up the auto-scaling service by type instead of having to
-    //// use the logic here below. Any reason why we cannot use the logic above?
+    //// @Toby, @Matt - We are wondering if you ran into issues using the convenience
+    //// method (see above) for getting services that match a given type (label).
+    //// If you did, let us know and we can look into it. If there are not any issues,
+    //// can you guys use the logic above instead of the code commented out below?
     ////
     // var scalingServ: Service? = nil
     // let services = configMgr.getServices()
