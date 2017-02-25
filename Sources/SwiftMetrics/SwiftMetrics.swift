@@ -15,7 +15,8 @@
  *******************************************************************************/
 import agentcore
 import Foundation
-import CloudFoundryEnv
+import Configuration
+import CloudFoundryConfig
 #if os(Linux)
 import Glibc
 #else
@@ -94,17 +95,14 @@ open class SwiftMetrics {
 
   private func setDefaultLibraryPath() {
     var defaultLibraryPath = "."
-    var isLocal = true
-    do {
-      isLocal = try CloudFoundryEnv.getAppEnv().isLocal
-    } catch {
-      loaderApi.logMessage(debug, "setDefaultLibraryPath(): unable to get CF env, defaulting to local")
-    }
+    let configMgr = ConfigurationManager()
+    configMgr.load(.environmentVariables)
+    loaderApi.logMessage(debug, "setDefaultLibraryPath(): isLocal: \(configMgr.isLocal)")
     //if we're in Bluemix, use the path the swift-buildpack saves libraries to
-    if (!isLocal) {
+    if (!configMgr.isLocal) {
       defaultLibraryPath = "/home/vcap/app/.swift-lib"
     } else {
-      ///use the directory that the swift program lives in
+      //use the directory that the swift program lives in
       let programPath = CommandLine.arguments[0]
       let i = programPath.range(of: "/", options: .backwards)
       if i != nil {
@@ -298,4 +296,3 @@ open class SwiftMetrics {
     return swiftMon!
   }
 }
-

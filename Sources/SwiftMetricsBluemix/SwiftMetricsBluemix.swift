@@ -1,7 +1,9 @@
 import Foundation
 import Dispatch
 import LoggerAPI
+import Configuration
 import CloudFoundryEnv
+import CloudFoundryConfig
 import KituraRequest
 import SwiftMetrics
 import SwiftMetricsKitura
@@ -65,7 +67,7 @@ public class AutoScalar {
   var enabledMetrics: [String] = []
   // list of metrics to collect (CPU, Memory, HTTP etc. Can be altered by the auto-scaling service in the refresh thread.
 
-  let autoScalingServiceLabelPrefix = "Auto-Scaling"
+  let autoScalingServiceLabel = "Auto-Scaling"
   // used to find the AutoScaling service from the Cloud Foundry Application Environment
 
   fileprivate var metrics: Metrics = Metrics() //initialises to defaults above
@@ -99,75 +101,41 @@ public class AutoScalar {
   }
 
   private func initCredentials() -> Bool {
-    do {
-      let appEnv = try CloudFoundryEnv.getAppEnv()
-      var autoScalingServiceCreds: [String:Any] = [:]
-      // Find auto-scaling service using convenience method
-      let appEnvServices = appEnv.getServices()
-      for (_, service) in appEnvServices {
-        if service.label.hasPrefix(autoScalingServiceLabelPrefix) {
-          Log.debug("[Auto-Scaling Agent] Found Auto-Scaling service: \(service.name)")
-          autoScalingServiceCreds = service.credentials ?? [:]
-          break
-        }
-      }
-      Log.debug("[Auto-Scaling Agent] Auto-scaling service credentials: \(autoScalingServiceCreds)")
-
-      if autoScalingServiceCreds.isEmpty {
-        Log.error("[Auto-Scaling Agent] Please bind auto-scaling service!")
-        return false
-      }
-
-      // Validate optionals
-      guard let agentUsername = autoScalingServiceCreds["agentUsername"] as? String else {
-        Log.warning("[Auto-Scaling Agent] sendMetrics:serviceEnv.agentUsername is not found or empty.")
-        return false
-      }
-
-      guard let agentPassword = autoScalingServiceCreds["agentPassword"] as? String else {
-        Log.warning("[Auto-Scaling Agent] sendMetrics:serviceEnv.agentPassword is not found or empty.")
-        return false
-      }
-
-      guard let appID = autoScalingServiceCreds["app_id"] as? String else {
-        Log.warning("[Auto-Scaling Agent] sendMetrics:serviceEnv.app_id is not found or empty.")
-        return false
-      }
-
-      guard let host = autoScalingServiceCreds["url"] as? String else {
-        Log.warning("[Auto-Scaling Agent] sendMetrics:serviceEnv.url is not found or empty.")
-        return false
-      }
-
-      guard let serviceID = autoScalingServiceCreds["service_id"] as? String else {
-        Log.warning("[Auto-Scaling Agent] sendMetrics:serviceEnv.service_id is not found or empty.")
-        return false
-      }
-
-      // Assign unwrapped values
-      self.host = host
-      self.serviceID = serviceID
-      self.appID = appID
-      self.agentPassword = agentPassword
-      self.agentUsername = agentUsername
-
-      guard let app = appEnv.getApp() else {
-        Log.warning("[Auto-Scaling Agent] sendMetrics:serviceEnv.url is not found or empty.")
-        return false
-      }
-
-      // Extract fields from App object
-      appName = app.name
-      instanceIndex = app.instanceIndex
-      instanceId = app.instanceId
-
-      auth = "\(agentUsername):\(agentPassword)"
-      Log.debug("[Auto-scaling Agent] Authorisation: \(auth)")
-      authorization = Data(auth.utf8).base64EncodedString()
-    } catch {
-      Log.warning("[Auto-Scaling Agent] Unable to get Cloud Foundry Environment!")
+    let configMgr = ConfigurationManager()
+    configMgr.load(.environmentVariables)
+    // Find auto-scaling service using convenience method
+    let autoScalingServs: [Service] = configMgr.getServices(type: autoScalingServiceLabel)
+    if autoScalingServs.count == 0 {
+      Log.debug("[Auto-Scaling Agent] Could not find Auto-Scaling service.")
       return false
     }
+
+    guard let autoScalingService = AutoScalingService(withService: autoScalingServs[0]) else {
+      Log.error("[Auto-Scaling Agent] Could not create instance of Auto-Scaling service.")
+      return false
+    }
+
+    Log.debug("[Auto-Scaling Agent] Found Auto-Scaling service: \(autoScalingService.name)")
+    // Assign unwrapped values
+    self.host = autoScalingService.url
+    self.serviceID = autoScalingService.serviceID
+    self.appID = autoScalingService.appID
+    self.agentPassword = autoScalingService.password
+    self.agentUsername = autoScalingService.username
+
+    guard let app = configMgr.getApp() else {
+      Log.warning("[Auto-Scaling Agent] sendMetrics:serviceEnv.url is not found or empty.")
+      return false
+    }
+
+    // Extract fields from App object
+    appName = app.name
+    instanceIndex = app.instanceIndex
+    instanceId = app.instanceId
+
+    auth = "\(agentUsername):\(agentPassword)"
+    Log.debug("[Auto-scaling Agent] Authorisation: \(auth)")
+    authorization = Data(auth.utf8).base64EncodedString()
 
     return true
   }
@@ -406,4 +374,3 @@ public class AutoScalar {
   }
 
 }
-
