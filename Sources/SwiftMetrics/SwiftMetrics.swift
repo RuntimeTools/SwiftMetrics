@@ -95,19 +95,18 @@ open class SwiftMetrics {
 
   private func setDefaultLibraryPath() {
     var defaultLibraryPath = "."
-    let configMgr = ConfigurationManager()
-    configMgr.load(.environmentVariables)
+    let configMgr = ConfigurationManager().load(.environmentVariables)
     loaderApi.logMessage(debug, "setDefaultLibraryPath(): isLocal: \(configMgr.isLocal)")
-    //if we're in Bluemix, use the path the swift-buildpack saves libraries to
-    if (!configMgr.isLocal) {
-      defaultLibraryPath = "/home/vcap/app/.swift-lib"
-    } else {
-      //use the directory that the swift program lives in
+    if (configMgr.isLocal) {
+      //if local, use the directory that the swift program lives in
       let programPath = CommandLine.arguments[0]
       let i = programPath.range(of: "/", options: .backwards)
       if i != nil {
         defaultLibraryPath = programPath.substring(to: i!.lowerBound)
       }
+    } else {
+      //if we're in Bluemix, use the path the swift-buildpack saves libraries to
+      defaultLibraryPath = "/home/vcap/app/.swift-lib"
     }
     loaderApi.logMessage(fine, "setDefaultLibraryPath(): to \(defaultLibraryPath)")
     self.setPluginSearch(toDirectory: URL(fileURLWithPath: defaultLibraryPath, isDirectory: true))
