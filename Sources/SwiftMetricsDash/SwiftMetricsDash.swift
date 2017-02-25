@@ -93,8 +93,7 @@ public class SwiftMetricsDash {
         router.get("/cpuAverages", handler: getcpuAverages)
         router.get("/httpRequest", handler: gethttpRequest)
         if createServer {
-            let configMgr = ConfigurationManager()
-            configMgr.load(.environmentVariables)
+            let configMgr = ConfigurationManager().load(.environmentVariables)
             Kitura.addHTTPServer(onPort: configMgr.port, with: router)
             print("SwiftMetricsDash : Starting on port \(configMgr.port)")
             Kitura.run()
