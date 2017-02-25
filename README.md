@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.com/RuntimeTools/SwiftMetrics.svg?token=mJT5PYB2xpM2BrzG4qWD&branch=master)](https://travis-ci.com/RuntimeTools/SwiftMetrics)
+![macOS](https://img.shields.io/badge/os-macOS-green.svg?style=flat)
+![Linux](https://img.shields.io/badge/os-linux-green.svg?style=flat)
+
 # Swift Application Metrics
 Swift Application Metrics monitoring and profiling agent
 
@@ -10,9 +14,9 @@ Swift Application Metrics provides the following built-in data collection source
  Environment        | Machine and runtime environment information
  CPU                | Process and system CPU
  Memory             | Process and system memory usage
- 
+
  SwiftMetricsKitura adds the additional collection source:
- 
+
  Source             | Description
 :-------------------|:-------------------------------------------
  HTTP               | HTTP metric information
@@ -43,7 +47,7 @@ Swift Package manager will automatically clone the code required and build it du
 
 <a name="config"></a>
 ### Configuring Swift Application Metrics
-Swift Application Metrics comes with a configuration file inside the [Packages directory](#install) (`.../Packages/omr-agentcore-<version>/properties/healthcenter.properties`). This is used to configure connection options, logging and data source options. 
+Swift Application Metrics comes with a configuration file inside the [Packages directory](#install) (`.../Packages/omr-agentcore-<version>/properties/healthcenter.properties`). This is used to configure connection options, logging and data source options.
 
 Swift Application Metrics will attempt to load `healthcenter.properties` from one of the following locations (in order):
 
@@ -56,7 +60,7 @@ Many of the options provide configuration of the Health Center core agent librar
 
 ## Running Swift Application Metrics
 <a name="run-local"></a>
-### Modifying your application 
+### Modifying your application
 
 To load `SwiftMetrics` and get the base monitoring API, add the following to the start-up code for your application:
 ```swift
@@ -146,14 +150,14 @@ public protocol SMData {
 
 ### CPU data structure
 Emitted when a CPU monitoring sample is taken.
-* `public struct CPUData: SMData` 
+* `public struct CPUData: SMData`
     * `timeOfSample` (Int) the system time in milliseconds since epoch when the sample was taken.
     * `percentUsedByApplication` (Float) the percentage of CPU used by the Swift application itself. This is a value between 0.0 and 1.0.
     * `percentUsedBySystem` (Float) the percentage of CPU used by the system as a whole. This is a value between 0.0 and 1.0.
 
 ### Memory data structure
 Emitted when a memory monitoring sample is taken.
-* `public struct MemData: SMData` 
+* `public struct MemData: SMData`
     * `timeOfSample` (Int) the system time in milliseconds since epoch when the sample was taken.
     * `totalRAMOnSystem` (Int) the total amount of RAM available on the system in bytes.
     * `totalRAMUsed` (Int) the total amount of RAM in use on the system in bytes.
@@ -164,7 +168,7 @@ Emitted when a memory monitoring sample is taken.
 
 ### HTTP data structure (when including SwiftMetricsKitura)
 Emitted when an HTTP monitoring sample is taken.
-* `public struct HTTPData: SMData` 
+* `public struct HTTPData: SMData`
     * `timeOfRequest` (Int) the system time in milliseconds since epoch when the request was made.
     * `url` (String) the request url.
     * `duration` (Double) the duration the request took.
