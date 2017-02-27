@@ -191,8 +191,6 @@ open class SwiftMetrics {
         self.setDefaultLibraryPath()
       }
       _ = loaderApi.initialize()
-      loaderApi.logMessage(debug, "start(): Forcing MQTT Connection on")
-      loaderApi.setProperty("com.ibm.diagnostics.healthcenter.mqtt", "on")
       loaderApi.start()
     } else {
       loaderApi.logMessage(fine, "start(): Swift Application Metrics has already started")
