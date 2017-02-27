@@ -142,7 +142,7 @@ memChart.append("text")
     .attr("x", memSystemLabel.node().getBBox().width + 60) 
     .attr("y", graphHeight + margin.bottom - 5)
     .attr("class", "lineLabel2")
-    .text("Node Process");
+    .text("Swift Process");
 
 function resizeMemChart() {
     var chart = d3.select(".memChart")

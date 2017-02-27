@@ -141,7 +141,7 @@ cpuChart.append("text")
     .attr("x", cpuSystemLabel.node().getBBox().width + 60) 
     .attr("y", graphHeight + margin.bottom - 5)
     .attr("class", "lineLabel2")
-    .text("Node Process");
+    .text("Swift Process");
 
 function resizeCPUChart() {
     var chart = d3.select(".cpuChart");
