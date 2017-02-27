@@ -35,7 +35,7 @@ private class HttpMonitor: ServerMonitor {
 
     // This function is called from Kitura.net when an http request starts
     public func started(request: ServerRequest, response: ServerResponse) {
-        queue.async {
+        queue.sync {
             // Only keep 1000 unprocessed calls to conserve memory (this is a guess estimate value)
             if (requestStore.count > 1000) {
                 requestStore.removeFirst()
@@ -47,7 +47,7 @@ private class HttpMonitor: ServerMonitor {
     // This function is called from Kitura.net when an http request finishes
     public func finished(request: ServerRequest?, response: ServerResponse) {
         if let request = request {
-            queue.async {
+            queue.sync {
                 for (index,req) in requestStore.enumerated() {
                     if request === req.request {
                        self.sM.emitData(HTTPData(timeOfRequest:Int(req.requestTime), url:req.request.urlURL.absoluteString, duration:(self.timeIntervalSince1970MilliSeconds - req.requestTime), statusCode:response.statusCode, requestMethod:req.request.method))
