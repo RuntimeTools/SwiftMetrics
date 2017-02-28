@@ -256,23 +256,23 @@ public class SwiftMetricsDash {
 
         httpQueue.sync {
 //            let tempArray = self.httpDataStore
-            do { 
-                if self.httpDataStore.count > 0 {
+            if self.httpDataStore.count > 0 {
                 print("httpDataStore.count is \(self.httpDataStore.count)")
                 print("httpDataStore is \(self.httpDataStore)")
                 result = JSON(self.httpDataStore)
-                    print("after result set")
-                    print("after send")
-              	    self.httpDataStore.removeAll()
-                } else {
-			        try response.status(.OK).send(json: JSON([])).end()	        
-                }
-            } catch {
-                print("SwiftMetricsDash ERROR : problem sending httpRequest data")
+                print("after result set")
+                print("after send")
+           	    self.httpDataStore.removeAll()
+            } else {
+	            result = JSON([])	        
             }
-            
         }
-        try response.status(.OK).send(json: result).end()           
+        
+        do { 
+           try response.status(.OK).send(json: result).end()           
+        } catch {
+           print("SwiftMetricsDash ERROR : problem sending httpRequest data")
+        }
     }
         
 }
