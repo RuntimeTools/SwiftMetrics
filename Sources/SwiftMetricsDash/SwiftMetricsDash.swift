@@ -121,9 +121,8 @@ public class SwiftMetricsDash {
 
     func storeHTTP(myhttp: HTTPData) {
     	let currentTime = NSDate().timeIntervalSince1970
-        httpQueue.async {
-        	let tempArray = self.httpDataStore
-            for httpJson in tempArray {
+        httpQueue.sync {
+            for httpJson in self.httpDataStore {
                 if(currentTime - (Double(httpJson["time"].stringValue)! / 1000) > 1800) {
                     self.httpDataStore.removeFirst()
                 } else {
@@ -138,10 +137,9 @@ public class SwiftMetricsDash {
 
     func storeCPU(cpu: CPUData) {
         let currentTime = NSDate().timeIntervalSince1970
-        cpuQueue.async {
-            let tempArray = self.cpuDataStore
-           	if tempArray.count > 0 {
-           		for cpuJson in tempArray {
+        cpuQueue.sync {
+           	if self.cpuDataStore.count > 0 {
+           		for cpuJson in self.cpuDataStore {
                		if(currentTime - (Double(cpuJson["time"].stringValue)! / 1000) > 1800) {
     	                self.cpuDataStore.removeFirst()
                		} else {
@@ -157,10 +155,9 @@ public class SwiftMetricsDash {
 
     func storeMem(mem: MemData) {
 	    let currentTime = NSDate().timeIntervalSince1970
-        memQueue.async {
-	        let tempArray = self.memDataStore
-            if tempArray.count > 0 {
-        	    for memJson in tempArray {
+        memQueue.sync {
+            if self.memDataStore.count > 0 {
+        	    for memJson in self.memDataStore {
             	    if(currentTime - (Double(memJson["time"].stringValue)! / 1000) > 1800) {
 	                    self.memDataStore.removeFirst()
             	    } else {
@@ -179,35 +176,33 @@ public class SwiftMetricsDash {
 
     public func getcpuRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
         response.headers["Content-Type"] = "application/json"
-        let tempArray = self.cpuDataStore
-        cpuQueue.async {
-            do {
-               if tempArray.count > 0 {
-                   try response.status(.OK).send(json: JSON(tempArray)).end()	        
-                   self.cpuDataStore.removeAll()
-               } else {
-    		       try response.status(.OK).send(json: JSON([])).end()	        
-               }
-            } catch {
-                print("SwiftMetricsDash ERROR : problem sending cpuRequest data")
-            }
+        var responseData: JSON = []        
+        cpuQueue.sync {
+           if self.cpuDataStore.count > 0 {
+               responseData = JSON(self.cpuDataStore)
+               self.cpuDataStore.removeAll()
+           } 
+        }
+        do {
+            try response.status(.OK).send(json: responseData).end()          
+        } catch {
+            print("SwiftMetricsDash ERROR : problem sending cpuRequest data")
         }
     }
     
     public func getmemRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
        	response.headers["Content-Type"] = "application/json"
-        let tempArray = self.memDataStore
-        memQueue.async {
-            do {
-                if tempArray.count > 0 {
-	    	        try response.status(.OK).send(json: JSON(tempArray)).end()	        
-               	    self.memDataStore.removeAll()
-                } else {
-       			    try response.status(.OK).send(json: JSON([])).end()	        
-                }
-            } catch {
-                print("SwiftMetricsDash ERROR : problem sending memRequest data")
+        var responseData: JSON = []        
+        memQueue.sync {
+            if self.memDataStore.count > 0 {
+                responseData = JSON(self.memDataStore)
+           	    self.memDataStore.removeAll()
             }
+        }
+        do {
+            try response.status(.OK).send(json: responseData).end()          
+        } catch {
+            print("SwiftMetricsDash ERROR : problem sending memRequest data")
         }
     }
 
@@ -251,19 +246,19 @@ public class SwiftMetricsDash {
 
 	public func gethttpRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void)  {
         response.headers["Content-Type"] = "application/json"
-        let tempArray = self.httpDataStore
-        httpQueue.async {
-            do { 
-                if tempArray.count > 0 {
-                    try response.status(.OK).send(json: JSON(tempArray)).end()	        
-              	    self.httpDataStore.removeAll()
-                } else {
-			        try response.status(.OK).send(json: JSON([])).end()	        
-                }
-            } catch {
-                print("SwiftMetricsDash ERROR : problem sending httpRequest data")
+        var result: JSON = []
+
+        httpQueue.sync {
+            if self.httpDataStore.count > 0 {
+                result = JSON(self.httpDataStore)
+           	    self.httpDataStore.removeAll()
             }
-            
+        }
+        
+        do { 
+           try response.status(.OK).send(json: result).end()           
+        } catch {
+           print("SwiftMetricsDash ERROR : problem sending httpRequest data")
         }
     }
         
