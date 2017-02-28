@@ -176,33 +176,33 @@ public class SwiftMetricsDash {
 
     public func getcpuRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
         response.headers["Content-Type"] = "application/json"
+        var responseData: JSON = []        
         cpuQueue.sync {
-            do {
-               if self.cpuDataStore.count > 0 {
-                   try response.status(.OK).send(json: JSON(self.cpuDataStore)).end()	        
-                   self.cpuDataStore.removeAll()
-               } else {
-    		       try response.status(.OK).send(json: JSON([])).end()	        
-               }
-            } catch {
-                print("SwiftMetricsDash ERROR : problem sending cpuRequest data")
-            }
+           if self.cpuDataStore.count > 0 {
+               responseData = JSON(self.cpuDataStore)
+               self.cpuDataStore.removeAll()
+           } 
+        }
+        do {
+            try response.status(.OK).send(json: responseData).end()          
+        } catch {
+            print("SwiftMetricsDash ERROR : problem sending cpuRequest data")
         }
     }
     
     public func getmemRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
        	response.headers["Content-Type"] = "application/json"
+        var responseData: JSON = []        
         memQueue.sync {
-            do {
-                if self.memDataStore.count > 0 {
-	    	        try response.status(.OK).send(json: JSON(self.memDataStore)).end()	        
-               	    self.memDataStore.removeAll()
-                } else {
-       			    try response.status(.OK).send(json: JSON([])).end()	        
-                }
-            } catch {
-                print("SwiftMetricsDash ERROR : problem sending memRequest data")
+            if self.memDataStore.count > 0 {
+                responseData = JSON(self.memDataStore)
+           	    self.memDataStore.removeAll()
             }
+        }
+        do {
+            try response.status(.OK).send(json: responseData).end()          
+        } catch {
+            print("SwiftMetricsDash ERROR : problem sending memRequest data")
         }
     }
 
