@@ -180,8 +180,8 @@ public class SwiftMetricsDash {
 
     public func getcpuRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
         response.headers["Content-Type"] = "application/json"
-        let tempArray = self.cpuDataStore
         cpuQueue.sync {
+            let tempArray = self.cpuDataStore
             do {
                if tempArray.count > 0 {
                    try response.status(.OK).send(json: JSON(tempArray)).end()	        
