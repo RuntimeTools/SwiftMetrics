@@ -256,15 +256,20 @@ public class SwiftMetricsDash {
             let tempArray = self.httpDataStore
             print("in getGetHTTPRequest")
             do { 
+            print("in getGetHTTPRequest 2")
                 if tempArray.count > 0 {
+            print("in getGetHTTPRequest 3")
                     try response.status(.OK).send(json: JSON(tempArray)).end()	        
               	    self.httpDataStore.removeAll()
+            print("in getGetHTTPRequest 3a")
                 } else {
+            print("in getGetHTTPRequest 4")
 			        try response.status(.OK).send(json: JSON([])).end()	        
                 }
             } catch {
                 print("SwiftMetricsDash ERROR : problem sending httpRequest data")
             }
+            print("in getGetHTTPRequest 5")
             
         }
     }
