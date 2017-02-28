@@ -157,7 +157,7 @@ public class SwiftMetricsDash {
 
     func storeMem(mem: MemData) {
 	    let currentTime = NSDate().timeIntervalSince1970
-        memQueue.async {
+        memQueue.sync {
 	        let tempArray = self.memDataStore
             if tempArray.count > 0 {
         	    for memJson in tempArray {
@@ -180,7 +180,7 @@ public class SwiftMetricsDash {
     public func getcpuRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
         response.headers["Content-Type"] = "application/json"
         let tempArray = self.cpuDataStore
-        cpuQueue.async {
+        cpuQueue.sync {
             do {
                if tempArray.count > 0 {
                    try response.status(.OK).send(json: JSON(tempArray)).end()	        
@@ -197,7 +197,7 @@ public class SwiftMetricsDash {
     public func getmemRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
        	response.headers["Content-Type"] = "application/json"
         let tempArray = self.memDataStore
-        memQueue.async {
+        memQueue.sync {
             do {
                 if tempArray.count > 0 {
 	    	        try response.status(.OK).send(json: JSON(tempArray)).end()	        
