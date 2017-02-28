@@ -197,8 +197,8 @@ public class SwiftMetricsDash {
     
     public func getmemRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
        	response.headers["Content-Type"] = "application/json"
-        let tempArray = self.memDataStore
         memQueue.sync {
+            let tempArray = self.memDataStore
             do {
                 if tempArray.count > 0 {
 	    	        try response.status(.OK).send(json: JSON(tempArray)).end()	        
@@ -252,8 +252,8 @@ public class SwiftMetricsDash {
 
 	public func gethttpRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void)  {
         response.headers["Content-Type"] = "application/json"
-        let tempArray = self.httpDataStore
         httpQueue.sync {
+            let tempArray = self.httpDataStore
             print("in getGetHTTPRequest")
             do { 
                 if tempArray.count > 0 {
