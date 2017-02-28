@@ -121,7 +121,7 @@ public class SwiftMetricsDash {
 
     func storeHTTP(myhttp: HTTPData) {
     	let currentTime = NSDate().timeIntervalSince1970
-        httpQueue.async {
+        httpQueue.sync {
         	let tempArray = self.httpDataStore
             for httpJson in tempArray {
                 if(currentTime - (Double(httpJson["time"].stringValue)! / 1000) > 1800) {
