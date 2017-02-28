@@ -253,24 +253,17 @@ public class SwiftMetricsDash {
 	public func gethttpRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void)  {
         response.headers["Content-Type"] = "application/json"
         httpQueue.sync {
-            let tempArray = self.httpDataStore
-            print("in getGetHTTPRequest")
+//            let tempArray = self.httpDataStore
             do { 
-            print("in getGetHTTPRequest 2")
-                if tempArray.count > 0 {
-            print("in getGetHTTPRequest 3")
-                    try response.status(.OK).send(json: JSON(tempArray)).end()	        
-            print("in getGetHTTPRequest 3a")
+                if self.httpDataStore.count > 0 {
+                    try response.status(.OK).send(json: JSON(self.httpDataStore)).end()	        
               	    self.httpDataStore.removeAll()
-            print("in getGetHTTPRequest 3b")
                 } else {
-            print("in getGetHTTPRequest 4")
 			        try response.status(.OK).send(json: JSON([])).end()	        
                 }
             } catch {
                 print("SwiftMetricsDash ERROR : problem sending httpRequest data")
             }
-            print("in getGetHTTPRequest 5")
             
         }
     }
