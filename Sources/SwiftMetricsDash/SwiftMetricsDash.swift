@@ -260,8 +260,9 @@ public class SwiftMetricsDash {
                 if tempArray.count > 0 {
             print("in getGetHTTPRequest 3")
                     try response.status(.OK).send(json: JSON(tempArray)).end()	        
-              	    self.httpDataStore.removeAll()
             print("in getGetHTTPRequest 3a")
+              	    self.httpDataStore.removeAll()
+            print("in getGetHTTPRequest 3b")
                 } else {
             print("in getGetHTTPRequest 4")
 			        try response.status(.OK).send(json: JSON([])).end()	        
