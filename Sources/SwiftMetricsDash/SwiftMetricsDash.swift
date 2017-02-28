@@ -52,9 +52,9 @@ public class SwiftMetricsDash {
          self.SM = swiftMetricsInstance
         _ = SwiftMetricsKitura(swiftMetricsInstance: SM)
         self.monitor = SM.monitor()
-        //monitor.on(storeCPU)
-        //monitor.on(storeMem)
-        //monitor.on(storeHTTP)
+        monitor.on(storeCPU)
+        monitor.on(storeMem)
+        monitor.on(storeHTTP)
 
         try startServer(createServer: create, router: router)
     }
@@ -100,21 +100,20 @@ public class SwiftMetricsDash {
 
 	func calculateAverageCPU() -> JSON {
 		var cpuLine = JSON([])
-		cpuQueue.sync {
-    		if (self.cpuData.count > 0) {
-    			var totalApplicationUse: Float = 0
-    			var totalSystemUse: Float = 0
-    			var time: Int = 0
-    			for cpuItem in self.cpuData {
-    				totalApplicationUse += cpuItem.percentUsedByApplication
-    				totalSystemUse += cpuItem.percentUsedBySystem
-    				time = cpuItem.timeOfSample
-    			}
-    			cpuLine = JSON([
-    				"time":"\(time)",
-    				"process":"\(totalApplicationUse/Float(cpuData.count))",
-    				"system":"\(totalSystemUse/Float(cpuData.count))"])
-    		}
+		let tempArray = self.cpuData
+		if (tempArray.count > 0) {
+			var totalApplicationUse: Float = 0
+			var totalSystemUse: Float = 0
+			var time: Int = 0
+			for cpuItem in tempArray {
+				totalApplicationUse += cpuItem.percentUsedByApplication
+				totalSystemUse += cpuItem.percentUsedBySystem
+				time = cpuItem.timeOfSample
+			}
+			cpuLine = JSON([
+				"time":"\(time)",
+				"process":"\(totalApplicationUse/Float(tempArray.count))",
+				"system":"\(totalSystemUse/Float(tempArray.count))"])
 		}
 		return cpuLine
 	}
@@ -123,8 +122,8 @@ public class SwiftMetricsDash {
     func storeHTTP(myhttp: HTTPData) {
     	let currentTime = NSDate().timeIntervalSince1970
         httpQueue.sync {
-            if (self.httpDataStore.count > 0) {
-            for httpJson in self.httpDataStore {
+        	let tempArray = self.httpDataStore
+            for httpJson in tempArray {
                 if(currentTime - (Double(httpJson["time"].stringValue)! / 1000) > 1800) {
                     self.httpDataStore.removeFirst()
                 } else {
@@ -133,7 +132,6 @@ public class SwiftMetricsDash {
             }
             let httpLine = JSON(["time":"\(myhttp.timeOfRequest)","url":"\(myhttp.url)","duration":"\(myhttp.duration)","method":"\(myhttp.requestMethod)","statusCode":"\(myhttp.statusCode)"])
     	    self.httpDataStore.append(httpLine)
-    	    }
     	}
     }
 
@@ -141,49 +139,52 @@ public class SwiftMetricsDash {
     func storeCPU(cpu: CPUData) {
         let currentTime = NSDate().timeIntervalSince1970
         cpuQueue.sync {
-        if (self.cpuDataStore.count > 0) {        
-       		for cpuJson in self.cpuDataStore {
-           		if(currentTime - (Double(cpuJson["time"].stringValue)! / 1000) > 1800) {
-	                self.cpuDataStore.removeFirst()
-           		} else {
-                	break
-	            }
-        	}
-       	    cpuData.append(cpu);
-    	    let cpuLine = JSON(["time":"\(cpu.timeOfSample)","process":"\(cpu.percentUsedByApplication)","system":"\(cpu.percentUsedBySystem)"])
-    	    self.cpuDataStore.append(cpuLine)
-        }
+            let tempArray = self.cpuDataStore
+           	if tempArray.count > 0 {
+           		for cpuJson in tempArray {
+               		if(currentTime - (Double(cpuJson["time"].stringValue)! / 1000) > 1800) {
+    	                self.cpuDataStore.removeFirst()
+               		} else {
+                    	break
+    	            }
+            	}
+           	}
+           	self.cpuData.append(cpu);
+        	let cpuLine = JSON(["time":"\(cpu.timeOfSample)","process":"\(cpu.percentUsedByApplication)","system":"\(cpu.percentUsedBySystem)"])
+        	self.cpuDataStore.append(cpuLine)
         }
     }
 
     func storeMem(mem: MemData) {
 	    let currentTime = NSDate().timeIntervalSince1970
         memQueue.sync {
-        if (self.memDataStore.count > 0) {
-    	    for memJson in self.memDataStore {
-        	    if(currentTime - (Double(memJson["time"].stringValue)! / 1000) > 1800) {
-                    self.memDataStore.removeFirst()
-        	    } else {
-           		    break
-        	    }
-            }
+	        let tempArray = self.memDataStore
+            if tempArray.count > 0 {
+        	    for memJson in tempArray {
+            	    if(currentTime - (Double(memJson["time"].stringValue)! / 1000) > 1800) {
+	                    self.memDataStore.removeFirst()
+            	    } else {
+               		    break
+	        	    }
+	            }
+	        }
    		    let memLine = JSON([
     	    	"time":"\(mem.timeOfSample)",
     		    "physical":"\(mem.applicationRAMUsed)",
 	    	   "physical_used":"\(mem.totalRAMUsed)"
    		    ])
    		    self.memDataStore.append(memLine)
-   		}
    	    }
     }
 
     public func getcpuRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
         response.headers["Content-Type"] = "application/json"
+        let tempArray = self.cpuDataStore
         cpuQueue.sync {
             do {
-               if self.cpuDataStore.count > 0 {
-                   try response.status(.OK).send(json: JSON(self.cpuDataStore)).end()	        
-                   cpuDataStore.removeAll()
+               if tempArray.count > 0 {
+                   try response.status(.OK).send(json: JSON(tempArray)).end()	        
+                   self.cpuDataStore.removeAll()
                } else {
     		       try response.status(.OK).send(json: JSON([])).end()	        
                }
@@ -195,10 +196,11 @@ public class SwiftMetricsDash {
     
     public func getmemRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
        	response.headers["Content-Type"] = "application/json"
+        let tempArray = self.memDataStore
         memQueue.sync {
             do {
-                if self.memDataStore.count > 0 {
-	    	        try response.status(.OK).send(json: JSON(self.memDataStore)).end()	        
+                if tempArray.count > 0 {
+	    	        try response.status(.OK).send(json: JSON(tempArray)).end()	        
                	    self.memDataStore.removeAll()
                 } else {
        			    try response.status(.OK).send(json: JSON([])).end()	        
@@ -249,10 +251,11 @@ public class SwiftMetricsDash {
 
 	public func gethttpRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void)  {
         response.headers["Content-Type"] = "application/json"
+        let tempArray = self.httpDataStore
         httpQueue.sync {
             do { 
-                if self.httpDataStore.count > 0 {
-                    try response.status(.OK).send(json: JSON(self.httpDataStore)).end()	        
+                if tempArray.count > 0 {
+                    try response.status(.OK).send(json: JSON(tempArray)).end()	        
               	    self.httpDataStore.removeAll()
                 } else {
 			        try response.status(.OK).send(json: JSON([])).end()	        
@@ -260,6 +263,7 @@ public class SwiftMetricsDash {
             } catch {
                 print("SwiftMetricsDash ERROR : problem sending httpRequest data")
             }
+            
         }
     }
         
