@@ -52,9 +52,9 @@ public class SwiftMetricsDash {
          self.SM = swiftMetricsInstance
         _ = SwiftMetricsKitura(swiftMetricsInstance: SM)
         self.monitor = SM.monitor()
-        monitor.on(storeCPU)
-        monitor.on(storeMem)
-        monitor.on(storeHTTP)
+        //monitor.on(storeCPU)
+        //monitor.on(storeMem)
+        //monitor.on(storeHTTP)
 
         try startServer(createServer: create, router: router)
     }
