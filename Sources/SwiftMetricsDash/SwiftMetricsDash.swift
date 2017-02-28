@@ -122,6 +122,7 @@ public class SwiftMetricsDash {
     func storeHTTP(myhttp: HTTPData) {
     	let currentTime = NSDate().timeIntervalSince1970
         httpQueue.sync {
+            print("in storeHTTP")
         	let tempArray = self.httpDataStore
             for httpJson in tempArray {
                 if(currentTime - (Double(httpJson["time"].stringValue)! / 1000) > 1800) {
@@ -253,6 +254,7 @@ public class SwiftMetricsDash {
         response.headers["Content-Type"] = "application/json"
         let tempArray = self.httpDataStore
         httpQueue.sync {
+            print("in getGetHTTPRequest")
             do { 
                 if tempArray.count > 0 {
                     try response.status(.OK).send(json: JSON(tempArray)).end()	        

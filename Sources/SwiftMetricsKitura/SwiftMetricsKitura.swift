@@ -17,12 +17,13 @@ struct requests {
     var requestTime: Double
 }
 
-// Array of requests for parsing later
-var requestStore = [requests]()
 
 private class HttpMonitor: ServerMonitor {
     private let sM: SwiftMetrics
     let queue = DispatchQueue(label: "requestStoreQueue")
+    // Array of requests for parsing later
+    var requestStore = [requests]()
+
 
     init(swiftMetricsInstance: SwiftMetrics) {
         self.sM = swiftMetricsInstance
