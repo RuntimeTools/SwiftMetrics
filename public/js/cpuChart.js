@@ -172,7 +172,7 @@ function resizeCPUChart() {
 
 
 function updateCPUData() {
-    var cpuRequest = "http://" + myurl + "/cpuRequest";
+    var cpuRequest = "//" + myurl + "/cpuRequest";
     d3.json(cpuRequest, function(error, cpuRequestData) {
         if (error) return console.warn(error);
         if (!cpuRequestData || cpuRequestData.length === 0) return;

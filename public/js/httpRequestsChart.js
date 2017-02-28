@@ -91,7 +91,7 @@ httpChart.append("text")
     .text("HTTP Incoming Requests");
 
 function updateHttpData() {
-    request = "http://" + myurl + "/httpRequest";
+    request = "//" + myurl + "/httpRequest";
     d3.json(request, function(error, httpRequestData) {
 
         if (error) return console.warn(error);
