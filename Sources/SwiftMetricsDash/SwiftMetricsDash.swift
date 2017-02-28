@@ -122,9 +122,7 @@ public class SwiftMetricsDash {
     func storeHTTP(myhttp: HTTPData) {
     	let currentTime = NSDate().timeIntervalSince1970
         httpQueue.sync {
-            print("in storeHTTP")
-        	let tempArray = self.httpDataStore
-            for httpJson in tempArray {
+            for httpJson in self.httpDataStore {
                 if(currentTime - (Double(httpJson["time"].stringValue)! / 1000) > 1800) {
                     self.httpDataStore.removeFirst()
                 } else {
@@ -255,13 +253,8 @@ public class SwiftMetricsDash {
         var result: JSON = []
 
         httpQueue.sync {
-//            let tempArray = self.httpDataStore
             if self.httpDataStore.count > 0 {
-                print("httpDataStore.count is \(self.httpDataStore.count)")
-                print("httpDataStore is \(self.httpDataStore)")
                 result = JSON(self.httpDataStore)
-                print("after result set")
-                print("after send")
            	    self.httpDataStore.removeAll()
             }
         }
