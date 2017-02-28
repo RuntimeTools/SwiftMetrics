@@ -112,8 +112,8 @@ public class SwiftMetricsDash {
     			}
     			cpuLine = JSON([
     				"time":"\(time)",
-    				"process":"\(totalApplicationUse/Float(tempArray.count))",
-    				"system":"\(totalSystemUse/Float(tempArray.count))"])
+    				"process":"\(totalApplicationUse/Float(cpuData.count))",
+    				"system":"\(totalSystemUse/Float(cpuData.count))"])
     		}
 		}
 		return cpuLine
