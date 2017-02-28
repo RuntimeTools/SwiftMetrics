@@ -123,6 +123,7 @@ public class SwiftMetricsDash {
     func storeHTTP(myhttp: HTTPData) {
     	let currentTime = NSDate().timeIntervalSince1970
         httpQueue.sync {
+            if (self.httpDataStore.count > 0) {
             for httpJson in self.httpDataStore {
                 if(currentTime - (Double(httpJson["time"].stringValue)! / 1000) > 1800) {
                     self.httpDataStore.removeFirst()
@@ -132,6 +133,7 @@ public class SwiftMetricsDash {
             }
             let httpLine = JSON(["time":"\(myhttp.timeOfRequest)","url":"\(myhttp.url)","duration":"\(myhttp.duration)","method":"\(myhttp.requestMethod)","statusCode":"\(myhttp.statusCode)"])
     	    self.httpDataStore.append(httpLine)
+    	    }
     	}
     }
 
@@ -139,6 +141,7 @@ public class SwiftMetricsDash {
     func storeCPU(cpu: CPUData) {
         let currentTime = NSDate().timeIntervalSince1970
         cpuQueue.sync {
+        if (self.cpuDataStore.count > 0) {        
        		for cpuJson in self.cpuDataStore {
            		if(currentTime - (Double(cpuJson["time"].stringValue)! / 1000) > 1800) {
 	                self.cpuDataStore.removeFirst()
@@ -150,11 +153,13 @@ public class SwiftMetricsDash {
     	    let cpuLine = JSON(["time":"\(cpu.timeOfSample)","process":"\(cpu.percentUsedByApplication)","system":"\(cpu.percentUsedBySystem)"])
     	    self.cpuDataStore.append(cpuLine)
         }
+        }
     }
 
     func storeMem(mem: MemData) {
 	    let currentTime = NSDate().timeIntervalSince1970
         memQueue.sync {
+        if (self.memDataStore.count > 0) {
     	    for memJson in self.memDataStore {
         	    if(currentTime - (Double(memJson["time"].stringValue)! / 1000) > 1800) {
                     self.memDataStore.removeFirst()
@@ -168,6 +173,7 @@ public class SwiftMetricsDash {
 	    	   "physical_used":"\(mem.totalRAMUsed)"
    		    ])
    		    self.memDataStore.append(memLine)
+   		}
    	    }
     }
 
