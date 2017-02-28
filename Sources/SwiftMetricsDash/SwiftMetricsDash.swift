@@ -138,9 +138,8 @@ public class SwiftMetricsDash {
     func storeCPU(cpu: CPUData) {
         let currentTime = NSDate().timeIntervalSince1970
         cpuQueue.sync {
-            let tempArray = self.cpuDataStore
-           	if tempArray.count > 0 {
-           		for cpuJson in tempArray {
+           	if self.cpuDataStore.count > 0 {
+           		for cpuJson in self.cpuDataStore {
                		if(currentTime - (Double(cpuJson["time"].stringValue)! / 1000) > 1800) {
     	                self.cpuDataStore.removeFirst()
                		} else {
@@ -157,9 +156,8 @@ public class SwiftMetricsDash {
     func storeMem(mem: MemData) {
 	    let currentTime = NSDate().timeIntervalSince1970
         memQueue.sync {
-	        let tempArray = self.memDataStore
-            if tempArray.count > 0 {
-        	    for memJson in tempArray {
+            if self.memDataStore.count > 0 {
+        	    for memJson in self.memDataStore {
             	    if(currentTime - (Double(memJson["time"].stringValue)! / 1000) > 1800) {
 	                    self.memDataStore.removeFirst()
             	    } else {
@@ -179,10 +177,9 @@ public class SwiftMetricsDash {
     public func getcpuRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
         response.headers["Content-Type"] = "application/json"
         cpuQueue.sync {
-            let tempArray = self.cpuDataStore
             do {
-               if tempArray.count > 0 {
-                   try response.status(.OK).send(json: JSON(tempArray)).end()	        
+               if self.cpuDataStore.count > 0 {
+                   try response.status(.OK).send(json: JSON(self.cpuDataStore)).end()	        
                    self.cpuDataStore.removeAll()
                } else {
     		       try response.status(.OK).send(json: JSON([])).end()	        
@@ -196,10 +193,9 @@ public class SwiftMetricsDash {
     public func getmemRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
        	response.headers["Content-Type"] = "application/json"
         memQueue.sync {
-            let tempArray = self.memDataStore
             do {
-                if tempArray.count > 0 {
-	    	        try response.status(.OK).send(json: JSON(tempArray)).end()	        
+                if self.memDataStore.count > 0 {
+	    	        try response.status(.OK).send(json: JSON(self.memDataStore)).end()	        
                	    self.memDataStore.removeAll()
                 } else {
        			    try response.status(.OK).send(json: JSON([])).end()	        
