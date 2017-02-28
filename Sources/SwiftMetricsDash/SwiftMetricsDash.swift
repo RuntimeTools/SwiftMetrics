@@ -252,7 +252,7 @@ public class SwiftMetricsDash {
 
 	public func gethttpRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void)  {
         response.headers["Content-Type"] = "application/json"
-        var result: JSON
+        var result: JSON = []
 
         httpQueue.sync {
 //            let tempArray = self.httpDataStore
@@ -263,8 +263,6 @@ public class SwiftMetricsDash {
                 print("after result set")
                 print("after send")
            	    self.httpDataStore.removeAll()
-            } else {
-	            result = JSON([])	        
             }
         }
         
