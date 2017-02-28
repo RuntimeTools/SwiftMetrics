@@ -258,7 +258,9 @@ public class SwiftMetricsDash {
                 if self.httpDataStore.count > 0 {
                 print("httpDataStore.count is \(self.httpDataStore.count)")
                 print("httpDataStore is \(self.httpDataStore)")
-                    try response.status(.OK).send(json: JSON(self.httpDataStore)).end()	        
+                let result = JSON(self.httpDataStore)
+                    print("after result set")
+                    try response.status(.OK).send(json: result).end()	        
                     print("after send")
               	    self.httpDataStore.removeAll()
                 } else {
