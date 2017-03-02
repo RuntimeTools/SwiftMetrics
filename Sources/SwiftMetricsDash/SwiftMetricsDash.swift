@@ -131,7 +131,7 @@ public class SwiftMetricsDash {
 
 
     func storeHTTP(myhttp: HTTPData) {
-    	let currentTime = NSDate().timeIntervalSince1970
+    	//let currentTime = NSDate().timeIntervalSince1970
         httpQueue.async {
             if self.httpAggregateData.total == 0 {
                 self.httpAggregateData.total = 1
@@ -278,16 +278,17 @@ public class SwiftMetricsDash {
 
 	public func gethttpRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void)  {
         response.headers["Content-Type"] = "application/json"
-        //let tempArray = self.httpDataStore
         httpQueue.async {
             do {
                 if self.httpAggregateData.total > 0 {
-                    let httpLine = JSON(["time":"\(self.httpAggregateData.timeOfRequest)","url":"\(self.httpAggregateData.url)","duration":"\(self.httpAggregateData.longest)","average":"\(self.httpAggregateData.average)"])
+                    let httpLine = JSON([
+                        "time":"\(self.httpAggregateData.timeOfRequest)",
+                        "url":"\(self.httpAggregateData.url)",
+                        "longest":"\(self.httpAggregateData.longest)",
+                        "average":"\(self.httpAggregateData.average)",
+                        "total":"\(self.httpAggregateData.total)"])
                     try response.status(.OK).send(json:httpLine).end()
                     self.httpAggregateData = HTTPAggregateData()
-                //if tempArray.count > 0 {
-                //    try response.status(.OK).send(json: JSON(tempArray)).end()
-              	//    self.httpDataStore.removeAll()
                 } else {
 			        try response.status(.OK).send(json: JSON([])).end()
                 }
