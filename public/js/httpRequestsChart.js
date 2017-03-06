@@ -25,7 +25,7 @@ var http_xAxis = d3.svg.axis()
     .scale(http_xScale)
     .orient("bottom")
     .ticks(3)
-    .tickFormat(getTimeFormat());
+    .tickFormat(d3.time.format("%H:%M:%S"));
 
 var http_yAxis = d3.svg.axis()
     .scale(http_yScale)
@@ -134,19 +134,22 @@ function updateHttpData() {
             http_yScale.domain([0, d3.max(httpData, function(d) {
                 return d.longest;
             })]);
-            http_xAxis.tickFormat(getTimeFormat());
             var selection = d3.select(".httpChart");
-            selection.selectAll("circle").remove();
+            //selection.selectAll("circle").remove();
             selection.select(".httpline")
                 .attr("d", httpline(httpData));
             selection.select(".xAxis")
                 .call(http_xAxis);
             selection.select(".yAxis")
                 .call(http_yAxis);
-            // Add the points
-            selection.selectAll("point")
-                .data(httpData)
-                .enter().append("circle")
+
+            // Re-adjust the points
+            var points = selection.selectAll(".point").data(httpData)
+                .attr("cx", function(d) { return http_xScale(d.time); })
+                .attr("cy", function(d) { return http_yScale(d.longest); })
+            points.exit().remove();
+            points.enter().append("circle")
+                .attr("class", "point")
                 .attr("r", 4)
                 .style("fill", "#5aaafa")
                 .style("stroke", "white")
@@ -154,14 +157,18 @@ function updateHttpData() {
                     "translate(" + margin.left + "," + margin.top + ")")
                 .attr("cx", function(d) { return http_xScale(d.time); })
                 .attr("cy", function(d) { return http_yScale(d.longest); })
-                .append("svg:title").text(function(d) { 
-                    return d.total
-                     + " requests\n average duration = "
-                     + d3.format(".2s")(d.average / 1000)
-                     + "s\n longest duration = "
-                     +  d3.format(".2s")(d.longest / 1000)
-                     + "s for URL: " + d.url;
-                    }); // tooltip
+                .append("svg:title").text(function(d) { // tooltip
+                    if(d.total === 1) {
+                        return d.url
+                    } else {
+                        return d.total
+                         + " requests\n average duration = "
+                         + d3.format(".2s")(d.average)
+                         + "ms\n longest duration = "
+                         +  d3.format(".2s")(d.longest)
+                         + "ms for URL: " + d.url;
+                    }
+                });
         }
     });
 }
@@ -174,8 +181,7 @@ function resizeHttpChart() {
     http_xAxis = d3.svg.axis()
         .scale(http_xScale)
         .orient("bottom")
-        .ticks(3)
-        .tickFormat(getTimeFormat());
+        .ticks(3);
 
     httpTitleBox.attr("width", httpCanvasWidth)
 
