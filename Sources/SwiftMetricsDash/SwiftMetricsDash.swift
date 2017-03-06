@@ -106,6 +106,7 @@ class SwiftMetricsService: WebSocketService {
     var httpAggregateData: HTTPAggregateData = HTTPAggregateData()
     var httpURLData:[String:(totalTime:Double, numHits:Double)] = [:]
     let httpURLsQueue = DispatchQueue(label: "httpURLsQueue")
+    let httpQueue = DispatchQueue(label: "httpStoreQueue")
     var monitor:SwiftMonitor
 
     public init(monitor: SwiftMonitor) {
