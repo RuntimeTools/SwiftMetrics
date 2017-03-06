@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2017 IBM Corp.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -21,16 +21,18 @@
 var mem_xScale = d3.time.scale().range([0, graphWidth]);
 var mem_yScale = d3.scale.linear().range([graphHeight, 0]);
 
-var mem_xAxis = d3.svg.axis().scale(mem_xScale)
+var mem_xAxis = d3.svg.axis()
+    .scale(mem_xScale)
     .orient("bottom")
     .ticks(3)
     .tickFormat(getTimeFormat());
 
-var mem_yAxis = d3.svg.axis().scale(mem_yScale)
+var mem_yAxis = d3.svg.axis()
+    .scale(mem_yScale)
     .orient("left")
     .ticks(8)
     .tickFormat(function(d) {
-        return d3.format(".2s")(d * 1024 * 1024)
+        return d3.format(".2s")(d * 1024 *1024);
     });
 
 // Memory data storage
@@ -113,9 +115,17 @@ memChart.append("text")
     .style("font-size", "18px")
     .text("Memory");
 
+// Add the placeholder text
+var memChartPlaceholder = memChart.append("text")
+    .attr("x", graphWidth/2)
+    .attr("y", graphHeight/2)
+    .attr("text-anchor", "middle")
+    .style("font-size", "18px")
+    .text("No Data Available");
+
 // Add the system colour box
 memChart.append("rect")
-    .attr("x", 0) 
+    .attr("x", 0)
     .attr("y", graphHeight + margin.bottom - 15)
     .attr("class", "colourbox1")
     .attr("width", 10)
@@ -123,7 +133,7 @@ memChart.append("rect")
 
 // Add the SYSTEM label
 var memSystemLabel = memChart.append("text")
-    .attr("x", 15) 
+    .attr("x", 15)
     .attr("y", graphHeight + margin.bottom - 5)
     .attr("text-anchor", "start")
     .attr("class", "lineLabel")
@@ -131,7 +141,7 @@ var memSystemLabel = memChart.append("text")
 
 // Add the process colour box
 memChart.append("rect")
-    .attr("x", memSystemLabel.node().getBBox().width + 45) 
+    .attr("x", memSystemLabel.node().getBBox().width + 25)
     .attr("y", graphHeight + margin.bottom - 15)
     .attr("width", 10)
     .attr("height", 10)
@@ -139,7 +149,7 @@ memChart.append("rect")
 
 // Add the PROCESS label
 memChart.append("text")
-    .attr("x", memSystemLabel.node().getBBox().width + 60) 
+    .attr("x", memSystemLabel.node().getBBox().width + 40)
     .attr("y", graphHeight + margin.bottom - 5)
     .attr("class", "lineLabel2")
     .text("Swift Process");
@@ -150,51 +160,53 @@ function resizeMemChart() {
     mem_xScale = d3.time.scale().range([0, graphWidth]);
     mem_xAxis = d3.svg.axis().scale(mem_xScale)
         .orient("bottom").ticks(3).tickFormat(getTimeFormat());
-    
+
     memTitleBox.attr("width", canvasWidth)
 
     // Redraw lines and axes
     mem_xScale.domain(d3.extent(memData, function(d) {
         return d.date;
     }));
-    chart.select(".systemLine") 
+    chart.select(".systemLine")
         .attr("d", mem_systemLine(memData));
-    chart.select(".processLine") 
+    chart.select(".processLine")
         .attr("d", mem_processLine(memData));
     chart.select(".xAxis").call(mem_xAxis);
     chart.select(".yAxis").call(mem_yAxis);
 }
 
-function updateMemData() {
-    var memRequest = "http://" + myurl + "/memRequest";
-    d3.json(memRequest, function(error, memRequestData) {
-        if (error) return console.warn(error);
-        if (!memRequestData || memRequestData.length === 0) return;
-        for (var i = 0, len = memRequestData.length; i < len; i++) {
-            var d = memRequestData[i];
-            if (d != null && d.hasOwnProperty('time')) {
-                d.date = new Date(+d.time);
-                d.system = +d.physical_used / (1024 * 1024);
-                d.process = +d.physical / (1024 * 1024);
-                if (i == len - 1) {
-                    var _memProcessLatest = Math.round(d.process);
-                    // Update gauge if loaded
-                    if(typeof(updateMemProcessGauge) === 'function' && _memProcessLatest != memProcessLatest) {
-                        updateMemProcessGauge(d.process);
-                    }
-                    memProcessLatest = _memProcessLatest;
-                    memSystemLatest = Math.round(d.system);
-                }
-                memData.push(d)
-            }
+function updateMemData(memRequest) {
+	// Get the data again
+	    data = JSON.parse(memRequest);  // parses the data into a JSON array
+      	if (!data)
+	        return
+
+        var d = data;
+        d.date = new Date(+d.time);
+        d.system  = +d.physical_used  / (1024 * 1024);
+        d.process  = +d.physical  / (1024 * 1024);
+
+        var _memProcessLatest = Math.round(d.process);
+        // Update gauge if loaded
+        if (typeof(updateMemProcessGauge) === 'function' && _memProcessLatest != memProcessLatest) {
+        	updateMemProcessGauge(d.process);
+        }
+        memProcessLatest = _memProcessLatest;
+        memSystemLatest = Math.round(d.system);
+        memData.push(d)
+
+        if(memData.length === 2) {
+            // second data point - remove "No Data Available" label
+            memChartPlaceholder.attr("visibility", "hidden");
         }
 
-        // Only keep 30 minutes of data
-        var currentTime = Date.now()
-        var d = memData[0]
-        if (d === null) return;
-			
-        while (d.hasOwnProperty('date') && d.date.valueOf() + 1800000 < currentTime) {
+	    // Only keep 30 minutes of data
+	    var currentTime = Date.now()
+	    var d = memData[0]
+	    if (d === null)
+		    return;
+
+        while (d.hasOwnProperty('date') && d.date.valueOf() + maxTimeWindow < currentTime) {
             memData.shift()
             d = memData[0]
         }
@@ -225,7 +237,5 @@ function updateMemData() {
 //            .text(memProcessLatest + "MB");
 //        selection.select(".systemLatest")
 //            .text(memSystemLatest + "MB");
-    });
-}
 
-setInterval(updateMemData, 2000);
+}
