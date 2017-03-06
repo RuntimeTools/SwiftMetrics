@@ -135,7 +135,6 @@ function updateHttpData() {
                 return d.longest;
             })]);
             var selection = d3.select(".httpChart");
-            //selection.selectAll("circle").remove();
             selection.select(".httpline")
                 .attr("d", httpline(httpData));
             selection.select(".xAxis")

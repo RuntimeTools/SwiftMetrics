@@ -183,4 +183,3 @@ function resizeHttpThroughputChart() {
         .call(httpTP_yAxis);
 }
 
-//setInterval(updateThroughPutData, 2000);

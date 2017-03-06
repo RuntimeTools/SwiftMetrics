@@ -133,8 +133,7 @@ public class SwiftMetricsDash {
 
 
     func storeHTTP(myhttp: HTTPData) {
-    	//let currentTime = NSDate().timeIntervalSince1970
-        httpQueue.async {
+    	httpQueue.async {
             if self.httpAggregateData.total == 0 {
                 self.httpAggregateData.total = 1
                 self.httpAggregateData.timeOfRequest = myhttp.timeOfRequest
@@ -151,17 +150,7 @@ public class SwiftMetricsDash {
                 self.httpAggregateData.url = myhttp.url
               }
             }
-        	//let tempArray = self.httpDataStore
-            //for httpJson in tempArray {
-            //    if(currentTime - (Double(httpJson["time"].stringValue)! / 1000) > 1800) {
-            //        self.httpDataStore.removeFirst()
-            //    } else {
-             //       break
-             //   }
-            //}
-            //let httpLine = JSON(["time":"\(myhttp.timeOfRequest)","url":"\(myhttp.url)","duration":"\(myhttp.duration)","method":"\(myhttp.requestMethod)","statusCode":"\(myhttp.statusCode)"])
-    	   // self.httpDataStore.append(httpLine)
-    	}
+        }
         httpURLsQueue.async {
             let urlTuple = self.httpURLData[myhttp.url]
             if(urlTuple != nil) {
@@ -319,13 +308,11 @@ public class SwiftMetricsDash {
             for (key, value) in self.httpURLData {
                 let json : JSON = ["url": key, "averageResponseTime": value.0]
                 responseData.append(json)
-            //    print("\(json)")
             }
-            //print("\(responseData)")
             do {
                 try response.status(.OK).send(json: JSON(responseData)).end()
             } catch {
-                print("SwiftMetricsDash ERROR : problem sending http URL data (top-5)")
+                print("SwiftMetricsDash ERROR : problem sending http URL data")
             }
         }
     }
