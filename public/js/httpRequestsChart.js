@@ -40,10 +40,10 @@ var mouseOverHttpGraph = false;
 // Define the HTTP request time line
 var httpline = d3.svg.line()
     .x(function(d) {
-        return http_xScale(d.date);
+        return http_xScale(d.time);
     })
     .y(function(d) {
-        return http_yScale(d.duration);
+        return http_yScale(d.longest);
     });
 
 var httpSVG = d3.select("#httpDiv1")
@@ -97,53 +97,29 @@ function updateHttpData() {
         if (error) return console.warn(error);
         if (httpRequestData == null) return;
 
-        for (var i = 0, len = httpRequestData.length; i < len; i++) {
-            var d = httpRequestData[i];
-            if (d != null && d.hasOwnProperty('time')) {
-                d.date = new Date(+d.time);
-                d.responseTime = Math.round(+d.duration)
-                httpData.push(d)
-                var urlStats = httpAverages[d.url]
-                if(urlStats != null) {
-                    var averageResponseTime = urlStats[0]
-                    var hits = urlStats[1]
-                    // Recalculate the average
-                    httpAverages[d.url] = [(averageResponseTime * hits + parseFloat(d.duration))/(hits + 1), hits + 1]
-                } else {
-                    httpAverages[d.url] = [parseFloat(d.duration), 1]
-                } 
-            }
-        }
+        // Send data to throughput chart so as not to duplicate requests
+        updateThroughPutData(httpRequestData)
+
+        if (!httpRequestData) return;
+        
+        httpData.push(httpRequestData);
 
         // Only keep 30 minutes or 2000 items of data
         var currentTime = Date.now()
         var d = httpData[0]
-        while (httpData.length > 2000 || (d.hasOwnProperty('date') && d.date.valueOf() + 1800000 < currentTime)) {
+        while (httpData.length > 2000 || (d.hasOwnProperty('time') && d.time + 1800000 < currentTime)) {
             httpData.shift()
             d = httpData[0]
-        }
-
-        //calculate the new http rate
-        var timeDifference = httpData[httpData.length -1].date - httpData[0].date;
-        if (timeDifference > 0) {
-            var averageRate = httpData.length * 1000 / timeDifference
-            httpRate.push({httpRate:averageRate, time:httpData[httpData.length -1].date})
-        }
-
-        d = httpRate[0]
-        while (httpRate.length > 2000 || (d.hasOwnProperty('time') && d.time.valueOf() + 1800000 < currentTime)) {
-            httpRate.shift()
-            d = httpRate[0]
         }
 
         // Don't redraw graph if mouse is over it (keeps it still for tooltips)
         if(!mouseOverHttpGraph) {
             // Set the input domain for x and y axes
             http_xScale.domain(d3.extent(httpData, function(d) {
-                return d.date;
+                return d.time;
             }));
             http_yScale.domain([0, d3.max(httpData, function(d) {
-                return d.duration;
+                return d.longest;
             })]);
             http_xAxis.tickFormat(getTimeFormat());
             var selection = d3.select(".httpChart");
@@ -163,9 +139,16 @@ function updateHttpData() {
                 .style("stroke", "white")
                 .attr("transform",
                     "translate(" + margin.left + "," + margin.top + ")")
-                .attr("cx", function(d) { return http_xScale(d.date); })
-                .attr("cy", function(d) { return http_yScale(d.duration); })
-                .append("svg:title").text(function(d) { return d.url; }); // tooltip
+                .attr("cx", function(d) { return http_xScale(d.time); })
+                .attr("cy", function(d) { return http_yScale(d.longest); })
+                .append("svg:title").text(function(d) { 
+                    return d.total
+                     + " requests\n average duration = "
+                     + d3.format(".2s")(d.average / 1000)
+                     + "s\n longest duration = "
+                     +  d3.format(".2s")(d.longest / 1000)
+                     + "s for URL: " + d.url;
+                    }); // tooltip
         }
     });
 }
@@ -184,7 +167,7 @@ function resizeHttpChart() {
     httpTitleBox.attr("width", httpCanvasWidth)
 
     http_xScale.domain(d3.extent(httpData, function(d) {
-        return d.date;
+        return d.time;
     }));
 
     chart.selectAll("circle").remove();
@@ -203,8 +186,8 @@ function resizeHttpChart() {
         .style("stroke", "white")
         .attr("transform",
             "translate(" + margin.left + "," + margin.top + ")")
-        .attr("cx", function(d) { return http_xScale(d.date); })
-        .attr("cy", function(d) { return http_yScale(d.duration); })
+        .attr("cx", function(d) { return http_xScale(d.time); })
+        .attr("cy", function(d) { return http_yScale(d.longest); })
         .append("svg:title").text(function(d) { return d.url; });
 }
 
