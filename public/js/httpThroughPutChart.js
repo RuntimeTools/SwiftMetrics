@@ -95,6 +95,14 @@ httpThroughPutChart.append("text")
     .style("font-size", "18px")
     .text("HTTP Throughput");
 
+// Add the placeholder text
+var httpTPChartPlaceholder = httpThroughPutChart.append("text")
+    .attr("x", httpDiv2GraphWidth/2)
+    .attr("y", graphHeight/2)
+    .attr("text-anchor", "middle")
+    .style("font-size", "18px")
+    .text("No Data Available");
+
 function updateThroughPutData(httpThroughPutRequestData) {
     if(httpRate.length === 1) {
         // second data point - remove "No Data Available" label

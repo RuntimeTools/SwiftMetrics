@@ -90,6 +90,14 @@ httpChart.append("text")
     .style("font-size", "18px")
     .text("HTTP Incoming Requests");
 
+// Add the placeholder text
+var httpChartPlaceholder = httpChart.append("text")
+    .attr("x", httpGraphWidth/2)
+    .attr("y", tallerGraphHeight/2)
+    .attr("text-anchor", "middle")
+    .style("font-size", "18px")
+    .text("No Data Available");
+
 function updateHttpData() {
     request = "http://" + myurl + "/httpRequest";
     d3.json(request, function(error, httpRequestData) {
@@ -101,6 +109,10 @@ function updateHttpData() {
         updateThroughPutData(httpRequestData)
 
         if (!httpRequestData) return;
+
+        if(httpData.length === 0) {
+            // first data - remove "No Data Available" label
+            httpChartPlaceholder.attr("visibility", "hidden");
         
         httpData.push(httpRequestData);
 

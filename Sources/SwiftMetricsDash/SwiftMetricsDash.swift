@@ -36,12 +36,13 @@ struct HTTPAggregateData: SMData {
 public class SwiftMetricsDash {
 
     var cpuDataStore:[JSON] = []
-    var httpDataStore:[JSON] = []
     var httpAggregateData: HTTPAggregateData = HTTPAggregateData()
+    var httpURLData:[String:(totalTime:Double, numHits:Double)] = [:]
     var memDataStore:[JSON] = []
     var cpuData:[CPUData] = []
     let cpuQueue = DispatchQueue(label: "cpuStoreQueue")
     let httpQueue = DispatchQueue(label: "httpStoreQueue")
+    let httpURLsQueue = DispatchQueue(label: "httpURLsQueue")
     let memQueue = DispatchQueue(label: "memStoreQueue")
     var monitor:SwiftMonitor
     var SM:SwiftMetrics
@@ -101,6 +102,7 @@ public class SwiftMetricsDash {
         router.get("/envRequest", handler: getenvRequest)
         router.get("/cpuAverages", handler: getcpuAverages)
         router.get("/httpRequest", handler: gethttpRequest)
+        router.get("/httpURLs", handler: gethttpURLs)
         if createServer {
             let configMgr = ConfigurationManager().load(.environmentVariables)
             Kitura.addHTTPServer(onPort: configMgr.port, with: router)
@@ -296,6 +298,24 @@ public class SwiftMetricsDash {
                 print("SwiftMetricsDash ERROR : problem sending httpRequest data")
             }
 
+        }
+    }
+
+    public func gethttpURLs(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
+        httpURLsQueue.async {
+            response.headers["Content-Type"] = "application/json" 
+            var responseData:[JSON] = []
+            for (key, value) in self.httpURLData {
+                let json : JSON = ["url": key, "averageResponseTime": value.0]
+                responseData.append(json)
+            //    print("\(json)")
+            }
+            //print("\(responseData)")
+            do {
+                try response.status(.OK).send(json: JSON(responseData)).end()
+            } catch {
+                print("SwiftMetricsDash ERROR : problem sending http URL data (top-5)")
+            }
         }
     }
 
