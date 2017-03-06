@@ -140,7 +140,7 @@ function updateThroughPutData(httpThroughPutRequestData) {
         .call(httpTP_xAxis);
     selection.select(".yAxis")
         .call(httpTP_yAxis);
-});
+}
 
 function resizeHttpThroughputChart() {
     httpDiv2CanvasWidth = $("#httpDiv2").width() - 8;
