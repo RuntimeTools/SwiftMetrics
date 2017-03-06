@@ -166,7 +166,6 @@ function updateHttpData(httpRequest) {
                     }
                 });
         }
-    });
 }
 
 function resizeHttpChart() {
