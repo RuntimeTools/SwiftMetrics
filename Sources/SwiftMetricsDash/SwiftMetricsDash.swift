@@ -114,12 +114,10 @@ class SwiftMetricsService: WebSocketService {
         monitor.on(sendCPU)
         monitor.on(sendMEM)
         monitor.on(storeHTTP)
-        router.get("/httpURLs", handler: gethttpURLs)
-
     }
 
     func sendCPU(cpu: CPUData) {
-
+        gethttpRequest()
         let cpuLine = JSON(["topic":"cpu", "payload":["time":"\(cpu.timeOfSample)","process":"\(cpu.percentUsedByApplication)","system":"\(cpu.percentUsedBySystem)"]])
 
         for (_,connection) in connections {
@@ -245,42 +243,41 @@ class SwiftMetricsService: WebSocketService {
         }
     }
 
-    public func gethttpRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void)  {
-        response.headers["Content-Type"] = "application/json"
+    func gethttpRequest()  {
         httpQueue.async {
             do {
                 if self.httpAggregateData.total > 0 {
                     let httpLine = JSON([
+                    "topic":"http","payload":[
                         "time":"\(self.httpAggregateData.timeOfRequest)",
                         "url":"\(self.httpAggregateData.url)",
                         "longest":"\(self.httpAggregateData.longest)",
                         "average":"\(self.httpAggregateData.average)",
-                        "total":"\(self.httpAggregateData.total)"])
-                    try response.status(.OK).send(json:httpLine).end()
-                    self.httpAggregateData = HTTPAggregateData()
-                } else {
-			        try response.status(.OK).send(json: JSON([])).end()
-                }
-            } catch {
-                print("SwiftMetricsDash ERROR : problem sending httpRequest data")
-            }
+                        "total":"\(self.httpAggregateData.total)"]])
 
-        }
+                        for (_,connection) in self.connections {
+                            if let messageToSend = httpLine.rawString() {
+                                connection.send(message: messageToSend)
+                            }
+                        }
+                    self.httpAggregateData = HTTPAggregateData()
+                }
+          }
+    }
     }
 
-    public func gethttpURLs(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
+    func gethttpURLs() {
         httpURLsQueue.async {
-            response.headers["Content-Type"] = "application/json"
             var responseData:[JSON] = []
             for (key, value) in self.httpURLData {
                 let json : JSON = ["url": key, "averageResponseTime": value.0]
                 responseData.append(json)
             }
-            do {
-                try response.status(.OK).send(json: JSON(responseData)).end()
-            } catch {
-                print("SwiftMetricsDash ERROR : problem sending http URL data")
-            }
+//            do {
+//                try response.status(.OK).send(json: JSON(responseData)).end()
+//            } catch {
+//                print("SwiftMetricsDash ERROR : problem sending http URL data")
+//            }
         }
     }
 
