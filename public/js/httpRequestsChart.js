@@ -113,6 +113,7 @@ function updateHttpData() {
         if(httpData.length === 0) {
             // first data - remove "No Data Available" label
             httpChartPlaceholder.attr("visibility", "hidden");
+        }
         
         httpData.push(httpRequestData);
 

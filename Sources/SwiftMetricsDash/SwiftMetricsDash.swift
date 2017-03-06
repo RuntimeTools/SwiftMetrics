@@ -162,6 +162,17 @@ public class SwiftMetricsDash {
             //let httpLine = JSON(["time":"\(myhttp.timeOfRequest)","url":"\(myhttp.url)","duration":"\(myhttp.duration)","method":"\(myhttp.requestMethod)","statusCode":"\(myhttp.statusCode)"])
     	   // self.httpDataStore.append(httpLine)
     	}
+        httpURLsQueue.async {
+            let urlTuple = self.httpURLData[myhttp.url]
+            if(urlTuple != nil) {
+                let averageResponseTime = urlTuple!.0
+                let hits = urlTuple!.1
+                // Recalculate the average
+                self.httpURLData.updateValue(((averageResponseTime * hits + myhttp.duration)/(hits + 1), hits + 1), forKey: myhttp.url)
+            } else {
+                self.httpURLData.updateValue((myhttp.duration, 1), forKey: myhttp.url)
+            }
+        }
     }
 
 
