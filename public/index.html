@@ -31,7 +31,10 @@
     </div>
 
 <script>
+    // Global variables
     var monitoringStartTime = new Date();
+    var maxTimeWindow = 900000; // 15 minutes
+
     // Initialise graph and canvas dimensions
     var margin = {
          top: 50,
@@ -67,8 +70,8 @@
 
 <script type="text/javascript" src="js/envTable.js"></script>
 <script type="text/javascript" src="js/cpuChart.js"></script>
-<script type="text/javascript" src="js/httpRequestsChart.js"></script>
 <script type="text/javascript" src="js/httpThroughPutChart.js"></script>
+<script type="text/javascript" src="js/httpRequestsChart.js"></script>
 <script type="text/javascript" src="js/httpTop5.js"></script>
 <script type="text/javascript" src="js/memChart.js"></script>
 

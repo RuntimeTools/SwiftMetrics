@@ -95,7 +95,41 @@ httpThroughPutChart.append("text")
     .style("font-size", "18px")
     .text("HTTP Throughput");
 
-function updateThroughPutData() {
+// Add the placeholder text
+var httpTPChartPlaceholder = httpThroughPutChart.append("text")
+    .attr("x", httpDiv2GraphWidth/2)
+    .attr("y", graphHeight/2)
+    .attr("text-anchor", "middle")
+    .style("font-size", "18px")
+    .text("No Data Available");
+
+function updateThroughPutData(httpThroughPutRequestData) {
+    if(httpRate.length === 1) {
+        // second data point - remove "No Data Available" label
+        httpTPChartPlaceholder.attr("visibility", "hidden");
+    }
+
+    var d = httpThroughPutRequestData//[i];
+    if (d != null && d.hasOwnProperty('time')) {
+        if (httpRate.length == 0) {
+            httpRate.push({httpRate:0, time:d.time})
+        } else {
+            // calculate the new http rate
+            var timeDifference = d.time/1000 - httpRate[httpRate.length - 1].time/1000;
+            if (timeDifference > 0) {
+                var averageRate = d.total / timeDifference
+                httpRate.push({httpRate:averageRate, time:d.time})
+            }
+        }
+    }
+    // Only keep 30 minutes of data
+    var currentTime = Date.now()
+    var d0 = httpRate[0]
+    while (d0.time + maxTimeWindow < currentTime) {
+        httpRate.shift()
+        d0 = httpRate[0]
+    }
+
     // Re-scale the x range to the new time interval
     httpTP_xScale.domain(d3.extent(httpRate, function(d) {
         return d.time;
@@ -114,7 +148,6 @@ function updateThroughPutData() {
         .call(httpTP_xAxis);
     selection.select(".yAxis")
         .call(httpTP_yAxis);
-
 }
 
 function resizeHttpThroughputChart() {
@@ -150,4 +183,3 @@ function resizeHttpThroughputChart() {
         .call(httpTP_yAxis);
 }
 
-setInterval(updateThroughPutData, 2000);

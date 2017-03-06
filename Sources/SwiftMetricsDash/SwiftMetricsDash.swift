@@ -25,14 +25,24 @@ import Configuration
 import CloudFoundryConfig
 import Dispatch
 
+struct HTTPAggregateData: SMData {
+  public var timeOfRequest: Int = 0
+  public var url: String = ""
+  public var longest: Double = 0
+  public var average: Double = 0
+  public var total: Int = 0
+}
+
 public class SwiftMetricsDash {
 
     var cpuDataStore:[JSON] = []
-    var httpDataStore:[JSON] = []
+    var httpAggregateData: HTTPAggregateData = HTTPAggregateData()
+    var httpURLData:[String:(totalTime:Double, numHits:Double)] = [:]
     var memDataStore:[JSON] = []
     var cpuData:[CPUData] = []
     let cpuQueue = DispatchQueue(label: "cpuStoreQueue")
     let httpQueue = DispatchQueue(label: "httpStoreQueue")
+    let httpURLsQueue = DispatchQueue(label: "httpURLsQueue")
     let memQueue = DispatchQueue(label: "memStoreQueue")
     var monitor:SwiftMonitor
     var SM:SwiftMetrics
@@ -92,6 +102,7 @@ public class SwiftMetricsDash {
         router.get("/envRequest", handler: getenvRequest)
         router.get("/cpuAverages", handler: getcpuAverages)
         router.get("/httpRequest", handler: gethttpRequest)
+        router.get("/httpURLs", handler: gethttpURLs)
         if createServer {
             let configMgr = ConfigurationManager().load(.environmentVariables)
             Kitura.addHTTPServer(onPort: configMgr.port, with: router)
@@ -122,19 +133,35 @@ public class SwiftMetricsDash {
 
 
     func storeHTTP(myhttp: HTTPData) {
-    	let currentTime = NSDate().timeIntervalSince1970
-        httpQueue.async {
-        	let tempArray = self.httpDataStore
-            for httpJson in tempArray {
-                if(currentTime - (Double(httpJson["time"].stringValue)! / 1000) > 1800) {
-                    self.httpDataStore.removeFirst()
-                } else {
-                    break
-                }
+    	httpQueue.async {
+            if self.httpAggregateData.total == 0 {
+                self.httpAggregateData.total = 1
+                self.httpAggregateData.timeOfRequest = myhttp.timeOfRequest
+                self.httpAggregateData.url = myhttp.url
+                self.httpAggregateData.longest = myhttp.duration
+                self.httpAggregateData.average = myhttp.duration
+            } else {
+              let oldTotalAsDouble:Double = Double(self.httpAggregateData.total)
+              let newTotal = self.httpAggregateData.total + 1
+              self.httpAggregateData.total = newTotal
+              self.httpAggregateData.average = (self.httpAggregateData.average * oldTotalAsDouble + myhttp.duration) / Double(newTotal)
+              if (myhttp.duration > self.httpAggregateData.longest) {
+                self.httpAggregateData.longest = myhttp.duration
+                self.httpAggregateData.url = myhttp.url
+              }
             }
-            let httpLine = JSON(["time":"\(myhttp.timeOfRequest)","url":"\(myhttp.url)","duration":"\(myhttp.duration)","method":"\(myhttp.requestMethod)","statusCode":"\(myhttp.statusCode)"])
-    	    self.httpDataStore.append(httpLine)
-    	}
+        }
+        httpURLsQueue.async {
+            let urlTuple = self.httpURLData[myhttp.url]
+            if(urlTuple != nil) {
+                let averageResponseTime = urlTuple!.0
+                let hits = urlTuple!.1
+                // Recalculate the average
+                self.httpURLData.updateValue(((averageResponseTime * hits + myhttp.duration)/(hits + 1), hits + 1), forKey: myhttp.url)
+            } else {
+                self.httpURLData.updateValue((myhttp.duration, 1), forKey: myhttp.url)
+            }
+        }
     }
 
 
@@ -253,12 +280,17 @@ public class SwiftMetricsDash {
 
 	public func gethttpRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void)  {
         response.headers["Content-Type"] = "application/json"
-        let tempArray = self.httpDataStore
         httpQueue.async {
             do {
-                if tempArray.count > 0 {
-                    try response.status(.OK).send(json: JSON(tempArray)).end()
-              	    self.httpDataStore.removeAll()
+                if self.httpAggregateData.total > 0 {
+                    let httpLine = JSON([
+                        "time":"\(self.httpAggregateData.timeOfRequest)",
+                        "url":"\(self.httpAggregateData.url)",
+                        "longest":"\(self.httpAggregateData.longest)",
+                        "average":"\(self.httpAggregateData.average)",
+                        "total":"\(self.httpAggregateData.total)"])
+                    try response.status(.OK).send(json:httpLine).end()
+                    self.httpAggregateData = HTTPAggregateData()
                 } else {
 			        try response.status(.OK).send(json: JSON([])).end()
                 }
@@ -269,4 +301,20 @@ public class SwiftMetricsDash {
         }
     }
 
-}
+    public func gethttpURLs(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
+        httpURLsQueue.async {
+            response.headers["Content-Type"] = "application/json" 
+            var responseData:[JSON] = []
+            for (key, value) in self.httpURLData {
+                let json : JSON = ["url": key, "averageResponseTime": value.0]
+                responseData.append(json)
+            }
+            do {
+                try response.status(.OK).send(json: JSON(responseData)).end()
+            } catch {
+                print("SwiftMetricsDash ERROR : problem sending http URL data")
+            }
+        }
+    }
+
+}           

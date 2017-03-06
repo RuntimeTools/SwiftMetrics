@@ -126,11 +126,15 @@ function updateHttpAverages(workingData) {
 }
 
 function updateURLData() {
-    var workingData = []
-    for (urlValue in httpAverages) {
-        workingData.push({url:urlValue, averageResponseTime:httpAverages[urlValue][0]})
-    }    
-    updateHttpAverages(workingData);
+    // Get the HTTP average response times
+    request="http://" + myurl + "/httpURLs";
+    d3.json(request, function(error, data) {
+        if(error) {
+            console.log("Error getting HTTP average data: " + error)
+            return
+        }
+        updateHttpAverages(data);
+    });
 }
 
 function resizeHttpTop5Chart() {
