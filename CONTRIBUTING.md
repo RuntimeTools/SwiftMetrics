@@ -19,14 +19,14 @@ Provide as much context as possible so we can try to recreate the issue.
 
 ## Feature requests
 
-For feature requests, please raise a Github [issue](https://github.com/IBM-Swift/SwiftMetrics/issues).
+For feature requests, please raise a Github [issue](https://github.com/RuntimeTools/SwiftMetrics/issues).
 
 ## Pull-Requests
 
 We are not accepting direct contributions at this time, please raise a 
-GitHub [issue](https://github.com/IBM-Swift/SwiftMetrics/issues).
+GitHub [issue](https://github.com/RuntimeTools/SwiftMetrics/issues).
 
 ### Contributor License Agreement
 
 We are not accepting direct contributions at this time, please raise a 
-GitHub [issue](https://github.com/IBM-Swift/SwiftMetrics/issues).
+GitHub [issue](https://github.com/RuntimeTools/SwiftMetrics/issues).

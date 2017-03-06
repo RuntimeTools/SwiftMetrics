@@ -199,11 +199,11 @@ Connecting to the Health Center client requires the additional installation of a
 
 Note that both the API and the Health Center client can be used at the same time and will receive the same data. Use of the API requires application modification (see *[Modifying your application](#run-local)*).
 
-Further information regarding the use of the Health Center client with Swift Application Metrics can be found on the [SwiftMetrics wiki][3]: [Using Swift Application Metrics with the Health Center client](https://github.com/IBM-Swift/SwiftMetrics/wiki/Using-Swift-Application-Metrics-with-the-Health-Center-client).
+Further information regarding the use of the Health Center client with Swift Application Metrics can be found on the [SwiftMetrics wiki][3]: [Using Swift Application Metrics with the Health Center client](https://github.com/RuntimeTools/SwiftMetrics/wiki/Using-Swift-Application-Metrics-with-the-Health-Center-client).
 
 
 ## Troubleshooting
-Find below some possible problem scenarios and corresponding diagnostic steps. Updates to troubleshooting information will be made available on the [SwiftMetrics wiki][3]: [Troubleshooting](https://github.com/IBM-Swift/SwiftMetrics/wiki/Troubleshooting). If these resources do not help you resolve the issue, you can open an issue on the Swift Application Metrics [issue tracker][5].
+Find below some possible problem scenarios and corresponding diagnostic steps. Updates to troubleshooting information will be made available on the [SwiftMetrics wiki][3]: [Troubleshooting](https://github.com/RuntimeTools/SwiftMetrics/wiki/Troubleshooting). If these resources do not help you resolve the issue, you can open an issue on the Swift Application Metrics [issue tracker][5].
 
 ### Checking Swift Application Metrics has started
 By default, a message similar to the following will be written to console output when Swift Application Metrics starts:
@@ -228,7 +228,7 @@ This project is released under an Apache 2.0 open source license.
 This project uses a semver-parsable X.0.Z version number for releases, where X is incremented for breaking changes to the public API described in this document and Z is incremented for bug fixes **and** for non-breaking changes to the public API that provide new function.
 
 ### Development versions
-Non-release versions of this project (for example on github.com/IBM-Swift/SwiftMetrics) will use semver-parsable X.0.Z-dev.B version numbers, where X.0.Z is the last release with Z incremented and B is an integer. For further information on the development process go to the  [SwiftMetrics wiki][3]: [Developing](https://github.com/IBM-Swift/SwiftMetrics/wiki/Developing).
+Non-release versions of this project (for example on github.com/RuntimeTools/SwiftMetrics) will use semver-parsable X.0.Z-dev.B version numbers, where X.0.Z is the last release with Z incremented and B is an integer. For further information on the development process go to the  [SwiftMetrics wiki][3]: [Developing](https://github.com/RuntimeTools/SwiftMetrics/wiki/Developing).
 
 ## Version
 0.0.12
@@ -242,7 +242,7 @@ Non-release versions of this project (for example on github.com/IBM-Swift/SwiftM
 
 [1]: https://marketplace.eclipse.org/content/ibm-monitoring-and-diagnostic-tools-health-center
 [2]: http://www.ibm.com/support/knowledgecenter/SS3KLZ/com.ibm.java.diagnostics.healthcenter.doc/topics/connecting.html
-[3]: https://github.com/IBM-Swift/SwiftMetrics/wiki
+[3]: https://github.com/RuntimeTools/SwiftMetrics/wiki
 [4]: https://docs.npmjs.com/files/folders
-[5]: https://github.com/IBM-Swift/SwiftMetrics/issues
-[6]: https://github.com/IBM-Swift/SwiftMetrics
+[5]: https://github.com/RuntimeTools/SwiftMetrics/issues
+[6]: https://github.com/RuntimeTools/SwiftMetrics
