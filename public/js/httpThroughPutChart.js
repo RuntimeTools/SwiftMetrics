@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2017 IBM Corp.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -46,7 +46,7 @@ var httpThroughPutline = d3.svg.line()
     });
 
 // create the chart canvas
-var httpThroughPutSVG = d3.select("#httpDiv2")
+var httpThroughPutSVG = d3.select("#httpThroughPutDiv")
     .append("svg")
     .attr("width", httpDiv2CanvasWidth)
     .attr("height", canvasHeight)
@@ -118,7 +118,7 @@ function updateThroughPutData() {
 }
 
 function resizeHttpThroughputChart() {
-    httpDiv2CanvasWidth = $("#httpDiv2").width() - 8;
+    httpDiv2CanvasWidth = $("#httpThroughPutDiv").width() - 8;
     httpDiv2GraphWidth = httpDiv2CanvasWidth - margin.left - margin.right;
 
     // only altering the horizontal for the moment
@@ -150,4 +150,4 @@ function resizeHttpThroughputChart() {
         .call(httpTP_yAxis);
 }
 
-setInterval(updateThroughPutData, 2000);
+d3.timer(updateThroughPutData, 2000);

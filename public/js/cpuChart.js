@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2017 IBM Corp.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -64,7 +64,7 @@ var processline = d3.svg.line().interpolate("basis")
     });
 
 // Define the cpuChart
-var cpuSVG = d3.select("#cpuDiv1")
+var cpuSVG = d3.select("#cpuDiv")
     .append("svg")
     .attr("width", canvasWidth)
     .attr("height", canvasHeight)
@@ -114,7 +114,7 @@ cpuChart.append("text")
 
 // Add the system colour box
 cpuChart.append("rect")
-    .attr("x", 0) 
+    .attr("x", 0)
     .attr("y", graphHeight + margin.bottom - 15)
     .attr("class", "colourbox1")
     .attr("width", 10)
@@ -122,7 +122,7 @@ cpuChart.append("rect")
 
 // Add the SYSTEM label
 var cpuSystemLabel = cpuChart.append("text")
-    .attr("x", 15) 
+    .attr("x", 15)
     .attr("y", graphHeight + margin.bottom - 5)
     .attr("text-anchor", "start")
     .attr("class", "lineLabel")
@@ -130,7 +130,7 @@ var cpuSystemLabel = cpuChart.append("text")
 
 // Add the process colour box
 cpuChart.append("rect")
-    .attr("x", cpuSystemLabel.node().getBBox().width + 45) 
+    .attr("x", cpuSystemLabel.node().getBBox().width + 45)
     .attr("y", graphHeight + margin.bottom - 15)
     .attr("width", 10)
     .attr("height", 10)
@@ -138,7 +138,7 @@ cpuChart.append("rect")
 
 // Add the PROCESS label
 cpuChart.append("text")
-    .attr("x", cpuSystemLabel.node().getBBox().width + 60) 
+    .attr("x", cpuSystemLabel.node().getBBox().width + 60)
     .attr("y", graphHeight + margin.bottom - 5)
     .attr("class", "lineLabel2")
     .text("Swift Process");
@@ -160,13 +160,13 @@ function resizeCPUChart() {
     cpu_xScale.domain(d3.extent(cpuData, function(d) {
         return d.date;
     }));
-    chart.select(".systemLine") 
+    chart.select(".systemLine")
         .attr("d", systemline(cpuData));
-    chart.select(".processLine") 
+    chart.select(".processLine")
         .attr("d", processline(cpuData));
-    chart.select(".xAxis") 
+    chart.select(".xAxis")
         .call(cpu_xAxis);
-    chart.select(".yAxis") 
+    chart.select(".yAxis")
         .call(cpu_yAxis);
 }
 
@@ -217,7 +217,7 @@ function updateCPUData() {
         var selection = d3.select(".cpuChart");
         selection.select(".systemLine")
             .attr("d", systemline(cpuData));
-        selection.select(".processLine") 
+        selection.select(".processLine")
             .attr("d", processline(cpuData));
         selection.select(".xAxis")
             .call(cpu_xAxis);
@@ -227,5 +227,4 @@ function updateCPUData() {
 }
 
 // Update data every 2 seconds
-setInterval(updateCPUData, 2000);
-
+d3.timer(updateCPUData, 2000);
