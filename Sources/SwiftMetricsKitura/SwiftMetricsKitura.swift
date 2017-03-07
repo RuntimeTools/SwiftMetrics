@@ -60,9 +60,9 @@ private class HttpMonitor: ServerMonitor {
                        let temp = HTTPData(timeOfRequest:Int(req.requestTime),
                              url:req.request.urlURL.absoluteString,
                           duration:(self.timeIntervalSince1970MilliSeconds - req.requestTime),
-                            statusCode:response.statusCode, requestMethod:req.request.method))
+                            statusCode:response.statusCode, requestMethod:req.request.method)
 
-                            
+
                        //self.sM.emitData(HTTPData(timeOfRequest:Int(req.requestTime),
                         //     url:req.request.urlURL.absoluteString,
                       //       duration:(self.timeIntervalSince1970MilliSeconds - req.requestTime),
