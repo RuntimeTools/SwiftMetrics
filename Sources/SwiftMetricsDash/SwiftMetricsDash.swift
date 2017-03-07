@@ -170,47 +170,45 @@ class SwiftMetricsService: WebSocketService {
 
 
     public func getenvRequest()  {
-        var responseData: [JSON] = []
+        var commandLine = ""
+        var hostname = ""
+        var os = ""
+        var numPar = ""
+
         for (param, value) in self.monitor.getEnvironmentData() {
             switch param {
                 case "command.line":
-
-                    let json: JSON = ["Parameter": "Command Line", "Value": value]
-                    //var temp  = JSON(json["content"].arrayObject! + responseData["content"].arrayObject!)
-                    responseData.append(json)
+                    commandLine = value
+                    break
                 case "environment.HOSTNAME":
-                    let json: JSON = ["Parameter": "Hostname", "Value": value]
-                    //var temp   = JSON(json["content"].arrayObject! + responseData["content"].arrayObject!)
-                    responseData.append(json)
+                    hostname = value
+                    break
                 case "os.arch":
-                    let json: JSON = ["Parameter": "OS Architecture", "Value": value]
-                    //var temp   = JSON(json["content"].arrayObject! + responseData["content"].arrayObject!)
-                    responseData.append(json)
+                    os = value
+                    break
                 case "number.of.processors":
-                    let json: JSON = ["Parameter": "Number of Processors", "Value": value]
-                    //var temp   = JSON(json["content"].arrayObject! + responseData["content"].arrayObject!)
-                    responseData.append(json)
+                    numPar = value
+                    break
                 default:
                     break
              }
         }
-          let line1 = "\"Parameter\": \"Command Line\", \"Value\": \"tobesvalue\""
-          let line2 = "\"Parameter\": \"Hostname\", \"Value\": \"julesvalue\""
-          let envLine = "{\"topic\":\"env\",\"payload\":" + "{" + line1 + "}}"
-          print("envline \(envLine)")
 
 
-//        let envLine = JSON(["topic":"env","payload":[responseData]])
-//        print("envLine is \(envLine)")
-//        print("response data is \(responseData)")
-//        print("envLine.rawString is \(envLine.rawString())")
+        let envLine = JSON(["topic":"env","payload":[
+                "Command Line":"\(commandLine)",
+                "Hostname":"\(hostname)",
+                "Number of Processors":"\(numPar)",
+                "OS Architecture":"\(os)"
+                ]])
+
         for (_,connection) in connections {
-
-                connection.send(message: envLine)
-
+            if let messageToSend = envLine.rawString() {
+                connection.send(message: messageToSend)
+            }
         }
-
     }
+
     func storeHTTP(myhttp: HTTPData) {
     	httpQueue.sync {
             if self.httpAggregateData.total == 0 {
