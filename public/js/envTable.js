@@ -46,11 +46,11 @@ var paragraph = envSVG.append("g")
     .attr("transform",
         "translate(" + 20 + "," + (margin.top + 10) + ")");
 
-function populateEnvTable(envRequestData) {
-        //envRequestData = JSON.parse(envRequest);
+function populateEnvTable(envRequest) {
+
+        envRequestData = JSON.parse(envRequest);
         if (envRequestData == null) return
 
-        function tabulate(data) {
 
             // create a row for each object in the data
             var rows = paragraph.selectAll('text')
@@ -75,10 +75,6 @@ function populateEnvTable(envRequestData) {
                     return i * tableRowWidth; // indent second element for each row
                 })
                 .text(function (d) { return d.value; });
-        }
-
-        // render the table(s)
-        tabulate(envRequestData); // 2 column table
 
 }
 
