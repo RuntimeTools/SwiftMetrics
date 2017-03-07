@@ -236,7 +236,7 @@ public class SwiftMonitor {
 
   func raiseEvent<T: SMData>(data: T) {
     swiftMetrics.loaderApi.logMessage(fine, "raiseEvent(): Publishing a \(T.self) event")
-    EventEmitter.publish(data: data)
+    //EventEmitter.publish(data: data)
   }
 
   func raiseCoreEvent(topic: String, message: String) {

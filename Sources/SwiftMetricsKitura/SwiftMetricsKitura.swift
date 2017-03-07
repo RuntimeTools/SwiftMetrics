@@ -50,8 +50,11 @@ private class HttpMonitor: ServerMonitor {
             queue.sync {
                 for (index,req) in requestStore.enumerated() {
                     if request === req.request {
-                       //self.sM.emitData(HTTPData(timeOfRequest:Int(req.requestTime), url:req.request.urlURL.absoluteString, duration:(self.timeIntervalSince1970MilliSeconds - req.requestTime), statusCode:response.statusCode, requestMethod:req.request.method))
-                       requestStore.remove(at:index)
+                       self.sM.emitData(HTTPData(timeOfRequest:Int(req.requestTime), 
+                             url:req.request.urlURL.absoluteString,
+                             duration:(self.timeIntervalSince1970MilliSeconds - req.requestTime),
+                             statusCode:response.statusCode, requestMethod:req.request.method))
+                             requestStore.remove(at:index)
                        break
                     }
                 }
