@@ -242,6 +242,7 @@ class SwiftMetricsService: WebSocketService {
     }
 
     @objc func gethttpRequest()  {
+    print("in getHttprequest")
         httpQueue.sync {
             do {
                 if self.httpAggregateData.total > 0 {
