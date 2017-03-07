@@ -56,6 +56,13 @@ private class HttpMonitor: ServerMonitor {
                              print("3 \(response.statusCode)")
                              print("4 \(req.request.method)")
                              print("5 ll done")
+
+                       let temp = HTTPData(timeOfRequest:Int(req.requestTime),
+                             url:req.request.urlURL.absoluteString,
+                          duration:(self.timeIntervalSince1970MilliSeconds - req.requestTime),
+                            statusCode:response.statusCode, requestMethod:req.request.method))
+
+                            
                        //self.sM.emitData(HTTPData(timeOfRequest:Int(req.requestTime),
                         //     url:req.request.urlURL.absoluteString,
                       //       duration:(self.timeIntervalSince1970MilliSeconds - req.requestTime),
