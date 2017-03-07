@@ -133,7 +133,7 @@ public class SwiftMetricsDash {
 
 
     func storeHTTP(myhttp: HTTPData) {
-    	httpQueue.async {
+    	httpQueue.sync {
             if self.httpAggregateData.total == 0 {
                 self.httpAggregateData.total = 1
                 self.httpAggregateData.timeOfRequest = myhttp.timeOfRequest
@@ -151,7 +151,7 @@ public class SwiftMetricsDash {
               }
             }
         }
-        httpURLsQueue.async {
+        httpURLsQueue.sync {
             let urlTuple = self.httpURLData[myhttp.url]
             if(urlTuple != nil) {
                 let averageResponseTime = urlTuple!.0
@@ -167,7 +167,7 @@ public class SwiftMetricsDash {
 
     func storeCPU(cpu: CPUData) {
         let currentTime = NSDate().timeIntervalSince1970
-        cpuQueue.async {
+        cpuQueue.sync {
             let tempArray = self.cpuDataStore
            	if tempArray.count > 0 {
            		for cpuJson in tempArray {
@@ -186,7 +186,7 @@ public class SwiftMetricsDash {
 
     func storeMem(mem: MemData) {
 	    let currentTime = NSDate().timeIntervalSince1970
-        memQueue.async {
+        memQueue.sync {
 	        let tempArray = self.memDataStore
             if tempArray.count > 0 {
         	    for memJson in tempArray {
@@ -303,7 +303,7 @@ public class SwiftMetricsDash {
 
     public func gethttpURLs(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
         httpURLsQueue.async {
-            response.headers["Content-Type"] = "application/json" 
+            response.headers["Content-Type"] = "application/json"
             var responseData:[JSON] = []
             for (key, value) in self.httpURLData {
                 let json : JSON = ["url": key, "averageResponseTime": value.0]
@@ -317,4 +317,4 @@ public class SwiftMetricsDash {
         }
     }
 
-}           
+}
