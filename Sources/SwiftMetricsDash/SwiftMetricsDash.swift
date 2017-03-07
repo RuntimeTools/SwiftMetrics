@@ -117,7 +117,7 @@ class SwiftMetricsService: WebSocketService {
     }
 
     func sendCPU(cpu: CPUData) {
-        //gethttpRequest()
+        gethttpRequest()
         let cpuLine = JSON(["topic":"cpu", "payload":["time":"\(cpu.timeOfSample)","process":"\(cpu.percentUsedByApplication)","system":"\(cpu.percentUsedBySystem)"]])
 
         for (_,connection) in connections {
