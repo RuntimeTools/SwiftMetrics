@@ -113,7 +113,7 @@ class SwiftMetricsService: WebSocketService {
         self.monitor = monitor
         monitor.on(sendCPU)
         monitor.on(sendMEM)
-        monitor.on(storeHTTP)
+        //monitor.on(storeHTTP)
     }
 
     func sendCPU(cpu: CPUData) {
