@@ -50,10 +50,12 @@ private class HttpMonitor: ServerMonitor {
             queue.sync {
                 for (index,req) in requestStore.enumerated() {
                     if request === req.request {
-                       let temp = HTTPData(timeOfRequest:Int(req.requestTime),
-                             url:req.request.urlURL.absoluteString,
-                             duration:(self.timeIntervalSince1970MilliSeconds - req.requestTime),
-                             statusCode:response.statusCode, requestMethod:req.request.method)
+                       print("0 \(req.requestTime)")
+                             print("1 \(req.request.urlURL.absoluteString)")
+                             print("2 \(self.timeIntervalSince1970MilliSeconds - req.requestTime)")
+                             print("3 \(response.statusCode)")
+                             print("4 \(req.request.method)")
+                             print("5 ll done")
                        //self.sM.emitData(HTTPData(timeOfRequest:Int(req.requestTime),
                         //     url:req.request.urlURL.absoluteString,
                       //       duration:(self.timeIntervalSince1970MilliSeconds - req.requestTime),
