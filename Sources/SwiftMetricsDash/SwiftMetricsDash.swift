@@ -303,7 +303,7 @@ public class SwiftMetricsDash {
 
     public func gethttpURLs(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
         httpURLsQueue.async {
-            response.headers["Content-Type"] = "application/json" 
+            response.headers["Content-Type"] = "application/json"
             var responseData:[JSON] = []
             for (key, value) in self.httpURLData {
                 let json : JSON = ["url": key, "averageResponseTime": value.0]
@@ -317,4 +317,4 @@ public class SwiftMetricsDash {
         }
     }
 
-}           
+}
