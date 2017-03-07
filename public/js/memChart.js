@@ -166,7 +166,7 @@ function resizeMemChart() {
 }
 
 function updateMemData() {
-    var memRequest = "http://" + myurl + "/memRequest";
+    var memRequest = "//" + myurl + "/memRequest";
     d3.json(memRequest, function(error, memRequestData) {
         if (error) return console.warn(error);
         if (!memRequestData || memRequestData.length === 0) return;

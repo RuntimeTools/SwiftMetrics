@@ -99,7 +99,7 @@ var httpChartPlaceholder = httpChart.append("text")
     .text("No Data Available");
 
 function updateHttpData() {
-    request = "http://" + myurl + "/httpRequest";
+    request = "//" + myurl + "/httpRequest";
     d3.json(request, function(error, httpRequestData) {
 
         if (error) return console.warn(error);

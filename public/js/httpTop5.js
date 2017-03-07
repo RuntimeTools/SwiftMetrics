@@ -49,7 +49,7 @@ httpTop5Chart.append("text")
     .text("Average Response Times (top 5)");
 
 function convertURL(url) {
-    if (url.toString().startsWith("http://" + myurl)) {
+    if (url.toString().startsWith("//" + myurl)) {
         return url.toString().substring(myurl.length + 7)
     } else {
         return url.toString()

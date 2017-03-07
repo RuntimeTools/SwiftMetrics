@@ -16,7 +16,7 @@
 
 // Table for displaying environmental parameters
 
-var request = "http://" + myurl + "/envRequest";
+var request = "//" + myurl + "/envRequest";
 
 var tableRowHeight = 30;
 var tableRowWidth = 170;
