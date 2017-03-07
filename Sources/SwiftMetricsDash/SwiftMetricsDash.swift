@@ -114,10 +114,10 @@ class SwiftMetricsService: WebSocketService {
         monitor.on(sendCPU)
         monitor.on(sendMEM)
         monitor.on(storeHTTP)
-    }
+        var _ = Timer.scheduledTimer(timeInterval: 2.0, target: self, selector: #selector(gethttpRequest), userInfo: nil, repeats: true)
+ }
 
     func sendCPU(cpu: CPUData) {
-        gethttpRequest()
         let cpuLine = JSON(["topic":"cpu", "payload":["time":"\(cpu.timeOfSample)","process":"\(cpu.percentUsedByApplication)","system":"\(cpu.percentUsedBySystem)"]])
 
         for (_,connection) in connections {
@@ -209,7 +209,7 @@ class SwiftMetricsService: WebSocketService {
         }
     }
 
-    func storeHTTP(myhttp: HTTPData) {
+    public func storeHTTP(myhttp: HTTPData) {
     	httpQueue.sync {
             if self.httpAggregateData.total == 0 {
                 self.httpAggregateData.total = 1
@@ -241,7 +241,7 @@ class SwiftMetricsService: WebSocketService {
         }
     }
 
-    func gethttpRequest()  {
+    @objc func gethttpRequest()  {
         httpQueue.sync {
             do {
                 if self.httpAggregateData.total > 0 {
