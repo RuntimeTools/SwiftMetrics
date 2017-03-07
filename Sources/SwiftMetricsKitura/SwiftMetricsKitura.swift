@@ -35,13 +35,15 @@ private class HttpMonitor: ServerMonitor {
 
     // This function is called from Kitura.net when an http request starts
     public func started(request: ServerRequest, response: ServerResponse) {
-        queue.sync {
-            // Only keep 1000 unprocessed calls to conserve memory (this is a guess estimate value)
-            if (requestStore.count > 1000) {
-                requestStore.removeFirst()
+        let request = request
+            queue.sync {
+                // Only keep 1000 unprocessed calls to conserve memory (this is a guess estimate value)
+                if (requestStore.count > 1000) {
+                    requestStore.removeFirst()
+                }
+                requestStore.append(requests(request: request, requestTime: self.timeIntervalSince1970MilliSeconds))
             }
-            requestStore.append(requests(request: request, requestTime: self.timeIntervalSince1970MilliSeconds))
-        }
+        
     }
 
     // This function is called from Kitura.net when an http request finishes
@@ -49,18 +51,16 @@ private class HttpMonitor: ServerMonitor {
         if let request = request {
             queue.sync {
                 for (index,req) in requestStore.enumerated() {
-                    if request === req.request {
-                       print("0 \(req.requestTime)")
-      //                       print("1 \(req.request.urlURL.absoluteString)")
-                             print("2 \(self.timeIntervalSince1970MilliSeconds - req.requestTime)")
-                             print("3 \(response.statusCode)")
-                             print("4 \(req.request.method)")
-                             print("5 ll done")
 
-                       let temp = HTTPData(timeOfRequest:Int(req.requestTime),
-                             url:"req.request.urlURL.absoluteString",
-                          duration:(self.timeIntervalSince1970MilliSeconds - req.requestTime),
-                            statusCode:response.statusCode, requestMethod:req.request.method)
+                    if request === req.request {
+
+                       //print("0 \(req.requestTime)")
+
+                          print("1 \(req.request.urlURL.absoluteString)")
+                             //print("2 \(self.timeIntervalSince1970MilliSeconds - req.requestTime)")
+                             //print("3 \(response.statusCode)")
+                             //print("4 \(req.request.method)")
+                             print("5 ll done")
 
 
                        //self.sM.emitData(HTTPData(timeOfRequest:Int(req.requestTime),
@@ -69,11 +69,12 @@ private class HttpMonitor: ServerMonitor {
                       //       statusCode:response.statusCode, requestMethod:req.request.method))
                              requestStore.remove(at:index)
                        break
+                       }
                     }
                 }
             }
         }
-    }
+
 }
 
 public typealias httpClosure = (HTTPData) -> ()
