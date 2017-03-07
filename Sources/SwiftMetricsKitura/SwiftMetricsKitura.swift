@@ -43,7 +43,7 @@ private class HttpMonitor: ServerMonitor {
                 }
                 requestStore.append(requests(request: request, requestTime: self.timeIntervalSince1970MilliSeconds))
             }
-        
+
     }
 
     // This function is called from Kitura.net when an http request finishes
@@ -51,24 +51,13 @@ private class HttpMonitor: ServerMonitor {
         if let request = request {
             queue.sync {
                 for (index,req) in requestStore.enumerated() {
-
                     if request === req.request {
-
-                       //print("0 \(req.requestTime)")
-
-                          print("1 \(req.request.urlURL.absoluteString)")
-                             //print("2 \(self.timeIntervalSince1970MilliSeconds - req.requestTime)")
-                             //print("3 \(response.statusCode)")
-                             //print("4 \(req.request.method)")
-                             print("5 ll done")
-
-
-                       //self.sM.emitData(HTTPData(timeOfRequest:Int(req.requestTime),
-                        //     url:req.request.urlURL.absoluteString,
-                      //       duration:(self.timeIntervalSince1970MilliSeconds - req.requestTime),
-                      //       statusCode:response.statusCode, requestMethod:req.request.method))
-                             requestStore.remove(at:index)
-                       break
+                        self.sM.emitData(HTTPData(timeOfRequest:Int(req.requestTime),
+                             url:req.request.urlURL.absoluteString,
+                             duration:(self.timeIntervalSince1970MilliSeconds - req.requestTime),
+                             statusCode:response.statusCode, requestMethod:req.request.method))
+                        requestStore.remove(at:index)
+                        break
                        }
                     }
                 }
@@ -85,7 +74,6 @@ public extension SwiftMonitor.EventEmitter {
 
     static func publish(data: HTTPData) {
         for process in httpObservers {
-            print("in SMK publish @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
             process(data)
         }
     }
