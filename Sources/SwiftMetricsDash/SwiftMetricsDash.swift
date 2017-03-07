@@ -133,7 +133,7 @@ public class SwiftMetricsDash {
 
 
     func storeHTTP(myhttp: HTTPData) {
-    	httpQueue.sync {
+    	httpQueue.async {
             if self.httpAggregateData.total == 0 {
                 self.httpAggregateData.total = 1
                 self.httpAggregateData.timeOfRequest = myhttp.timeOfRequest
@@ -151,7 +151,7 @@ public class SwiftMetricsDash {
               }
             }
         }
-        httpURLsQueue.sync {
+        httpURLsQueue.async {
             let urlTuple = self.httpURLData[myhttp.url]
             if(urlTuple != nil) {
                 let averageResponseTime = urlTuple!.0
@@ -167,7 +167,7 @@ public class SwiftMetricsDash {
 
     func storeCPU(cpu: CPUData) {
         let currentTime = NSDate().timeIntervalSince1970
-        cpuQueue.sync {
+        cpuQueue.async {
             let tempArray = self.cpuDataStore
            	if tempArray.count > 0 {
            		for cpuJson in tempArray {
@@ -186,7 +186,7 @@ public class SwiftMetricsDash {
 
     func storeMem(mem: MemData) {
 	    let currentTime = NSDate().timeIntervalSince1970
-        memQueue.sync {
+        memQueue.async {
 	        let tempArray = self.memDataStore
             if tempArray.count > 0 {
         	    for memJson in tempArray {
@@ -209,7 +209,7 @@ public class SwiftMetricsDash {
     public func getcpuRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
         response.headers["Content-Type"] = "application/json"
         let tempArray = self.cpuDataStore
-        cpuQueue.sync {
+        cpuQueue.async {
             do {
                if tempArray.count > 0 {
                    try response.status(.OK).send(json: JSON(tempArray)).end()
@@ -226,7 +226,7 @@ public class SwiftMetricsDash {
     public func getmemRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
        	response.headers["Content-Type"] = "application/json"
         let tempArray = self.memDataStore
-        memQueue.sync {
+        memQueue.async {
             do {
                 if tempArray.count > 0 {
 	    	        try response.status(.OK).send(json: JSON(tempArray)).end()
@@ -280,7 +280,7 @@ public class SwiftMetricsDash {
 
 	public func gethttpRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void)  {
         response.headers["Content-Type"] = "application/json"
-        httpQueue.sync {
+        httpQueue.async {
             do {
                 if self.httpAggregateData.total > 0 {
                     let httpLine = JSON([
@@ -302,7 +302,7 @@ public class SwiftMetricsDash {
     }
 
     public func gethttpURLs(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
-        httpURLsQueue.sync {
+        httpURLsQueue.async {
             response.headers["Content-Type"] = "application/json"
             var responseData:[JSON] = []
             for (key, value) in self.httpURLData {
