@@ -71,6 +71,7 @@ public extension SwiftMonitor.EventEmitter {
 
     static func publish(data: HTTPData) {
         for process in httpObservers {
+            print("in SMK publish @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
             process(data)
         }
     }
@@ -88,6 +89,7 @@ public extension SwiftMonitor {
   }
 
   func raiseEvent(data: HTTPData) {
+    print("before SMK raiseEvent")
     EventEmitter.publish(data: data)
   }
 
@@ -98,7 +100,7 @@ public extension SwiftMetrics {
   public func emitData(_ data: HTTPData) {
     if let monitor = swiftMon {
     print("SMK emitData before call")
-      //monitor.raiseEvent(data: data)
+      monitor.raiseEvent(data: data)
     }
   }
 
