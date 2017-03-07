@@ -50,7 +50,7 @@ private class HttpMonitor: ServerMonitor {
             queue.sync {
                 for (index,req) in requestStore.enumerated() {
                     if request === req.request {
-                       self.sM.emitData(HTTPData(timeOfRequest:Int(req.requestTime), 
+                       self.sM.emitData(HTTPData(timeOfRequest:Int(req.requestTime),
                              url:req.request.urlURL.absoluteString,
                              duration:(self.timeIntervalSince1970MilliSeconds - req.requestTime),
                              statusCode:response.statusCode, requestMethod:req.request.method))
@@ -97,7 +97,8 @@ public extension SwiftMetrics {
 
   public func emitData(_ data: HTTPData) {
     if let monitor = swiftMon {
-      monitor.raiseEvent(data: data)
+    print("SMK emitData before call")
+      //monitor.raiseEvent(data: data)
     }
   }
 
