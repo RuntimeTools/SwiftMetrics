@@ -275,14 +275,16 @@ class SwiftMetricsService: WebSocketService {
     func gethttpURLs() {
         sleep(UInt32(2))
         httpURLsQueue.async {
-            var responseData:String
+            var responseData:String = ""
             for (key, value) in self.httpURLData {
-                let json : JSON = ["url": key, "averageResponseTime": value.0]
-                responseData =+ (JSON.stringify(json))
+                let json = JSON(["url":"\(key)", "averageResponseTime": "\(value.0)"])
+                if let appendString = json.rawString() {
+                    responseData += appendString
+                }
             }
 
-            let httpURLLine = JSON(["topic":"httpURLs","payload":[\(responseData)]])
-
+            let httpURLLine = JSON(["topic":"httpURLs","payload":[responseData]])
+            print("ursl is \(responseData)")
             for (_,connection) in self.connections {
                 if let messageToSend = httpURLLine.rawString() {
                     connection.send(message: messageToSend)
