@@ -200,10 +200,10 @@ class SwiftMetricsService: WebSocketService {
 
 
         let envLine = JSON(["topic":"env","payload":[
-                "Command Line":"\(commandLine)",
-                "Hostname":"\(hostname)",
-                "Number of Processors":"\(numPar)",
-                "OS Architecture":"\(os)"
+                ["Parameter":"Command Line","Value":"\(commandLine)"],
+                ["Parameter":"Hostname","Value":"\(hostname)"],
+                ["Parameter":"Number of Processors","Value":"\(numPar)"],
+                ["Parameter":"OS Architecture","Value":"\(os)"]
                 ]])
 
         for (_,connection) in connections {
