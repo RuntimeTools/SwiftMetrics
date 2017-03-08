@@ -47,7 +47,7 @@ var paragraph = envSVG.append("g")
         "translate(" + 20 + "," + (margin.top + 10) + ")");
 
 function populateEnvTable(envRequestData) {
-        envData = JSON.parse(envRequest);
+        envData = JSON.parse(envRequestData);
         if (envData == null) return
 
         function tabulate(data) {
