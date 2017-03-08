@@ -214,7 +214,7 @@ class SwiftMetricsService: WebSocketService {
     }
 
     public func storeHTTP(myhttp: HTTPData) {
-    	httpQueue.sync {
+    	httpQueue.async {
             if self.httpAggregateData.total == 0 {
                 self.httpAggregateData.total = 1
                 self.httpAggregateData.timeOfRequest = myhttp.timeOfRequest
@@ -232,7 +232,7 @@ class SwiftMetricsService: WebSocketService {
               }
             }
         }
-        httpURLsQueue.sync {
+        httpURLsQueue.async {
             let urlTuple = self.httpURLData[myhttp.url]
             if(urlTuple != nil) {
                 let averageResponseTime = urlTuple!.0
@@ -246,10 +246,8 @@ class SwiftMetricsService: WebSocketService {
     }
 
     func gethttpRequest()  {
-        print("in getHttprequest")
-
         sleep(UInt32(2))
-        httpQueue.sync {
+        httpQueue.async {
             do {
                 if self.httpAggregateData.total > 0 {
                     let httpLine = JSON([
@@ -275,7 +273,7 @@ class SwiftMetricsService: WebSocketService {
     }
 
     func gethttpURLs() {
-        httpURLsQueue.sync {
+        httpURLsQueue.async {
             var responseData:[JSON] = []
             for (key, value) in self.httpURLData {
                 let json : JSON = ["url": key, "averageResponseTime": value.0]
