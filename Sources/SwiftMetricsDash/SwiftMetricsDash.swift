@@ -117,6 +117,7 @@ class SwiftMetricsService: WebSocketService {
         monitor.on(sendMEM)
         monitor.on(storeHTTP)
         gethttpRequest()
+        gethttpURLs()
   }
 
 
