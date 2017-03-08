@@ -273,17 +273,24 @@ class SwiftMetricsService: WebSocketService {
     }
 
     func gethttpURLs() {
+        sleep(UInt32(2))
         httpURLsQueue.async {
-            var responseData:[JSON] = []
+            var responseData:String
             for (key, value) in self.httpURLData {
                 let json : JSON = ["url": key, "averageResponseTime": value.0]
-                responseData.append(json)
+                responseData =+ (JSON.stringify(json))
             }
-//            do {
-//                try response.status(.OK).send(json: JSON(responseData)).end()
-//            } catch {
-//                print("SwiftMetricsDash ERROR : problem sending http URL data")
-//            }
+
+            let httpURLLine = JSON(["topic":"httpURLs","payload":[\(responseData)]])
+
+            for (_,connection) in self.connections {
+                if let messageToSend = httpURLLine.rawString() {
+                    connection.send(message: messageToSend)
+                }
+            }
+        }
+        DispatchQueue.global(qos: .background).async {
+          self.gethttpURLs()
         }
     }
 
