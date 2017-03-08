@@ -38,6 +38,7 @@ public class SwiftMetricsDash {
 
     var monitor:SwiftMonitor
     var SM:SwiftMetrics
+    var service:SwiftMetricsService
 
     public convenience init(swiftMetricsInstance : SwiftMetrics) throws {
        try self.init(swiftMetricsInstance : swiftMetricsInstance , endpoint: nil)
@@ -55,7 +56,8 @@ public class SwiftMetricsDash {
          self.SM = swiftMetricsInstance
         _ = SwiftMetricsKitura(swiftMetricsInstance: SM)
         self.monitor = SM.monitor()
-        WebSocket.register(service: SwiftMetricsService(monitor: monitor), onPath: "swiftmetrics-dash")
+        self.service = SwiftMetricsService(monitor: monitor)
+        WebSocket.register(service: self.service, onPath: "swiftmetrics-dash")
 
         try startServer(createServer: create, router: router)
     }
@@ -114,8 +116,10 @@ class SwiftMetricsService: WebSocketService {
         monitor.on(sendCPU)
         monitor.on(sendMEM)
         monitor.on(storeHTTP)
-        var _ = Timer.scheduledTimer(timeInterval: 2.0, target: self, selector: #selector(gethttpRequest), userInfo: nil, repeats: true)
- }
+        gethttpRequest()
+  }
+
+
 
     func sendCPU(cpu: CPUData) {
         let cpuLine = JSON(["topic":"cpu", "payload":["time":"\(cpu.timeOfSample)","process":"\(cpu.percentUsedByApplication)","system":"\(cpu.percentUsedBySystem)"]])
@@ -241,8 +245,10 @@ class SwiftMetricsService: WebSocketService {
         }
     }
 
-    @objc func gethttpRequest()  {
-    print("in getHttprequest")
+    func gethttpRequest()  {
+        print("in getHttprequest")
+
+        sleep(UInt32(2))
         httpQueue.sync {
             do {
                 if self.httpAggregateData.total > 0 {
@@ -262,6 +268,9 @@ class SwiftMetricsService: WebSocketService {
                     self.httpAggregateData = HTTPAggregateData()
                 }
             }
+        }
+        DispatchQueue.global(qos: .background).async {
+          self.gethttpRequest()
         }
     }
 
