@@ -287,7 +287,7 @@ class SwiftMetricsService: WebSocketService {
             }
 
             let httpURLLine = JSON(["topic":"httpURLs","payload":[responseData]])
-            print("ursl is \(responseData)")
+            print("httpURLLine is \(httpURLLine)")
             for (_,connection) in self.connections {
                 if let messageToSend = httpURLLine.rawString() {
                     connection.send(message: messageToSend)
