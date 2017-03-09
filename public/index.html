@@ -50,7 +50,7 @@
     canvasHeight = 250,
     tallerGraphHeight = canvasHeight - margin.top - margin.shortBottom,
     graphHeight = canvasHeight - margin.top - margin.bottom;
-     
+
     var myurl = location.host;
 
     // set up http variables to hold data for top 5 and averages.
@@ -74,9 +74,39 @@
 <script type="text/javascript" src="js/httpRequestsChart.js"></script>
 <script type="text/javascript" src="js/httpTop5.js"></script>
 <script type="text/javascript" src="js/memChart.js"></script>
-
 <script>
-    window.addEventListener('resize', resize); 
+    var myurl = location.host;
+    var client = new WebSocket("ws://" + myurl + "/swiftmetrics-dash","swiftmetrics-dash")
+
+    client.onmessage = function(message) {
+        received = JSON.parse(message.data);
+        topic = received.topic;
+        payload = JSON.stringify(received.payload);
+
+
+        console.log(topic);
+        switch (topic) {
+            case 'cpu':
+                updateCPUData(payload);
+                break;
+            case 'memory':
+                updateMemData(payload);
+                break;
+            case 'env':
+                populateEnvTable(payload);
+                break;
+            case 'http':
+                updateHttpData(payload);
+                break;
+            case 'httpURLs':
+                updateURLData(payload);
+                break;
+
+        }
+    }
+</script>
+<script>
+    window.addEventListener('resize', resize);
 
     function resize() {
         canvasWidth = $("#cpuDiv1").width() - 8,

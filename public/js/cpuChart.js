@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2017 IBM Corp.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -112,9 +112,17 @@ cpuChart.append("text")
     .style("font-size", "18px")
     .text("CPU");
 
+// Add the placeholder text
+var cpuChartPlaceholder = cpuChart.append("text")
+    .attr("x", graphWidth/2)
+    .attr("y", graphHeight/2 - 2)
+    .attr("text-anchor", "middle")
+    .style("font-size", "18px")
+    .text("No Data Available");
+
 // Add the system colour box
 cpuChart.append("rect")
-    .attr("x", 0) 
+    .attr("x", 0)
     .attr("y", graphHeight + margin.bottom - 15)
     .attr("class", "colourbox1")
     .attr("width", 10)
@@ -122,7 +130,7 @@ cpuChart.append("rect")
 
 // Add the SYSTEM label
 var cpuSystemLabel = cpuChart.append("text")
-    .attr("x", 15) 
+    .attr("x", 15)
     .attr("y", graphHeight + margin.bottom - 5)
     .attr("text-anchor", "start")
     .attr("class", "lineLabel")
@@ -130,7 +138,7 @@ var cpuSystemLabel = cpuChart.append("text")
 
 // Add the process colour box
 cpuChart.append("rect")
-    .attr("x", cpuSystemLabel.node().getBBox().width + 45) 
+    .attr("x", cpuSystemLabel.node().getBBox().width + 25)
     .attr("y", graphHeight + margin.bottom - 15)
     .attr("width", 10)
     .attr("height", 10)
@@ -138,7 +146,7 @@ cpuChart.append("rect")
 
 // Add the PROCESS label
 cpuChart.append("text")
-    .attr("x", cpuSystemLabel.node().getBBox().width + 60) 
+    .attr("x", cpuSystemLabel.node().getBBox().width + 40)
     .attr("y", graphHeight + margin.bottom - 5)
     .attr("class", "lineLabel2")
     .text("Swift Process");
@@ -160,72 +168,68 @@ function resizeCPUChart() {
     cpu_xScale.domain(d3.extent(cpuData, function(d) {
         return d.date;
     }));
-    chart.select(".systemLine") 
+    chart.select(".systemLine")
         .attr("d", systemline(cpuData));
-    chart.select(".processLine") 
+    chart.select(".processLine")
         .attr("d", processline(cpuData));
-    chart.select(".xAxis") 
+    chart.select(".xAxis")
         .call(cpu_xAxis);
-    chart.select(".yAxis") 
+    chart.select(".yAxis")
         .call(cpu_yAxis);
 }
 
 
-function updateCPUData() {
-    var cpuRequest = "http://" + myurl + "/cpuRequest";
-    d3.json(cpuRequest, function(error, cpuRequestData) {
-        if (error) return console.warn(error);
-        if (!cpuRequestData || cpuRequestData.length === 0) return;
+function updateCPUData(cpuRequest) {
 
-        for (var i = 0, len = cpuRequestData.length; i < len; i++) {
-            var d = cpuRequestData[i];
-            if(d != null && d.hasOwnProperty('time')) {
-                d.date = new Date(+d.time);
-                d.system = +d.system * 100;
-                d.process = +d.process * 100;
-                if (i == len - 1) {
-                    var _processLatest = Math.round(d.process);
-                    // Update gauge if loaded
-                    if(typeof(updateCpuProcessGauge) === 'function' && _processLatest != cpuProcessLatest) {
-                        updateCpuProcessGauge(cpuProcessLatest);
-                    }
-                    cpuProcessLatest = _processLatest;
-                    cpuSystemLatest = Math.round(d.system);
-                }
-                cpuData.push(d);
-            }
+    cpuRequestData = JSON.parse(cpuRequest);  // parses the data into a JSON array
+    if (!cpuRequestData) return;
+
+    var d = cpuRequestData;
+    if(d != null && d.hasOwnProperty('time')) {
+        d.date = new Date(+d.time);
+        d.system = +d.system * 100;
+        d.process = +d.process * 100;
+        var _processLatest = Math.round(d.process);
+        if(typeof(updateCpuProcessGauge) === 'function' && _processLatest != cpuProcessLatest) {
+            updateCpuProcessGauge(cpuProcessLatest);
         }
+        cpuProcessLatest = _processLatest;
+        cpuSystemLatest = Math.round(d.system);
+    }
+    cpuData.push(d);
 
-        // Only keep 30 minutes of data
-        var currentTime = Date.now();
-        var d = cpuData[0];
-        if (d === null)
-            return
+    if(cpuData.length === 2) {
+        // second data point - remove "No Data Available" label
+        cpuChartPlaceholder.attr("visibility", "hidden");
+    }
 
-        while (d.hasOwnProperty('date') && d.date.valueOf() + 1800000 < currentTime) {
-            cpuData.shift();
-            d = cpuData[0];
-        }
-        // Set the input domain for the x axis
-        cpu_xScale.domain(d3.extent(cpuData, function(d) {
-            return d.date;
-        }));
+    // Throw away expired data
 
-        cpu_xAxis.tickFormat(getTimeFormat());
+    var currentTime = Date.now();
+    var d = cpuData[0];
+    if (d === null)
+        return
 
-        // Select the CPU chart svg element to apply changes
-        var selection = d3.select(".cpuChart");
-        selection.select(".systemLine")
-            .attr("d", systemline(cpuData));
-        selection.select(".processLine") 
-            .attr("d", processline(cpuData));
-        selection.select(".xAxis")
-            .call(cpu_xAxis);
-        selection.select(".yAxis")
-            .call(cpu_yAxis);
-    });
+    while (d.hasOwnProperty('date') && d.date.valueOf() + maxTimeWindow < currentTime) {
+        cpuData.shift();
+        d = cpuData[0];
+    }
+    // Set the input domain for the x axis
+    cpu_xScale.domain(d3.extent(cpuData, function(d) {
+        return d.date;
+    }));
+
+    cpu_xAxis.tickFormat(getTimeFormat());
+
+    // Select the CPU chart svg element to apply changes
+    var selection = d3.select(".cpuChart");
+    selection.select(".systemLine")
+        .attr("d", systemline(cpuData));
+    selection.select(".processLine")
+        .attr("d", processline(cpuData));
+    selection.select(".xAxis")
+        .call(cpu_xAxis);
+    selection.select(".yAxis")
+        .call(cpu_yAxis);
+
 }
-
-// Update data every 2 seconds
-setInterval(updateCPUData, 2000);
-

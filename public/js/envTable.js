@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2017 IBM Corp.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -14,9 +14,10 @@
  * the License.
  ******************************************************************************/
 
-// Table for displaying environmental parameters
+// Table for displaying environment parameters
 
-var request = "http://" + myurl + "/envRequest";
+// Width of environment div
+var envDivCanvasWidth = $("#envDiv").width() - 8;
 
 var tableRowHeight = 30;
 var tableRowWidth = 170;
@@ -24,12 +25,12 @@ var tableRowWidth = 170;
 // Define the environment chart space
 var envSVG = d3.select("#envDiv")
     .append("svg")
-    .attr("width", canvasWidth)
+    .attr("width", envDivCanvasWidth)
     .attr("height", canvasHeight)
     .attr("class", "envData")
 
 var envTitleBox = envSVG.append("rect")
-    .attr("width", canvasWidth)
+    .attr("width", envDivCanvasWidth)
     .attr("height", 30)
     .attr("class", "titlebox")
 
@@ -45,11 +46,9 @@ var paragraph = envSVG.append("g")
     .attr("transform",
         "translate(" + 20 + "," + (margin.top + 10) + ")");
 
-function populateEnvTable() {
-    d3.json(request, function (error,envRequestData) {
-
-        if (error) return console.warn(error);
-        if (envRequestData == null) return
+function populateEnvTable(envRequestData) {
+        envData = JSON.parse(envRequestData);
+        if (envData == null) return
 
         function tabulate(data) {
 
@@ -77,17 +76,14 @@ function populateEnvTable() {
                 })
                 .text(function (d) { return d.value; });
         }
-	
-        // render the table(s)
-        tabulate(envRequestData); // 2 column table
 
-    });
+        // render the table(s)
+        tabulate(envData); // 2 column table
+
 }
 
 function resizeEnvTable() {
-    envSVG.attr("width", canvasWidth);
-    envTitleBox.attr("width", canvasWidth)
+    envDivCanvasWidth = $("#envDiv").width() - 8;
+    envSVG.attr("width", envDivCanvasWidth);
+    envTitleBox.attr("width", envDivCanvasWidth)
 }
-
-setTimeout(setInterval(populateEnvTable(), 1200000), 3000);
-

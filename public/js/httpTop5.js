@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2017 IBM Corp.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -16,6 +16,7 @@
 
 // Bar chart for top 5 URLs by average request time
 
+var httpAverages = new Object;
 var httpTop5Data = [];
 
 var httpTop5_barHeight = tallerGraphHeight / 5;
@@ -48,6 +49,14 @@ httpTop5Chart.append("text")
     .style("font-size", "18px")
     .text("Average Response Times (top 5)");
 
+// Add the placeholder text
+var httpTop5ChartPlaceholder = httpTop5Chart.append("text")
+    .attr("x", httpDiv3GraphWidth/2)
+    .attr("y", graphHeight/2)
+    .attr("text-anchor", "middle")
+    .style("font-size", "18px")
+    .text("No Data Available");
+
 function convertURL(url) {
     if (url.toString().startsWith("http://" + myurl)) {
         return url.toString().substring(myurl.length + 7)
@@ -67,7 +76,7 @@ function updateChart() {
     var bar = d3.select(".httpTop5Chart").selectAll(".bar")
         .data(httpTop5Data)
         .enter().append("g").attr("class", "bar")
-        .attr("transform", function(d, i) { 
+        .attr("transform", function(d, i) {
             return "translate(50," + (margin.top + i * httpTop5_barHeight) + ")";
         });
 
@@ -88,7 +97,7 @@ function updateChart() {
         .attr("y", httpTop5_barHeight / 2)
         .attr("dy", ".35em")
         .attr("fill", "white")
-        .text(function(d) {            
+        .text(function(d) {
             return convertURL(d.url)
         });
 
@@ -101,7 +110,7 @@ function updateChart() {
         .text(function(d) {
             return d3.format(",.2f")(d.averageResponseTime) + "ms";
         });
-    
+
     // Tooltip
     bar.append("svg:title").text(function(d) {return d.url;});
 }
@@ -125,16 +134,18 @@ function updateHttpAverages(workingData) {
     updateChart();
 }
 
-function updateURLData() {
-    // Get the HTTP average response times
-    request="http://" + myurl + "/httpURLs";
-    d3.json(request, function(error, data) {
-        if(error) {
-            console.log("Error getting HTTP average data: " + error)
-            return
-        }
-        updateHttpAverages(data);
-    });
+function updateURLData(data) {
+
+    if(httpTop5Data.length == 0) {
+        // first data - remove "No Data Available" label
+        httpTop5ChartPlaceholder.attr("visibility", "hidden");
+    }
+
+    httpTop5RequestData = JSON.parse(data);  // parses the data into a JSON array
+
+    updateHttpAverages(httpTop5RequestData);
+
+
 }
 
 function resizeHttpTop5Chart() {
@@ -146,5 +157,3 @@ function resizeHttpTop5Chart() {
     httpTop5TitleBox.attr("width", httpDiv3CanvasWidth)
     updateChart();
 }
-
-setInterval(updateURLData, 2000);

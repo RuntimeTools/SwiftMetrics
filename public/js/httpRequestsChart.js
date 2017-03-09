@@ -1,12 +1,12 @@
 /*******************************************************************************
  * Copyright 2017 IBM Corp.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -98,11 +98,8 @@ var httpChartPlaceholder = httpChart.append("text")
     .style("font-size", "18px")
     .text("No Data Available");
 
-function updateHttpData() {
-    request = "http://" + myurl + "/httpRequest";
-    d3.json(request, function(error, httpRequestData) {
-
-        if (error) return console.warn(error);
+function updateHttpData(httpRequest) {
+        httpRequestData = JSON.parse(httpRequest);
         if (httpRequestData == null) return;
 
         // Send data to throughput chart so as not to duplicate requests
@@ -114,7 +111,7 @@ function updateHttpData() {
             // first data - remove "No Data Available" label
             httpChartPlaceholder.attr("visibility", "hidden");
         }
-        
+
         httpData.push(httpRequestData);
 
         // Only keep 30 minutes or 2000 items of data
@@ -169,7 +166,6 @@ function updateHttpData() {
                     }
                 });
         }
-    });
 }
 
 function resizeHttpChart() {
@@ -208,9 +204,3 @@ function resizeHttpChart() {
         .attr("cy", function(d) { return http_yScale(d.longest); })
         .append("svg:title").text(function(d) { return d.url; });
 }
-
-// Call update to initialize graph
-updateHttpData()
-
-setInterval(updateHttpData, 2000);
-

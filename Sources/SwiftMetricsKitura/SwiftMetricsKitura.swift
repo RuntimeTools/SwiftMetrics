@@ -1,3 +1,19 @@
+/**
+* Copyright IBM Corporation 2017
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+**/
+
 import KituraNet
 import SwiftMetrics
 import Foundation
@@ -35,31 +51,37 @@ private class HttpMonitor: ServerMonitor {
 
     // This function is called from Kitura.net when an http request starts
     public func started(request: ServerRequest, response: ServerResponse) {
-        let request = request
-        let _ = request.urlURL
-
-        queue.sync {
-            // Only keep 1000 unprocessed calls to conserve memory (this is a guess estimate value)
-            if (requestStore.count > 1000) {
-                requestStore.removeFirst()
+        let requestTemp = request
+        let _ = requestTemp.urlURL
+            queue.sync {
+                // Only keep 1000 unprocessed calls to conserve memory (this is a guess estimate value)
+                if (requestStore.count > 1000) {
+                    requestStore.removeFirst()
+                }
+                requestStore.append(requests(request: requestTemp, requestTime: self.timeIntervalSince1970MilliSeconds))
             }
-            requestStore.append(requests(request: request, requestTime: self.timeIntervalSince1970MilliSeconds))
-        }
+
     }
 
     // This function is called from Kitura.net when an http request finishes
     public func finished(request: ServerRequest?, response: ServerResponse) {
-        if let request = request {
+        let _ = response
+        if let requestTemp = request {
             queue.sync {
                 for (index,req) in requestStore.enumerated() {
-                    if request === req.request {
-                       self.sM.emitData(HTTPData(timeOfRequest:Int(req.requestTime), url:req.request.urlURL.absoluteString, duration:(self.timeIntervalSince1970MilliSeconds - req.requestTime), statusCode:response.statusCode, requestMethod:req.request.method))
-                       requestStore.remove(at:index)
+                    if requestTemp === req.request {
+                        self.sM.emitData(HTTPData(timeOfRequest:Int(req.requestTime),
+                             url:req.request.urlURL.absoluteString,
+                             duration:(self.timeIntervalSince1970MilliSeconds - req.requestTime),
+                             statusCode:response.statusCode, requestMethod:req.request.method))
+                        requestStore.remove(at:index)
+                        break
+                       }
                     }
                 }
             }
         }
-    }
+
 }
 
 public typealias httpClosure = (HTTPData) -> ()

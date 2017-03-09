@@ -20,6 +20,7 @@ import SwiftMetricsBluemix
 import SwiftMetrics
 import SwiftyJSON
 import KituraNet
+import KituraWebSocket
 import Foundation
 import Configuration
 import CloudFoundryConfig
@@ -32,20 +33,12 @@ struct HTTPAggregateData: SMData {
   public var average: Double = 0
   public var total: Int = 0
 }
-
+var router = Router()
 public class SwiftMetricsDash {
 
-    var cpuDataStore:[JSON] = []
-    var httpAggregateData: HTTPAggregateData = HTTPAggregateData()
-    var httpURLData:[String:(totalTime:Double, numHits:Double)] = [:]
-    var memDataStore:[JSON] = []
-    var cpuData:[CPUData] = []
-    let cpuQueue = DispatchQueue(label: "cpuStoreQueue")
-    let httpQueue = DispatchQueue(label: "httpStoreQueue")
-    let httpURLsQueue = DispatchQueue(label: "httpURLsQueue")
-    let memQueue = DispatchQueue(label: "memStoreQueue")
     var monitor:SwiftMonitor
     var SM:SwiftMetrics
+    var service:SwiftMetricsService
 
     public convenience init(swiftMetricsInstance : SwiftMetrics) throws {
        try self.init(swiftMetricsInstance : swiftMetricsInstance , endpoint: nil)
@@ -54,7 +47,7 @@ public class SwiftMetricsDash {
     public init(swiftMetricsInstance : SwiftMetrics , endpoint: Router!) throws {
         // default to use passed in Router
         var create = false
-        var router = Router()
+
         if endpoint == nil {
             create = true
         } else {
@@ -63,9 +56,8 @@ public class SwiftMetricsDash {
          self.SM = swiftMetricsInstance
         _ = SwiftMetricsKitura(swiftMetricsInstance: SM)
         self.monitor = SM.monitor()
-        monitor.on(storeCPU)
-        monitor.on(storeMem)
-        monitor.on(storeHTTP)
+        self.service = SwiftMetricsService(monitor: monitor)
+        WebSocket.register(service: self.service, onPath: "swiftmetrics-dash")
 
         try startServer(createServer: create, router: router)
     }
@@ -97,12 +89,7 @@ public class SwiftMetricsDash {
             }
         }
         router.all("/swiftmetrics-dash", middleware: StaticFileServer(path: packagesPath))
-        router.get("/cpuRequest", handler: getcpuRequest)
-        router.get("/memRequest", handler: getmemRequest)
-        router.get("/envRequest", handler: getenvRequest)
-        router.get("/cpuAverages", handler: getcpuAverages)
-        router.get("/httpRequest", handler: gethttpRequest)
-        router.get("/httpURLs", handler: gethttpURLs)
+
         if createServer {
             let configMgr = ConfigurationManager().load(.environmentVariables)
             Kitura.addHTTPServer(onPort: configMgr.port, with: router)
@@ -111,28 +98,123 @@ public class SwiftMetricsDash {
         }
  	}
 
-	func calculateAverageCPU() -> JSON {
-		var cpuLine = JSON([])
-		let tempArray = self.cpuData
-		if (tempArray.count > 0) {
-			var totalApplicationUse: Float = 0
-			var totalSystemUse: Float = 0
-			var time: Int = 0
-			for cpuItem in tempArray {
-				totalApplicationUse += cpuItem.percentUsedByApplication
-				totalSystemUse += cpuItem.percentUsedBySystem
-				time = cpuItem.timeOfSample
-			}
-			cpuLine = JSON([
-				"time":"\(time)",
-				"process":"\(totalApplicationUse/Float(tempArray.count))",
-				"system":"\(totalSystemUse/Float(tempArray.count))"])
-		}
-		return cpuLine
-	}
 
 
-    func storeHTTP(myhttp: HTTPData) {
+
+}
+class SwiftMetricsService: WebSocketService {
+
+    private var connections = [String: WebSocketConnection]()
+    var httpAggregateData: HTTPAggregateData = HTTPAggregateData()
+    var httpURLData:[String:(totalTime:Double, numHits:Double)] = [:]
+    let httpURLsQueue = DispatchQueue(label: "httpURLsQueue")
+    let httpQueue = DispatchQueue(label: "httpStoreQueue")
+    var monitor:SwiftMonitor
+
+    public init(monitor: SwiftMonitor) {
+        self.monitor = monitor
+        monitor.on(sendCPU)
+        monitor.on(sendMEM)
+        monitor.on(storeHTTP)
+        gethttpRequest()
+      //  gethttpURLs()
+  }
+
+
+
+    func sendCPU(cpu: CPUData) {
+        let cpuLine = JSON(["topic":"cpu", "payload":["time":"\(cpu.timeOfSample)","process":"\(cpu.percentUsedByApplication)","system":"\(cpu.percentUsedBySystem)"]])
+
+        for (_,connection) in connections {
+            if let messageToSend = cpuLine.rawString() {
+                connection.send(message: messageToSend)
+            }
+        }
+
+    }
+
+
+    func sendMEM(mem: MemData) {
+
+        let memLine = JSON(["topic":"memory","payload":[
+                "time":"\(mem.timeOfSample)",
+                "physical":"\(mem.applicationRAMUsed)",
+                "physical_used":"\(mem.totalRAMUsed)"
+                ]])
+
+        for (_,connection) in connections {
+            if let messageToSend = memLine.rawString() {
+                connection.send(message: messageToSend)
+            }
+        }
+    }
+
+    func sendHTTP(myhttp: HTTPData) {
+        let httpLine = JSON(["topic":"http","payload":["time":"\(myhttp.timeOfRequest)","url":"\(myhttp.url)","duration":"\(myhttp.duration)","method":"\(myhttp.requestMethod)","statusCode":"\(myhttp.statusCode)"]])
+
+        for (_,connection) in connections {
+            if let messageToSend = httpLine.rawString() {
+                connection.send(message: messageToSend)
+            }
+        }
+
+    }
+
+    public func connected(connection: WebSocketConnection) {
+        connections[connection.id] = connection
+        getenvRequest()
+    }
+
+    public func disconnected(connection: WebSocketConnection, reason: WebSocketCloseReasonCode){}
+
+    public func received(message: Data, from : WebSocketConnection){}
+
+    public func received(message: String, from : WebSocketConnection){
+        print("SwiftMetricsService -- \(message)")
+    }
+
+
+    public func getenvRequest()  {
+        var commandLine = ""
+        var hostname = ""
+        var os = ""
+        var numPar = ""
+
+        for (param, value) in self.monitor.getEnvironmentData() {
+            switch param {
+                case "command.line":
+                    commandLine = value
+                    break
+                case "environment.HOSTNAME":
+                    hostname = value
+                    break
+                case "os.arch":
+                    os = value
+                    break
+                case "number.of.processors":
+                    numPar = value
+                    break
+                default:
+                    break
+             }
+        }
+
+
+        let envLine = JSON(["topic":"env","payload":[
+                ["Parameter":"Command Line","Value":"\(commandLine)"],
+                ["Parameter":"Hostname","Value":"\(hostname)"],
+                ["Parameter":"Number of Processors","Value":"\(numPar)"],
+                ["Parameter":"OS Architecture","Value":"\(os)"]
+                ]])
+
+        for (_,connection) in connections {
+            if let messageToSend = envLine.rawString() {
+                connection.send(message: messageToSend)
+            }
+        }
+    }
+
+    public func storeHTTP(myhttp: HTTPData) {
     	httpQueue.async {
             if self.httpAggregateData.total == 0 {
                 self.httpAggregateData.total = 1
@@ -164,156 +246,56 @@ public class SwiftMetricsDash {
         }
     }
 
-
-    func storeCPU(cpu: CPUData) {
-        let currentTime = NSDate().timeIntervalSince1970
-        cpuQueue.async {
-            let tempArray = self.cpuDataStore
-           	if tempArray.count > 0 {
-           		for cpuJson in tempArray {
-               		if(currentTime - (Double(cpuJson["time"].stringValue)! / 1000) > 1800) {
-    	                self.cpuDataStore.removeFirst()
-               		} else {
-                    	break
-    	            }
-            	}
-           	}
-           	self.cpuData.append(cpu);
-        	let cpuLine = JSON(["time":"\(cpu.timeOfSample)","process":"\(cpu.percentUsedByApplication)","system":"\(cpu.percentUsedBySystem)"])
-        	self.cpuDataStore.append(cpuLine)
-        }
-    }
-
-    func storeMem(mem: MemData) {
-	    let currentTime = NSDate().timeIntervalSince1970
-        memQueue.async {
-	        let tempArray = self.memDataStore
-            if tempArray.count > 0 {
-        	    for memJson in tempArray {
-            	    if(currentTime - (Double(memJson["time"].stringValue)! / 1000) > 1800) {
-	                    self.memDataStore.removeFirst()
-            	    } else {
-               		    break
-	        	    }
-	            }
-	        }
-   		    let memLine = JSON([
-    	    	"time":"\(mem.timeOfSample)",
-    		    "physical":"\(mem.applicationRAMUsed)",
-	    	   "physical_used":"\(mem.totalRAMUsed)"
-   		    ])
-   		    self.memDataStore.append(memLine)
-   	    }
-    }
-
-    public func getcpuRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
-        response.headers["Content-Type"] = "application/json"
-        let tempArray = self.cpuDataStore
-        cpuQueue.async {
-            do {
-               if tempArray.count > 0 {
-                   try response.status(.OK).send(json: JSON(tempArray)).end()
-                   self.cpuDataStore.removeAll()
-               } else {
-    		       try response.status(.OK).send(json: JSON([])).end()
-               }
-            } catch {
-                print("SwiftMetricsDash ERROR : problem sending cpuRequest data")
-            }
-        }
-    }
-
-    public func getmemRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
-       	response.headers["Content-Type"] = "application/json"
-        let tempArray = self.memDataStore
-        memQueue.async {
-            do {
-                if tempArray.count > 0 {
-	    	        try response.status(.OK).send(json: JSON(tempArray)).end()
-               	    self.memDataStore.removeAll()
-                } else {
-       			    try response.status(.OK).send(json: JSON([])).end()
-                }
-            } catch {
-                print("SwiftMetricsDash ERROR : problem sending memRequest data")
-            }
-        }
-    }
-
-    public func getenvRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void)  {
-        response.headers["Content-Type"] = "application/json"
-        var responseData: [JSON] = []
-        for (param, value) in self.monitor.getEnvironmentData() {
-            switch param {
-                case "command.line":
-                    let json: JSON = ["Parameter": "Command Line", "Value": value]
-                    responseData.append(json)
-                case "environment.HOSTNAME":
-                    let json: JSON = ["Parameter": "Hostname", "Value": value]
-                    responseData.append(json)
-                case "os.arch":
-                    let json: JSON = ["Parameter": "OS Architecture", "Value": value]
-                    responseData.append(json)
-                case "number.of.processors":
-                    let json: JSON = ["Parameter": "Number of Processors", "Value": value]
-                    responseData.append(json)
-                default:
-                    break
-			}
-        }
-        do {
-		    try response.status(.OK).send(json: JSON(responseData)).end()
-        } catch {
-            print("SwiftMetricsDash ERROR : problem sending environment data")
-        }
-    }
-
-	public func getcpuAverages(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void)  {
-        response.headers["Content-Type"] = "application/json"
-        do {
-		    try response.status(.OK).send(json: self.calculateAverageCPU()).end()
-	    } catch {
-	        print("SwiftMetricsDash ERROR : problem sending averageCPU data")
-        }
-
-    }
-
-	public func gethttpRequest(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void)  {
-        response.headers["Content-Type"] = "application/json"
+    func gethttpRequest()  {
+        sleep(UInt32(2))
         httpQueue.async {
             do {
                 if self.httpAggregateData.total > 0 {
                     let httpLine = JSON([
+                    "topic":"http","payload":[
                         "time":"\(self.httpAggregateData.timeOfRequest)",
                         "url":"\(self.httpAggregateData.url)",
                         "longest":"\(self.httpAggregateData.longest)",
                         "average":"\(self.httpAggregateData.average)",
-                        "total":"\(self.httpAggregateData.total)"])
-                    try response.status(.OK).send(json:httpLine).end()
-                    self.httpAggregateData = HTTPAggregateData()
-                } else {
-			        try response.status(.OK).send(json: JSON([])).end()
-                }
-            } catch {
-                print("SwiftMetricsDash ERROR : problem sending httpRequest data")
-            }
+                        "total":"\(self.httpAggregateData.total)"]])
 
+                        for (_,connection) in self.connections {
+                            if let messageToSend = httpLine.rawString() {
+                                connection.send(message: messageToSend)
+                            }
+                        }
+                    self.httpAggregateData = HTTPAggregateData()
+                }
+            }
+        }
+        DispatchQueue.global(qos: .background).async {
+          self.gethttpRequest()
         }
     }
 
-    public func gethttpURLs(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) {
+    func gethttpURLs() {
+        sleep(UInt32(2))
         httpURLsQueue.async {
-            response.headers["Content-Type"] = "application/json"
             var responseData:[JSON] = []
             for (key, value) in self.httpURLData {
-                let json : JSON = ["url": key, "averageResponseTime": value.0]
-                responseData.append(json)
+                let json = JSON(["url":key, "averageResponseTime": value.0])
+                //if let appendString = json.rawString() {
+                    //responseData += appendString
+                    responseData.append(json)
+                //        print("ursl is \(responseData)")
+              //  }
             }
-            do {
-                try response.status(.OK).send(json: JSON(responseData)).end()
-            } catch {
-                print("SwiftMetricsDash ERROR : problem sending http URL data")
+
+            let httpURLLine = JSON(["topic":"httpURLs","payload":[responseData]])
+            print("httpURLLine is \(httpURLLine)")
+            for (_,connection) in self.connections {
+                if let messageToSend = httpURLLine.rawString() {
+                    connection.send(message: messageToSend)
+                }
             }
+        }
+        DispatchQueue.global(qos: .background).async {
+          self.gethttpURLs()
         }
     }
 
