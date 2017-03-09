@@ -276,10 +276,9 @@ class SwiftMetricsService: WebSocketService {
     func gethttpURLs() {
         sleep(UInt32(2))
         httpURLsQueue.async {
-            print("in httpURLsQueue")
             var responseData:String = ""
             for (key, value) in self.httpURLData {
-                let json = JSON(["url":"\(key)", "averageResponseTime": "\(value.0)"])
+                let json = JSON(["url":key, "averageResponseTime": value.0])
                 if let appendString = json.rawString() {
                     responseData += appendString
                         print("ursl is \(responseData)")
