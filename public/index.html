@@ -6,15 +6,16 @@
 <link rel="alternate stylesheet" type="text/css" href="css/style.css" title="Dark background">
 
 <head>
-    <title>Application Metrics Dashboard for Swift (Tech Preview)</title>
+    <title>Application Metrics for Swift (Tech Preview)</title>
 </head>
 
 <body>
-    <!--<h1>Application Metrics Dashboard for Swift (Tech Preview)</h1>-->
     <!-- load the d3.js library -->
     <script src="d3/d3.v3.min.js"></script>
     <script src="jquery/jquery-3.1.1.min.js"></script>
     <script src="bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
+
+    <div class="headerDiv"><span class="rightHeader"></span><span class="leftHeader"></span></div>
 
     <div class="container-fluid">
         <div class="row">
@@ -68,6 +69,7 @@
     }
 </script>
 
+<script type="text/javascript" src="js/header.js"></script>
 <script type="text/javascript" src="js/envTable.js"></script>
 <script type="text/javascript" src="js/cpuChart.js"></script>
 <script type="text/javascript" src="js/httpThroughPutChart.js"></script>
@@ -100,6 +102,9 @@
                 break;
             case 'httpURLs':
                 updateURLData(payload);
+                break;
+            case 'title' :
+                updateHeader(payload);
                 break;
 
         }
