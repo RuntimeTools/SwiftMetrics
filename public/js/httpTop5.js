@@ -16,6 +16,7 @@
 
 // Bar chart for top 5 URLs by average request time
 
+var httpAverages = new Object;
 var httpTop5Data = [];
 
 var httpTop5_barHeight = tallerGraphHeight / 5;
@@ -47,6 +48,14 @@ httpTop5Chart.append("text")
     .attr("dominant-baseline", "central")
     .style("font-size", "18px")
     .text("Average Response Times (top 5)");
+
+// Add the placeholder text
+var httpTop5ChartPlaceholder = httpTop5Chart.append("text")
+    .attr("x", httpDiv3GraphWidth/2)
+    .attr("y", graphHeight/2)
+    .attr("text-anchor", "middle")
+    .style("font-size", "18px")
+    .text("No Data Available");
 
 function convertURL(url) {
     if (url.toString().startsWith("http://" + myurl)) {
@@ -126,7 +135,7 @@ function updateHttpAverages(workingData) {
 }
 
 function updateURLData(data) {
-    // Get the HTTP average response times
+
     if(httpTop5Data.length == 0) {
         // first data - remove "No Data Available" label
         httpTop5ChartPlaceholder.attr("visibility", "hidden");
@@ -135,6 +144,8 @@ function updateURLData(data) {
     httpTop5RequestData = JSON.parse(data);  // parses the data into a JSON array
 
     updateHttpAverages(httpTop5RequestData);
+
+
 }
 
 function resizeHttpTop5Chart() {
