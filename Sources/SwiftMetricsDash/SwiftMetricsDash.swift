@@ -163,6 +163,7 @@ class SwiftMetricsService: WebSocketService {
     public func connected(connection: WebSocketConnection) {
         connections[connection.id] = connection
         getenvRequest()
+        sendTitle()
     }
 
     public func disconnected(connection: WebSocketConnection, reason: WebSocketCloseReasonCode){}
@@ -209,6 +210,19 @@ class SwiftMetricsService: WebSocketService {
 
         for (_,connection) in connections {
             if let messageToSend = envLine.rawString() {
+                connection.send(message: messageToSend)
+            }
+        }
+    }
+
+
+    public func sendTitle()  {
+        let titleLine = JSON(["topic":"title","payload":[
+            "title":"Application Metrics for Swift",
+            "docs": "http://github.com/RuntimeTools/SwiftMetrics"]])
+
+         for (_,connection) in connections {
+            if let messageToSend = titleLine.rawString() {
                 connection.send(message: messageToSend)
             }
         }
