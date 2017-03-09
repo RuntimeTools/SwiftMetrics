@@ -127,9 +127,14 @@ function updateHttpAverages(workingData) {
 
 function updateURLData(data) {
     // Get the HTTP average response times
+    if(httpTop5Data.length == 0) {
+        // first data - remove "No Data Available" label
+        httpTop5ChartPlaceholder.attr("visibility", "hidden");
+    }
 
-        updateHttpAverages(data);
+    httpTop5RequestData = JSON.parse(data);  // parses the data into a JSON array
 
+    updateHttpAverages(httpTop5RequestData);
 }
 
 function resizeHttpTop5Chart() {
