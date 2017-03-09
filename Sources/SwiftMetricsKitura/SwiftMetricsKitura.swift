@@ -65,6 +65,7 @@ private class HttpMonitor: ServerMonitor {
 
     // This function is called from Kitura.net when an http request finishes
     public func finished(request: ServerRequest?, response: ServerResponse) {
+        let _ = response
         if let requestTemp = request {
             queue.sync {
                 for (index,req) in requestStore.enumerated() {
