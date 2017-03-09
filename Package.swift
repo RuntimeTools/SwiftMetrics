@@ -3,6 +3,7 @@ import PackageDescription
 let package = Package(
   name: "SwiftMetrics",
   targets: [
+      Target(name: "SwiftMetricsLatency", dependencies: ["SwiftMetrics"]),
       Target(name: "SwiftMetricsKitura", dependencies: ["SwiftMetrics"]),
       Target(name: "SwiftMetricsBluemix", dependencies: ["SwiftMetricsKitura"]),
       Target(name: "SwiftMetricsDash", dependencies: ["SwiftMetricsBluemix"])
@@ -15,3 +16,4 @@ let package = Package(
     .Package(url: "https://github.com/IBM-Swift/CloudConfiguration.git", majorVersion: 1)
   ]
 )
+
