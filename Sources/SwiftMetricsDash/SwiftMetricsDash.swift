@@ -117,7 +117,7 @@ class SwiftMetricsService: WebSocketService {
         monitor.on(sendMEM)
         monitor.on(storeHTTP)
         gethttpRequest()
-      //  gethttpURLs()
+        gethttpURLs()
   }
 
 
@@ -294,15 +294,11 @@ class SwiftMetricsService: WebSocketService {
             var responseData:[JSON] = []
             for (key, value) in self.httpURLData {
                 let json = JSON(["url":key, "averageResponseTime": value.0])
-                //if let appendString = json.rawString() {
-                    //responseData += appendString
                     responseData.append(json)
-                //        print("ursl is \(responseData)")
-              //  }
             }
 
             let httpURLLine = JSON(["topic":"httpURLs","payload":[responseData]])
-            print("httpURLLine is \(httpURLLine)")
+            //print("httpURLLine is \(httpURLLine)")
             for (_,connection) in self.connections {
                 if let messageToSend = httpURLLine.rawString() {
                     connection.send(message: messageToSend)
@@ -310,7 +306,7 @@ class SwiftMetricsService: WebSocketService {
             }
         }
         DispatchQueue.global(qos: .background).async {
-          self.gethttpURLs()
+            self.gethttpURLs()
         }
     }
 
