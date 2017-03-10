@@ -295,8 +295,8 @@ class SwiftMetricsService: WebSocketService {
             for response in responseData {
                 messageToSend += response.rawString()!
             }
-
-            let httpURLLine = JSON(["topic":"httpURLs","payload":[messageToSend]])
+            let messageToSend2 = JSON(messageToSend)
+            let httpURLLine = JSON(["topic":"httpURLs","payload":[messageToSend2]])
 
             print("httpURLLine is \(httpURLLine.rawString())")
             for (_,connection) in self.connections {
