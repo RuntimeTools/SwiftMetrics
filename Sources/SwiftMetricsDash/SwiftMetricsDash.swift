@@ -293,7 +293,7 @@ class SwiftMetricsService: WebSocketService {
             var messageToSend:String=""
 
             for response in responseData {
-                messageToSend += response.rawString()!
+                messageToSend += response.rawString()! + ","
             }
             let messageToSend2 = "{\"topic\":\"httpURLs\",\"payload\":[" + messageToSend + "]}"
             //let httpURLLine = JSON(["topic":"httpURLs","payload":[messageToSend2]])
