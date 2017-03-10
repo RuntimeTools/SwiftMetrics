@@ -149,17 +149,6 @@ class SwiftMetricsService: WebSocketService {
         }
     }
 
-    func sendHTTP(myhttp: HTTPData) {
-        let httpLine = JSON(["topic":"http","payload":["time":"\(myhttp.timeOfRequest)","url":"\(myhttp.url)","duration":"\(myhttp.duration)","method":"\(myhttp.requestMethod)","statusCode":"\(myhttp.statusCode)"]])
-
-        for (_,connection) in connections {
-            if let messageToSend = httpLine.rawString() {
-                connection.send(message: messageToSend)
-            }
-        }
-
-    }
-
     public func connected(connection: WebSocketConnection) {
         connections[connection.id] = connection
         getenvRequest()
@@ -229,7 +218,7 @@ class SwiftMetricsService: WebSocketService {
     }
 
     public func storeHTTP(myhttp: HTTPData) {
-        _ = myhttp
+        let _ = myhttp
     	  httpQueue.async {
             if self.httpAggregateData.total == 0 {
                 self.httpAggregateData.total = 1
@@ -238,14 +227,14 @@ class SwiftMetricsService: WebSocketService {
                 self.httpAggregateData.longest = myhttp.duration
                 self.httpAggregateData.average = myhttp.duration
             } else {
-              let oldTotalAsDouble:Double = Double(self.httpAggregateData.total)
-              let newTotal = self.httpAggregateData.total + 1
-              self.httpAggregateData.total = newTotal
-              self.httpAggregateData.average = (self.httpAggregateData.average * oldTotalAsDouble + myhttp.duration) / Double(newTotal)
-              if (myhttp.duration > self.httpAggregateData.longest) {
-                self.httpAggregateData.longest = myhttp.duration
-                self.httpAggregateData.url = myhttp.url
-              }
+                let oldTotalAsDouble:Double = Double(self.httpAggregateData.total)
+                let newTotal = self.httpAggregateData.total + 1
+                self.httpAggregateData.total = newTotal
+                self.httpAggregateData.average = (self.httpAggregateData.average * oldTotalAsDouble + myhttp.duration) / Double(newTotal)
+                if (myhttp.duration > self.httpAggregateData.longest) {
+                    self.httpAggregateData.longest = myhttp.duration
+                    self.httpAggregateData.url = myhttp.url
+                }
             }
         }
         httpURLsQueue.async {
