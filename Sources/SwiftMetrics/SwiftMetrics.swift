@@ -15,6 +15,7 @@
  *******************************************************************************/
 import agentcore
 import Foundation
+import Dispatch
 import Configuration
 import CloudFoundryConfig
 #if os(Linux)
@@ -50,6 +51,11 @@ public struct InitData: SMData {
   public let data: [String:String]
 }
 
+public struct LatencyData: SMData {
+  public let timeOfSample: Int
+  public let duration: Double
+}
+
 public var swiftMon: SwiftMonitor?
 
 
@@ -78,6 +84,8 @@ open class SwiftMetrics {
   var pushData: monitorPushData?
   var sendControl: monitorSendControl?
   var registerListener: monitorRegisterListener?
+  var sleepInterval: UInt32 = 2
+  var latencyEnabled: Bool = true
 
   public init() throws{
 
@@ -87,10 +95,26 @@ open class SwiftMetrics {
     loaderApi.setProperty("agentcore.version", loaderApi.getAgentVersion())
     loaderApi.setProperty("swiftmetrics.version", SWIFTMETRICS_VERSION)
     loaderApi.logMessage(info, "Swift Application Metrics")
+    DispatchQueue.global(qos: .background).async {
+        self.snoozeLatencyEmit(Date().timeIntervalSince1970 * 1000)
+    }
   }
 
   deinit {
+    self.latencyEnabled = false
     self.stop()
+  }
+
+  private func snoozeLatencyEmit(_ startTime: Double) {
+      if (latencyEnabled) {
+          let timeNow = Date().timeIntervalSince1970 * 1000
+          let latencyTime = timeNow - startTime
+          emitData(LatencyData(timeOfSample: Int(startTime), duration:latencyTime))
+          sleep(sleepInterval)
+          DispatchQueue.global(qos: .background).async {
+              self.snoozeLatencyEmit(Date().timeIntervalSince1970 * 1000)
+          }
+      }
   }
 
   private func setDefaultLibraryPath() {
@@ -212,9 +236,15 @@ open class SwiftMetrics {
     ///this seems to be probe-related - might not be needed
   }
 
+  public func emitData(_ data: LatencyData) {
+    if let monitor = swiftMon {
+      monitor.raiseEvent(data: data)
+    }
+  }
+
   public func emitData<T: SMData>(_ data: T) {
-    if swiftMon != nil {
-      swiftMon!.raiseEvent(data: data)
+    if let monitor = swiftMon {
+      monitor.raiseEvent(data: data)
     }
     ///add HC-visual events here
   }
@@ -296,3 +326,4 @@ open class SwiftMetrics {
     return swiftMon!
   }
 }
+

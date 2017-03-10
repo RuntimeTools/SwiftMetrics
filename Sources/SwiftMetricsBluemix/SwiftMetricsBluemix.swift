@@ -7,7 +7,6 @@ import CloudFoundryConfig
 import KituraRequest
 import SwiftMetrics
 import SwiftMetricsKitura
-import SwiftMetricsLatency
 import SwiftyJSON
 
 fileprivate struct HttpStats {
