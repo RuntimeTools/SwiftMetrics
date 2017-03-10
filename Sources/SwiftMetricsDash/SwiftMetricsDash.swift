@@ -117,8 +117,8 @@ class SwiftMetricsService: WebSocketService {
         monitor.on(sendMEM)
         monitor.on(storeHTTP)
         sendhttpData()
-        //gethttpURLs()
-  }
+        gethttpURLs()
+    }
 
 
 
@@ -247,8 +247,8 @@ class SwiftMetricsService: WebSocketService {
                 self.httpAggregateData.url = myhttp.url
               }
             }
-//        }
-//        httpURLsQueue.async {
+        }
+        httpURLsQueue.async {
             let urlTuple = self.httpURLData[myhttp.url]
             if(urlTuple != nil) {
                 let averageResponseTime = urlTuple!.0
@@ -280,23 +280,6 @@ class SwiftMetricsService: WebSocketService {
                     }
                 self.httpAggregateData = HTTPAggregateData()
             }
-
-            if self.httpURLData.count > 0 {
-                var responseData:[JSON] = []
-                for (key, value) in self.httpURLData {
-                    let json = JSON(["url":key, "averageResponseTime": value.0])
-                        responseData.append(json)
-                }
-
-                let httpURLLine = JSON(["topic":"httpURLs","payload":[responseData]])
-                //print("httpURLLine is \(httpURLLine)")
-                for (_,connection) in self.connections {
-                    if let messageToSend = httpURLLine.rawString() {
-                        connection.send(message: messageToSend)
-                    }
-                }
-            }
-
         }
         DispatchQueue.global(qos: .background).async {
             self.sendhttpData()
