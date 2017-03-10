@@ -295,13 +295,15 @@ class SwiftMetricsService: WebSocketService {
             for response in responseData {
                 messageToSend += response.rawString()!
             }
-            let messageToSend2 = JSON(messageToSend)
-            let httpURLLine = JSON(["topic":"httpURLs","payload":[messageToSend2]])
+            let messageToSend2 = "topic:\"httpURLs\",payload:[" + messageToSend + "]"
+            //let httpURLLine = JSON(["topic":"httpURLs","payload":[messageToSend2]])
 
-            print("httpURLLine is \(httpURLLine.rawString())")
+
+
+            print("messageToSend2 is \(messageToSend2)")
             for (_,connection) in self.connections {
                 //if let messageToSend = httpURLLine {
-                    connection.send(message: messageToSend)
+                    connection.send(message: messageToSend2)
                     //connection.send(message: httpURLLine)
                 //}
             }
