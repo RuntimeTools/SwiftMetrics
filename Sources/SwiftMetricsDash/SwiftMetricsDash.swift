@@ -116,8 +116,8 @@ class SwiftMetricsService: WebSocketService {
         monitor.on(sendCPU)
         monitor.on(sendMEM)
         monitor.on(storeHTTP)
-        gethttpRequest()
-        gethttpURLs()
+        sendhttpData()
+        //gethttpURLs()
   }
 
 
@@ -229,8 +229,8 @@ class SwiftMetricsService: WebSocketService {
     }
 
     public func storeHTTP(myhttp: HTTPData) {
-      _ = myhttp
-    	httpQueue.async {
+        _ = myhttp
+    	  httpQueue.async {
             if self.httpAggregateData.total == 0 {
                 self.httpAggregateData.total = 1
                 self.httpAggregateData.timeOfRequest = myhttp.timeOfRequest
@@ -247,8 +247,8 @@ class SwiftMetricsService: WebSocketService {
                 self.httpAggregateData.url = myhttp.url
               }
             }
-        }
-        httpURLsQueue.async {
+//        }
+//        httpURLsQueue.async {
             let urlTuple = self.httpURLData[myhttp.url]
             if(urlTuple != nil) {
                 let averageResponseTime = urlTuple!.0
@@ -261,30 +261,45 @@ class SwiftMetricsService: WebSocketService {
         }
     }
 
-    func gethttpRequest()  {
+    func sendhttpData()  {
         sleep(UInt32(2))
         httpQueue.async {
-            do {
-                if self.httpAggregateData.total > 0 {
-                    let httpLine = JSON([
-                    "topic":"http","payload":[
-                        "time":"\(self.httpAggregateData.timeOfRequest)",
-                        "url":"\(self.httpAggregateData.url)",
-                        "longest":"\(self.httpAggregateData.longest)",
-                        "average":"\(self.httpAggregateData.average)",
-                        "total":"\(self.httpAggregateData.total)"]])
+            if self.httpAggregateData.total > 0 {
+                let httpLine = JSON([
+                "topic":"http","payload":[
+                    "time":"\(self.httpAggregateData.timeOfRequest)",
+                    "url":"\(self.httpAggregateData.url)",
+                    "longest":"\(self.httpAggregateData.longest)",
+                    "average":"\(self.httpAggregateData.average)",
+                    "total":"\(self.httpAggregateData.total)"]])
 
-                        for (_,connection) in self.connections {
-                            if let messageToSend = httpLine.rawString() {
-                                connection.send(message: messageToSend)
-                            }
+                    for (_,connection) in self.connections {
+                        if let messageToSend = httpLine.rawString() {
+                            connection.send(message: messageToSend)
                         }
-                    self.httpAggregateData = HTTPAggregateData()
+                    }
+                self.httpAggregateData = HTTPAggregateData()
+            }
+
+            if self.httpURLData.total > 0 {
+                var responseData:[JSON] = []
+                for (key, value) in self.httpURLData {
+                    let json = JSON(["url":key, "averageResponseTime": value.0])
+                        responseData.append(json)
+                }
+
+                let httpURLLine = JSON(["topic":"httpURLs","payload":[responseData]])
+                //print("httpURLLine is \(httpURLLine)")
+                for (_,connection) in self.connections {
+                    if let messageToSend = httpURLLine.rawString() {
+                        connection.send(message: messageToSend)
+                    }
                 }
             }
+
         }
         DispatchQueue.global(qos: .background).async {
-          self.gethttpRequest()
+            self.sendhttpData()
         }
     }
 
