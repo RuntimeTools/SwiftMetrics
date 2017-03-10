@@ -220,34 +220,34 @@ class SwiftMetricsService: WebSocketService {
     }
 
     public func storeHTTP(myhttp: HTTPData) {
-        let _ = myhttp
+        let localmyhttp = myhttp
     	  httpQueue.sync {
             if self.httpAggregateData.total == 0 {
                 self.httpAggregateData.total = 1
-                self.httpAggregateData.timeOfRequest = myhttp.timeOfRequest
-                self.httpAggregateData.url = myhttp.url
-                self.httpAggregateData.longest = myhttp.duration
-                self.httpAggregateData.average = myhttp.duration
+                self.httpAggregateData.timeOfRequest = localmyhttp.timeOfRequest
+                self.httpAggregateData.url = localmyhttp.url
+                self.httpAggregateData.longest = localmyhttp.duration
+                self.httpAggregateData.average = localmyhttp.duration
             } else {
                 let oldTotalAsDouble:Double = Double(self.httpAggregateData.total)
                 let newTotal = self.httpAggregateData.total + 1
                 self.httpAggregateData.total = newTotal
-                self.httpAggregateData.average = (self.httpAggregateData.average * oldTotalAsDouble + myhttp.duration) / Double(newTotal)
-                if (myhttp.duration > self.httpAggregateData.longest) {
-                    self.httpAggregateData.longest = myhttp.duration
-                    self.httpAggregateData.url = myhttp.url
+                self.httpAggregateData.average = (self.httpAggregateData.average * oldTotalAsDouble + localmyhttp.duration) / Double(newTotal)
+                if (localmyhttp.duration > self.httpAggregateData.longest) {
+                    self.httpAggregateData.longest = localmyhttp.duration
+                    self.httpAggregateData.url = localmyhttp.url
                 }
             }
         }
         httpURLsQueue.async {
-            let urlTuple = self.httpURLData[myhttp.url]
+            let urlTuple = self.httpURLData[localmyhttp.url]
             if(urlTuple != nil) {
                 let averageResponseTime = urlTuple!.0
                 let hits = urlTuple!.1
                 // Recalculate the average
-                self.httpURLData.updateValue(((averageResponseTime * hits + myhttp.duration)/(hits + 1), hits + 1), forKey: myhttp.url)
+                self.httpURLData.updateValue(((averageResponseTime * hits + localmyhttp.duration)/(hits + 1), hits + 1), forKey: localmyhttp.url)
             } else {
-                self.httpURLData.updateValue((myhttp.duration, 1), forKey: myhttp.url)
+                self.httpURLData.updateValue((localmyhttp.duration, 1), forKey: localmyhttp.url)
             }
         }
     }
