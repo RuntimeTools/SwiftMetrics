@@ -281,7 +281,7 @@ class SwiftMetricsService: WebSocketService {
                 self.httpAggregateData = HTTPAggregateData()
             }
 
-            if self.httpURLData.total > 0 {
+            if self.httpURLData.count > 0 {
                 var responseData:[JSON] = []
                 for (key, value) in self.httpURLData {
                     let json = JSON(["url":key, "averageResponseTime": value.0])
