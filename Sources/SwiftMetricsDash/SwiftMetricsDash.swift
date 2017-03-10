@@ -110,7 +110,7 @@ class SwiftMetricsService: WebSocketService {
     let httpURLsQueue = DispatchQueue(label: "httpURLsQueue")
     let httpQueue = DispatchQueue(label: "httpStoreQueue")
     var monitor:SwiftMonitor
-    var httpTimer: Timer!
+
 
     public init(monitor: SwiftMonitor) {
         self.monitor = monitor
@@ -118,13 +118,6 @@ class SwiftMetricsService: WebSocketService {
         monitor.on(sendMEM)
         monitor.on(storeHTTP)
         sendhttpData()
-        // add timer code here to call sendhttpData
-        //httpTimer = Timer.scheduledTimer(timeInterval: 5,
-        //        target: self,
-        //        selector: #selector(sendhttpData),
-        //        userInfo: nil,
-        //        repeats: true)
-
         gethttpURLs()
     }
 
@@ -227,7 +220,7 @@ class SwiftMetricsService: WebSocketService {
 
     public func storeHTTP(myhttp: HTTPData) {
         let _ = myhttp
-    	  httpQueue.sync {
+    	  httpQueue.async {
             if self.httpAggregateData.total == 0 {
                 self.httpAggregateData.total = 1
                 self.httpAggregateData.timeOfRequest = myhttp.timeOfRequest
@@ -245,7 +238,7 @@ class SwiftMetricsService: WebSocketService {
                 }
             }
         }
-        httpURLsQueue.sync {
+        httpURLsQueue.async {
             let urlTuple = self.httpURLData[myhttp.url]
             if(urlTuple != nil) {
                 let averageResponseTime = urlTuple!.0
@@ -260,7 +253,7 @@ class SwiftMetricsService: WebSocketService {
 
     func sendhttpData()  {
         sleep(UInt32(2))
-        httpQueue.sync {
+        httpQueue.async {
             if self.httpAggregateData.total > 0 {
                 let httpLine = JSON([
                 "topic":"http","payload":[
@@ -283,7 +276,7 @@ class SwiftMetricsService: WebSocketService {
 
     func gethttpURLs() {
         sleep(UInt32(2))
-        httpURLsQueue.sync {
+        httpURLsQueue.async {
             var responseData:[JSON] = []
             for (key, value) in self.httpURLData {
                 let json = JSON(["url":key, "averageResponseTime": value.0])
