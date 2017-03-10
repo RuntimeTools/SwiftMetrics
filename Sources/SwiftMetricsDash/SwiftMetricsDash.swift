@@ -296,21 +296,16 @@ class SwiftMetricsService: WebSocketService {
                 messageToSend += response.rawString()! + ","
             }
 
-            // remove the last ','
-            messageToSend = messageToSend.substring(to: messageToSend.index(before: messageToSend.endIndex))
-
-            let messageToSend2 = "{\"topic\":\"httpURLs\",\"payload\":[" + messageToSend + "]}"
-            //let httpURLLine = JSON(["topic":"httpURLs","payload":[messageToSend2]])
-
-
-
-            print("messageToSend2 is \(messageToSend2)")
-            for (_,connection) in self.connections {
-                //if let messageToSend = httpURLLine {
-                    connection.send(message: messageToSend2)
-                    //connection.send(message: httpURLLine)
-                //}
+            if messageToSend.length > 0 {
+              // remove the last ','
+              messageToSend = messageToSend.substring(to: messageToSend.index(before: messageToSend.endIndex))
+              let messageToSend2 = "{\"topic\":\"httpURLs\",\"payload\":[" + messageToSend + "]}"
+              print("messageToSend2 is \(messageToSend2)")
+              for (_,connection) in self.connections {
+                  connection.send(message: messageToSend2)
+              }
             }
+
             jobsQueue.async {
                 self.gethttpURLs()
             }
