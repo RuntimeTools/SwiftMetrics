@@ -296,7 +296,7 @@ class SwiftMetricsService: WebSocketService {
                 messageToSend += response.rawString()! + ","
             }
 
-            if count(messageToSend) > 0 {
+            if !messageToSend.isEmpty {
               // remove the last ','
               messageToSend = messageToSend.substring(to: messageToSend.index(before: messageToSend.endIndex))
               let messageToSend2 = "{\"topic\":\"httpURLs\",\"payload\":[" + messageToSend + "]}"
