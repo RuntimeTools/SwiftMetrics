@@ -288,12 +288,14 @@ class SwiftMetricsService: WebSocketService {
                     responseData.append(json)
             }
 
+            print("responseData is \(responseData) with size of \(responseData.count)")
+
             let httpURLLine = JSON(["topic":"httpURLs","payload":[responseData]])
             print("httpURLLine is \(httpURLLine)")
             for (_,connection) in self.connections {
                 //if let messageToSend = httpURLLine {
                     //connection.send(message: messageToSend)
-                    connection.send(message: httpURLLine)
+                    //connection.send(message: httpURLLine)
                 //}
             }
             jobsQueue.async {
