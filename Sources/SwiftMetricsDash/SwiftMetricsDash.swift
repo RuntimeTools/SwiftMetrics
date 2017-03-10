@@ -110,6 +110,7 @@ class SwiftMetricsService: WebSocketService {
     let httpURLsQueue = DispatchQueue(label: "httpURLsQueue")
     let httpQueue = DispatchQueue(label: "httpStoreQueue")
     var monitor:SwiftMonitor
+    var httpTimer: Timer!
 
     public init(monitor: SwiftMonitor) {
         self.monitor = monitor
@@ -117,6 +118,13 @@ class SwiftMetricsService: WebSocketService {
         monitor.on(sendMEM)
         monitor.on(storeHTTP)
         sendhttpData()
+        // add timer code here to call sendhttpData
+        //httpTimer = Timer.scheduledTimer(timeInterval: 5,
+        //        target: self,
+        //        selector: #selector(sendhttpData),
+        //        userInfo: nil,
+        //        repeats: true)
+
         gethttpURLs()
     }
 
@@ -269,8 +277,6 @@ class SwiftMetricsService: WebSocketService {
                     }
                 self.httpAggregateData = HTTPAggregateData()
             }
-        }
-        DispatchQueue.global(qos: .background).async {
             self.sendhttpData()
         }
     }
@@ -291,8 +297,6 @@ class SwiftMetricsService: WebSocketService {
                     connection.send(message: messageToSend)
                 }
             }
-        }
-        DispatchQueue.global(qos: .background).async {
             self.gethttpURLs()
         }
     }
