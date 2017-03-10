@@ -3,9 +3,8 @@ import PackageDescription
 let package = Package(
   name: "SwiftMetrics",
   targets: [
-      Target(name: "SwiftMetricsLatency", dependencies: ["SwiftMetrics"]),
       Target(name: "SwiftMetricsKitura", dependencies: ["SwiftMetrics"]),
-      Target(name: "SwiftMetricsBluemix", dependencies: ["SwiftMetricsKitura","SwiftMetricsLatency"]),
+      Target(name: "SwiftMetricsBluemix", dependencies: ["SwiftMetricsKitura"]),
       Target(name: "SwiftMetricsDash", dependencies: ["SwiftMetricsBluemix"])
     ],
   dependencies: [

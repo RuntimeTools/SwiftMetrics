@@ -14,19 +14,13 @@ Swift Application Metrics provides the following built-in data collection source
  Environment        | Machine and runtime environment information
  CPU                | Process and system CPU
  Memory             | Process and system memory usage
+ Latency            | Dispatch Queue latency
 
  SwiftMetricsKitura adds the additional collection source:
 
  Source             | Description
 :-------------------|:-------------------------------------------
  HTTP               | HTTP metric information
-
-
- SwiftMetricsLatency adds the additional collection source:
-
- Source             | Description
-:-------------------|:-------------------------------------------
- Latency            | Dispatch Queue latency
 
 
 ## Getting Started
@@ -86,19 +80,6 @@ let sm = try SwiftMetrics()
 SwiftMetricsKitura(swiftMetricsInstance: sm)
 let monitoring = sm.monitor()
 ```
-
-If you would like to monitor dispatch queue latency as well, then use the following:
-```swift
-import SwiftMetrics
-import SwiftMetricsKitura
-import SwiftMetricsLatency
-
-let sm = try SwiftMetrics()
-SwiftMetricsKitura(swiftMetricsInstance: sm)
-SwiftMetricsLatency(swiftMetricsInstance: sm)
-let monitoring = sm.monitor()
-```
-
 
 SwiftMetrics() returns the Swift Application Metrics Agent - this runs parallel to your code and receives and emits data about your application to any connected clients e.g. A Health Center Eclipse IDE Client connected over MQTT. The `sm.monitor()` call returns a Swift Application Metrics Local Client, connected to the Agent `sm` over a local connection.
 
@@ -161,9 +142,6 @@ If you supply a closure that takes either a *[pre-supplied API struct](#api-stru
 ### SwiftMetricsKitura(swiftMetricsInstance: SwiftMetrics) (when importing SwiftMetricsKitura)
 Creates a SwiftMetricsKitura instance, which will monitor Kitura HTTP metrics and emit them via the SwiftMetrics instance specified.
 
-### SwiftMetricsLatency(swiftMetricsInstance: SwiftMetrics) (when importing SwiftMetricsLatency)
-Creates a SwiftMetricsLatency instance, which will monitor the dispatch queue latency and emit metrics via the SwiftMetrics instance specified.
-
 
 <a name="api-structs"></a>
 ## API Data Structures
@@ -211,7 +189,7 @@ Emitted when an environment sample is taken. The Dictionary obtained with this d
 * `public struct EnvData: SMData`
     * `data` ([String: String] Dictionary) of environment variable name:value pairs. The contents vary depending on system.
 
-### Latency data structure (when including SwiftMetricsLatency)
+### Latency data structure
 Emitted when a Latency sample is taken.
 * `public struct LatencyData: SMData`
     * `timeOfSample` (Int) the system time in milliseconds since epoch when the sample was taken.

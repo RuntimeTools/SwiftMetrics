@@ -37,12 +37,14 @@ public class SwiftMonitor {
   public typealias memoryClosure = (MemData) -> ()
   public typealias envClosure = (EnvData) -> ()
   public typealias initClosure = (InitData) -> ()
+  public typealias latencyClosure = (LatencyData) -> ()
 
   final public class EventEmitter {
     static var cpuObservers: [cpuClosure] = []
     static var memoryObservers: [memoryClosure] = []
     static var environmentObservers: [envClosure] = []
     static var initializedObservers: [initClosure] = []
+    static var latencyObservers: [latencyClosure] = []
     static var customObservers : [ String : [Any] ] = [:]
 
     static func publish(data: CPUData) {
@@ -69,6 +71,12 @@ public class SwiftMonitor {
       }
     }
 
+    static func publish(data: LatencyData) {
+        for process in latencyObservers {
+            process(data)
+        }
+    }
+
     static func publish<T: SMData>(data: T) {
       let index = "\(T.self)"
       if let closureList = customObservers[index] {
@@ -92,6 +100,10 @@ public class SwiftMonitor {
 
     static func subscribe(callback: @escaping initClosure) {
       initializedObservers.append(callback)
+    }
+
+    static func subscribe(callback: @escaping latencyClosure) {
+      latencyObservers.append(callback)
     }
 
     static func subscribe<T: SMData>(callback: @escaping (T) -> ()) {
@@ -209,6 +221,11 @@ public class SwiftMonitor {
     EventEmitter.subscribe(callback: callback)
   }
 
+  public func on(_ callback: @escaping latencyClosure) {
+    swiftMetrics.loaderApi.logMessage(fine, "on(): Subscribing a LatencyData observer")
+    EventEmitter.subscribe(callback: callback)
+  }
+
   public func on<T: SMData>(_ callback: @escaping (T) -> ()) {
     swiftMetrics.loaderApi.logMessage(fine, "on(): Subscribing a \(T.self)) observer")
     EventEmitter.subscribe(callback: callback)
@@ -231,6 +248,11 @@ public class SwiftMonitor {
 
   func raiseEvent(data: InitData) {
     swiftMetrics.loaderApi.logMessage(fine, "raiseEvent(): Publishing an InitData event")
+    EventEmitter.publish(data: data)
+  }
+
+  func raiseEvent(data: LatencyData) {
+    swiftMetrics.loaderApi.logMessage(fine, "raiseEvent(): Publishing a LatencyData event")
     EventEmitter.publish(data: data)
   }
 
