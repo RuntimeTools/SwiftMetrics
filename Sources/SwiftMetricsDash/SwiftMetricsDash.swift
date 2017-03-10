@@ -287,11 +287,9 @@ class SwiftMetricsService: WebSocketService {
                 let json = JSON(["url":key, "averageResponseTime": value.0])
                     responseData.append(json)
             }
-
-            print("responseData is \(responseData) with size of \(responseData.count)")
-
             var messageToSend:String=""
 
+            // build up the messageToSend string
             for response in responseData {
                 messageToSend += response.rawString()! + ","
             }
@@ -299,8 +297,8 @@ class SwiftMetricsService: WebSocketService {
             if !messageToSend.isEmpty {
               // remove the last ','
               messageToSend = messageToSend.substring(to: messageToSend.index(before: messageToSend.endIndex))
+              // construct the final JSON obkect
               let messageToSend2 = "{\"topic\":\"httpURLs\",\"payload\":[" + messageToSend + "]}"
-              print("messageToSend2 is \(messageToSend2)")
               for (_,connection) in self.connections {
                   connection.send(message: messageToSend2)
               }
