@@ -229,6 +229,7 @@ class SwiftMetricsService: WebSocketService {
     }
 
     public func storeHTTP(myhttp: HTTPData) {
+      _ = myhttp
     	httpQueue.async {
             if self.httpAggregateData.total == 0 {
                 self.httpAggregateData.total = 1
