@@ -119,7 +119,8 @@ open class SwiftMetrics {
     let currentDir = fm.currentDirectoryPath
     var dirContents = try fm.contentsOfDirectory(atPath: currentDir)
     for dir in dirContents {
-      if dir.contains("healthcenter.properties") {
+    
+      if dir.contains("swiftmetrics.properties") {
         propertiesPath = "\(currentDir)/\(dir)"
       }
     }
@@ -147,12 +148,12 @@ open class SwiftMetrics {
       ///omr-agentcore has a version number in it, so search for it
       dirContents = try fm.contentsOfDirectory(atPath: fm.currentDirectoryPath)
       for dir in dirContents {
-        if dir.contains("omr-agentcore") {
+        if dir.contains("SwiftMetrics") {
           ///that's where we want to be!
           _ = fm.changeCurrentDirectoryPath(dir)
         }
       }
-      propertiesPath = "\(fm.currentDirectoryPath)/properties/healthcenter.properties"
+      propertiesPath = "\(fm.currentDirectoryPath)/swiftmetrics.properties"
       _ = fm.changeCurrentDirectoryPath(currentDir)
 
     }
