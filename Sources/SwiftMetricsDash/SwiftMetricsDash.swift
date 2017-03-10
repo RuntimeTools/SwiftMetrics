@@ -109,6 +109,7 @@ class SwiftMetricsService: WebSocketService {
     var httpURLData:[String:(totalTime:Double, numHits:Double)] = [:]
     let httpURLsQueue = DispatchQueue(label: "httpURLsQueue")
     let httpQueue = DispatchQueue(label: "httpStoreQueue")
+    let jobsQueue = DispatchQueue(label: "jobsQueue")
     var monitor:SwiftMonitor
 
 
@@ -254,14 +255,15 @@ class SwiftMetricsService: WebSocketService {
     func sendhttpData()  {
         sleep(UInt32(2))
         httpQueue.sync {
-            if self.httpAggregateData.total > 0 {
+            let localCopy = self.httpAggregateData
+            if localCopy.total > 0 {
                 let httpLine = JSON([
                 "topic":"http","payload":[
-                    "time":"\(self.httpAggregateData.timeOfRequest)",
-                    "url":"\(self.httpAggregateData.url)",
-                    "longest":"\(self.httpAggregateData.longest)",
-                    "average":"\(self.httpAggregateData.average)",
-                    "total":"\(self.httpAggregateData.total)"]])
+                    "time":"\(localCopy.timeOfRequest)",
+                    "url":"\(localCopy.url)",
+                    "longest":"\(localCopy.longest)",
+                    "average":"\(localCopy.average)",
+                    "total":"\(localCopy.total)"]])
 
                     for (_,connection) in self.connections {
                         if let messageToSend = httpLine.rawString() {
@@ -270,13 +272,15 @@ class SwiftMetricsService: WebSocketService {
                     }
                 self.httpAggregateData = HTTPAggregateData()
             }
-            self.sendhttpData()
+            jobsQueue.async {
+                self.sendhttpData()
+            }
         }
     }
 
     func gethttpURLs() {
         sleep(UInt32(2))
-        httpURLsQueue.async {
+        httpURLsQueue.sync {
             var responseData:[JSON] = []
             let localCopy = self.httpURLData
             for (key, value) in localCopy {
@@ -291,7 +295,9 @@ class SwiftMetricsService: WebSocketService {
                     connection.send(message: messageToSend)
                 }
             }
-            self.gethttpURLs()
+            jobsQueue.async {
+                self.gethttpURLs()
+            }
         }
     }
 
