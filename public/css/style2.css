@@ -52,8 +52,7 @@
         float:left;
     }
 
-
-   .container-fluid {
+    .container-fluid {
         background-color: #f5f7fa;
     }
 
@@ -104,7 +103,7 @@
         stroke-width: 2;
         fill: none;
     }
-  
+
     g.xAxis path,
     g.xAxis line,
     g.yAxis path,
