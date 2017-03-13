@@ -190,10 +190,11 @@ public class AutoScalar {
   }
 
   private func startReport() {
-    if (!isAgentEnabled) {
-      Log.verbose("[Auto-Scaling Agent] Agent is disabled by server")
-      return
-    }
+    print("JS start report")
+//    if (!isAgentEnabled) {
+//      Log.verbose("[Auto-Scaling Agent] Agent is disabled by server")
+//      return
+//    }
 
     let metricsToSend = calculateAverageMetrics()
     let sendObject = constructSendObject(metricsToSend: metricsToSend)
