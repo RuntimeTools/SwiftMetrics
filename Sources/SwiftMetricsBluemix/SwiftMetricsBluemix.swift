@@ -99,14 +99,14 @@ public class AutoScalar {
       return
     }
     self.notifyStatus()
-    self.refreshConfig()
+//    self.refreshConfig()
     self.setMonitors(monitor: swiftMetricsInstance.monitor())
     DispatchQueue.global(qos: .background).async {
       self.snoozeStartReport()
     }
-    DispatchQueue.global(qos: .background).async {
-      self.snoozeRefreshConfig()
-    }
+//    DispatchQueue.global(qos: .background).async {
+//      self.snoozeRefreshConfig()
+//    }
     print("JS bottom of init")
   }
 
