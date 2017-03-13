@@ -1,8 +1,8 @@
-     @viewport {
+    @viewport {
         width: 320;
     }
 
-   body,html {
+    body,html {
         background-color: #f5f7fa; 
         width : 100%;
         border-color:#f5f7fa;
