@@ -2,7 +2,6 @@
         width: 320;
     }
 
-
     body,html {
         background-color: #f5f7fa; 
         width : 100%;
@@ -10,7 +9,15 @@
         height: 100%;
         margin: 0 auto;
         font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+        font-size: 12px;
         color: #ffffff;
+    }
+
+    h1 {
+        font: 26px Arial;
+        font-weight: bold;
+        text-align: center;
+        color: #3b4b54;
     }
 
     .headerDiv {
@@ -44,23 +51,15 @@
         color: #BBC3C8;
         float:left;
     }
-    
+
     .container-fluid {
         background-color: #f5f7fa;
     }
 
-    h1 {
-        font: 26px Arial;
-        font-weight: bold;
-        text-align: center;
-        color: #3b4b54;
-    }
-
     svg {
         margin: 3px;
-        border: 1px solid #dfe6eb;
+        border: 1px solid #aabbd4;
         background-color: #ffffff;
-
     }
 
     .col-md-2,
@@ -76,6 +75,8 @@
 
     .cpuChart path,
     .memChart path,
+    .gcChart path,
+    .elChart path,
     .httpThroughPutChart path,
     .httpChart path {
         stroke: #00b4a0;
@@ -102,7 +103,7 @@
         stroke-width: 2;
         fill: none;
     }
-  
+
     g.xAxis path,
     g.xAxis line,
     g.yAxis path,
@@ -159,7 +160,6 @@
         margin: 0 auto;
         display: block;
         text-align: center;
-
     }
 
     g.arc {
@@ -179,11 +179,10 @@
 
     .httpTop5Chart .bar {
         fill: #5aaafa;
-
     }
 
     .titlebox {
-        fill: #eff3f5;
-        stroke: #dbe6e9;
+        fill: #dde4ee;
+        stroke: #aabbd4;
         stroke-width: 1px;
     }
