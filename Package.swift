@@ -15,3 +15,4 @@ let package = Package(
     .Package(url: "https://github.com/IBM-Swift/CloudConfiguration.git", majorVersion: 1)
   ]
 )
+

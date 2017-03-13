@@ -18,10 +18,15 @@ func processEnv(env: EnvData) {
    }
 }
 
+func processLatency(lat: LatencyData) {
+  print("\nThis is a custom Latency event response.\n lat.timeOfSample = \(lat.timeOfSample), \n lat.duration = \(lat.duration).\n")
+}
+
 
 monitoring.on(processCPU)
 monitoring.on(processMem)
 monitoring.on(processEnv)
+monitoring.on(processLatency)
 
 monitoring.on({ (indata: InitData) in
    print("\n\n+++ Initialized Environment Information +++\n")

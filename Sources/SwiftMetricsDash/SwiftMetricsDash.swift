@@ -109,16 +109,18 @@ class SwiftMetricsService: WebSocketService {
     var httpURLData:[String:(totalTime:Double, numHits:Double)] = [:]
     let httpURLsQueue = DispatchQueue(label: "httpURLsQueue")
     let httpQueue = DispatchQueue(label: "httpStoreQueue")
+    let jobsQueue = DispatchQueue(label: "jobsQueue")
     var monitor:SwiftMonitor
+
 
     public init(monitor: SwiftMonitor) {
         self.monitor = monitor
         monitor.on(sendCPU)
         monitor.on(sendMEM)
         monitor.on(storeHTTP)
-        gethttpRequest()
-      //  gethttpURLs()
-  }
+        sendhttpData()
+        gethttpURLs()
+    }
 
 
 
@@ -147,17 +149,6 @@ class SwiftMetricsService: WebSocketService {
                 connection.send(message: messageToSend)
             }
         }
-    }
-
-    func sendHTTP(myhttp: HTTPData) {
-        let httpLine = JSON(["topic":"http","payload":["time":"\(myhttp.timeOfRequest)","url":"\(myhttp.url)","duration":"\(myhttp.duration)","method":"\(myhttp.requestMethod)","statusCode":"\(myhttp.statusCode)"]])
-
-        for (_,connection) in connections {
-            if let messageToSend = httpLine.rawString() {
-                connection.send(message: messageToSend)
-            }
-        }
-
     }
 
     public func connected(connection: WebSocketConnection) {
@@ -229,87 +220,93 @@ class SwiftMetricsService: WebSocketService {
     }
 
     public func storeHTTP(myhttp: HTTPData) {
-    	httpQueue.async {
+        let localmyhttp = myhttp
+    	  httpQueue.sync {
             if self.httpAggregateData.total == 0 {
                 self.httpAggregateData.total = 1
-                self.httpAggregateData.timeOfRequest = myhttp.timeOfRequest
-                self.httpAggregateData.url = myhttp.url
-                self.httpAggregateData.longest = myhttp.duration
-                self.httpAggregateData.average = myhttp.duration
+                self.httpAggregateData.timeOfRequest = localmyhttp.timeOfRequest
+                self.httpAggregateData.url = localmyhttp.url
+                self.httpAggregateData.longest = localmyhttp.duration
+                self.httpAggregateData.average = localmyhttp.duration
             } else {
-              let oldTotalAsDouble:Double = Double(self.httpAggregateData.total)
-              let newTotal = self.httpAggregateData.total + 1
-              self.httpAggregateData.total = newTotal
-              self.httpAggregateData.average = (self.httpAggregateData.average * oldTotalAsDouble + myhttp.duration) / Double(newTotal)
-              if (myhttp.duration > self.httpAggregateData.longest) {
-                self.httpAggregateData.longest = myhttp.duration
-                self.httpAggregateData.url = myhttp.url
-              }
+                let oldTotalAsDouble:Double = Double(self.httpAggregateData.total)
+                let newTotal = self.httpAggregateData.total + 1
+                self.httpAggregateData.total = newTotal
+                self.httpAggregateData.average = (self.httpAggregateData.average * oldTotalAsDouble + localmyhttp.duration) / Double(newTotal)
+                if (localmyhttp.duration > self.httpAggregateData.longest) {
+                    self.httpAggregateData.longest = localmyhttp.duration
+                    self.httpAggregateData.url = localmyhttp.url
+                }
             }
         }
         httpURLsQueue.async {
-            let urlTuple = self.httpURLData[myhttp.url]
+            let urlTuple = self.httpURLData[localmyhttp.url]
             if(urlTuple != nil) {
                 let averageResponseTime = urlTuple!.0
                 let hits = urlTuple!.1
                 // Recalculate the average
-                self.httpURLData.updateValue(((averageResponseTime * hits + myhttp.duration)/(hits + 1), hits + 1), forKey: myhttp.url)
+                self.httpURLData.updateValue(((averageResponseTime * hits + localmyhttp.duration)/(hits + 1), hits + 1), forKey: localmyhttp.url)
             } else {
-                self.httpURLData.updateValue((myhttp.duration, 1), forKey: myhttp.url)
+                self.httpURLData.updateValue((localmyhttp.duration, 1), forKey: localmyhttp.url)
             }
         }
     }
 
-    func gethttpRequest()  {
+    func sendhttpData()  {
         sleep(UInt32(2))
-        httpQueue.async {
-            do {
-                if self.httpAggregateData.total > 0 {
-                    let httpLine = JSON([
-                    "topic":"http","payload":[
-                        "time":"\(self.httpAggregateData.timeOfRequest)",
-                        "url":"\(self.httpAggregateData.url)",
-                        "longest":"\(self.httpAggregateData.longest)",
-                        "average":"\(self.httpAggregateData.average)",
-                        "total":"\(self.httpAggregateData.total)"]])
+        httpQueue.sync {
+            let localCopy = self.httpAggregateData
+            if localCopy.total > 0 {
+                let httpLine = JSON([
+                "topic":"http","payload":[
+                    "time":"\(localCopy.timeOfRequest)",
+                    "url":"\(localCopy.url)",
+                    "longest":"\(localCopy.longest)",
+                    "average":"\(localCopy.average)",
+                    "total":"\(localCopy.total)"]])
 
-                        for (_,connection) in self.connections {
-                            if let messageToSend = httpLine.rawString() {
-                                connection.send(message: messageToSend)
-                            }
+                    for (_,connection) in self.connections {
+                        if let messageToSend = httpLine.rawString() {
+                            connection.send(message: messageToSend)
                         }
-                    self.httpAggregateData = HTTPAggregateData()
-                }
+                    }
+                self.httpAggregateData = HTTPAggregateData()
             }
-        }
-        DispatchQueue.global(qos: .background).async {
-          self.gethttpRequest()
+            jobsQueue.async {
+                self.sendhttpData()
+            }
         }
     }
 
     func gethttpURLs() {
         sleep(UInt32(2))
-        httpURLsQueue.async {
+        httpURLsQueue.sync {
             var responseData:[JSON] = []
-            for (key, value) in self.httpURLData {
+            let localCopy = self.httpURLData
+            for (key, value) in localCopy {
                 let json = JSON(["url":key, "averageResponseTime": value.0])
-                //if let appendString = json.rawString() {
-                    //responseData += appendString
                     responseData.append(json)
-                //        print("ursl is \(responseData)")
-              //  }
+            }
+            var messageToSend:String=""
+
+            // build up the messageToSend string
+            for response in responseData {
+                messageToSend += response.rawString()! + ","
             }
 
-            let httpURLLine = JSON(["topic":"httpURLs","payload":[responseData]])
-            print("httpURLLine is \(httpURLLine)")
-            for (_,connection) in self.connections {
-                if let messageToSend = httpURLLine.rawString() {
-                    connection.send(message: messageToSend)
-                }
+            if !messageToSend.isEmpty {
+              // remove the last ','
+              messageToSend = messageToSend.substring(to: messageToSend.index(before: messageToSend.endIndex))
+              // construct the final JSON obkect
+              let messageToSend2 = "{\"topic\":\"httpURLs\",\"payload\":[" + messageToSend + "]}"
+              for (_,connection) in self.connections {
+                  connection.send(message: messageToSend2)
+              }
             }
-        }
-        DispatchQueue.global(qos: .background).async {
-          self.gethttpURLs()
+
+            jobsQueue.async {
+                self.gethttpURLs()
+            }
         }
     }
 

@@ -15,6 +15,12 @@ fileprivate struct HttpStats {
   fileprivate var average: Double = 0
 }
 
+fileprivate struct LatencyStats {
+  fileprivate var count: Double = 0
+  fileprivate var sum: Double = 0
+  fileprivate var average: Double = 0
+}
+
 fileprivate struct MemoryStats {
   fileprivate var count: Float = 0
   fileprivate var sum: Float = 0
@@ -36,6 +42,7 @@ fileprivate struct ThroughputStats {
 
 fileprivate struct Metrics {
   //holds the metrics we use for updates and used to create the metrics we send to the auto-scaling service
+  fileprivate var latencyStats: LatencyStats = LatencyStats()
   fileprivate var httpStats: HttpStats = HttpStats()
   fileprivate var memoryStats: MemoryStats = MemoryStats()
   fileprivate var cpuStats: CPUStats = CPUStats()
@@ -44,6 +51,7 @@ fileprivate struct Metrics {
 
 fileprivate struct AverageMetrics {
   //Stores averages of metrics to send to the auto-scaling service
+  fileprivate var dispatchQueueLatency: Double = 0
   fileprivate var responseTime: Double = 0
   fileprivate var memory: Float = 0
   fileprivate var cpu: Float = 0
@@ -109,27 +117,6 @@ public class AutoScalar {
       return false
     }
 
-    //// @Toby, @Matt - We are wondering if you ran into issues using the convenience
-    //// method (see above) for getting services that match a given type (label).
-    //// If you did, let us know and we can look into it. If there are not any issues,
-    //// can you guys use the logic above instead of the code commented out below?
-    ////
-    // var scalingServ: Service? = nil
-    // let services = configMgr.getServices()
-    // for (_, service) in services {
-    //    if service.label.hasPrefix(autoScalingServiceLabel) {
-    //      Log.debug("[Auto-Scaling Agent] Found Auto-Scaling service: \(service.name)")
-    //      scalingServ = service
-    //      break
-    //    }
-    // }
-    //
-    // guard let serv = scalingServ, let autoScalingService = AutoScalingService(withService: serv) else {
-    //   Log.error("[Auto-Scaling Agent] Could not create instance of Auto-Scaling service.")
-    //   return false
-    // }
-    ////
-
     Log.debug("[Auto-Scaling Agent] Found Auto-Scaling service: \(autoScalingService.name)")
 
     // Assign unwrapped values
@@ -175,7 +162,7 @@ public class AutoScalar {
   }
 
   public convenience init(swiftMetricsInstance: SwiftMetrics) {
-    self.init(metricsToEnable: ["CPU", "Memory", "Throughput", "ResponseTime"], swiftMetricsInstance: swiftMetricsInstance)
+    self.init(metricsToEnable: ["CPU", "Memory", "Throughput", "ResponseTime", "DispatchQueueLatency"], swiftMetricsInstance: swiftMetricsInstance)
   }
 
   private func setMonitors(monitor: SwiftMonitor) {
@@ -195,6 +182,10 @@ public class AutoScalar {
       Log.debug("[Auto-scaling Agent] Http response time received \(http.duration) ")
       self.metrics.throughputStats.requestCount += 1;
     })
+    monitor.on({(latency: LatencyData) -> () in
+      self.metrics.latencyStats.count += 1
+      self.metrics.latencyStats.sum += latency.duration
+    })
   }
 
   private func startReport() {
@@ -210,7 +201,12 @@ public class AutoScalar {
   }
 
   private func calculateAverageMetrics() ->  AverageMetrics {
-    metrics.httpStats.average = (metrics.httpStats.duration > 0 && metrics.httpStats.count > 0) ? (metrics.httpStats.duration / metrics.httpStats.count) : 0.0
+
+    metrics.latencyStats.average = (metrics.latencyStats.sum > 0 && metrics.latencyStats.count > 0) ? (metrics.latencyStats.sum / metrics.latencyStats.count) : 0.0
+    metrics.latencyStats.count = 0
+    metrics.latencyStats.sum = 0
+
+    metrics.httpStats.average = (metrics.httpStats.duration > 0 && metrics.httpStats.count > 0) ? (metrics.httpStats.duration / metrics.httpStats.count + metrics.latencyStats.average) : 0.0
     metrics.httpStats.count = 0;
     metrics.httpStats.duration = 0;
 
@@ -234,7 +230,9 @@ public class AutoScalar {
     }
     metrics.throughputStats.requestCount = 0
 
-    let metricsToSend = AverageMetrics(responseTime: metrics.httpStats.average,
+    let metricsToSend = AverageMetrics(
+      dispatchQueueLatency: metrics.latencyStats.average,
+      responseTime: metrics.httpStats.average,
       memory: metrics.memoryStats.average,
       cpu: metrics.cpuStats.average,
       throughput: metrics.throughputStats.throughput
@@ -285,6 +283,16 @@ public class AutoScalar {
           metricDict["group"] = "Web"
           metricDict["name"] = "responseTime"
           metricDict["value"] = Double(metricsToSend.responseTime)
+          metricDict["unit"] = "ms"
+          metricDict["desc"] = ""
+          metricDict["timestamp"] = timestamp
+          metricsArray.append(metricDict)
+        case "DispatchQueueLatency":
+          var metricDict = [String:Any]()
+          metricDict["category"] = "swift"
+          metricDict["group"] = "Web"
+          metricDict["name"] = "dispatchQueueLatency"
+          metricDict["value"] = Double(metricsToSend.dispatchQueueLatency)
           metricDict["unit"] = "ms"
           metricDict["desc"] = ""
           metricDict["timestamp"] = timestamp
