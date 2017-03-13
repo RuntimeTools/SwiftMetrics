@@ -60,7 +60,7 @@ fileprivate struct AverageMetrics {
 
 public class AutoScalar {
 
-  var reportInterval: Int = 3
+  var reportInterval: Int = 1
   // the number of s to wait between report thread runs
 
   var availableMonitorInterval: Int = 5
@@ -98,7 +98,7 @@ public class AutoScalar {
     if !self.initCredentials() {
       return
     }
-    self.notifyStatus()
+//    self.notifyStatus()
 //    self.refreshConfig()
     self.setMonitors(monitor: swiftMetricsInstance.monitor())
     DispatchQueue.global(qos: .background).async {
