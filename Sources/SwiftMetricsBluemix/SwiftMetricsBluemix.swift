@@ -166,6 +166,7 @@ public class AutoScalar {
 
   public convenience init(swiftMetricsInstance: SwiftMetrics) {
     self.init(metricsToEnable: ["CPU", "Memory", "Throughput", "ResponseTime", "DispatchQueueLatency"], swiftMetricsInstance: swiftMetricsInstance)
+    print("JS convenience init")
   }
 
   private func setMonitors(monitor: SwiftMonitor) {
