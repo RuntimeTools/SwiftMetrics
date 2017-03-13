@@ -328,8 +328,8 @@ public class AutoScalar {
     Log.debug("[Auto-scaling Agent] Attempting to send metrics to \(sendMetricsPath)")
 
  //   do {
-//      let jsonData = try JSONSerialization.data(withJSONObject: asOBJ, options: .prettyPrinted)
-//      let decoded = try JSONSerialization.jsonObject(with: jsonData, options: [])
+      let jsonData = try JSONSerialization.data(withJSONObject: asOBJ, options: .prettyPrinted)
+      let decoded = try JSONSerialization.jsonObject(with: jsonData, options: [])
 //      if let dictFromJSON = decoded as? [String:Any] {
 //        KituraRequest.request(.post,
 //          sendMetricsPath,
