@@ -92,6 +92,7 @@ public class AutoScalar {
   var instanceId = ""
 
   public init(metricsToEnable: [String], swiftMetricsInstance: SwiftMetrics) {
+    print("JS top of init")
     Log.entry("[Auto-Scaling Agent] initialization(\(metricsToEnable))")
     enabledMetrics = metricsToEnable
     if !self.initCredentials() {
@@ -106,6 +107,7 @@ public class AutoScalar {
     DispatchQueue.global(qos: .background).async {
       self.snoozeRefreshConfig()
     }
+    print("JS bottom of init")
   }
 
   private func initCredentials() -> Bool {
