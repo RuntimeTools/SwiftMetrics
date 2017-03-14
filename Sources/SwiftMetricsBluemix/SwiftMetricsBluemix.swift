@@ -58,7 +58,7 @@ fileprivate struct AverageMetrics {
   fileprivate var throughput : Double = 0
 }
 
-public class AutoScalar {
+public class SwiftMetricsBluemix {
 
   var reportInterval: Int = 30
   // the number of s to wait between report thread runs
