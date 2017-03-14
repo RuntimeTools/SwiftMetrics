@@ -320,24 +320,17 @@ public class SwiftMetricsBluemix {
     let sendMetricsPath = "\(host):443/services/agent/report"
     Log.debug("[Auto-scaling Agent] Attempting to send metrics to \(sendMetricsPath)")
 
-    do {
-      let jsonData = try JSONSerialization.data(withJSONObject: asOBJ, options: .prettyPrinted)
-      let decoded = try JSONSerialization.jsonObject(with: jsonData, options: [])
-      if let dictFromJSON = decoded as? [String:Any] {
-        KituraRequest.request(.post,
-          sendMetricsPath,
-          parameters: dictFromJSON,
-          encoding: JSONEncoding.default,
-          headers: ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
-        ).response {
-          request, response, data, error in
-            Log.debug("[Auto-scaling Agent] sendMetrics:Request: \(request!)")
-            Log.debug("[Auto-scaling Agent] sendMetrics:Response: \(response!)")
-            Log.debug("[Auto-scaling Agent] sendMetrics:Data: \(data!)")
-            Log.debug("[Auto-scaling Agent] sendMetrics:Error: \(error)")}
-        }
-    } catch {
-      Log.warning("[Auto-Scaling Agent] \(error.localizedDescription)")
+    KituraRequest.request(.post,
+      sendMetricsPath,
+      parameters: asOBJ,
+      encoding: JSONEncoding.default,
+      headers: ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
+    ).response {
+      request, response, data, error in
+        Log.debug("[Auto-scaling Agent] sendMetrics:Request: \(request!)")
+        Log.debug("[Auto-scaling Agent] sendMetrics:Response: \(response!)")
+        Log.debug("[Auto-scaling Agent] sendMetrics:Data: \(data!)")
+        Log.debug("[Auto-scaling Agent] sendMetrics:Error: \(error)")}
     }
   }
 
