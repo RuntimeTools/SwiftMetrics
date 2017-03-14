@@ -320,6 +320,7 @@ public class SwiftMetricsBluemix {
     let sendMetricsPath = "\(host):443/services/agent/report"
     Log.debug("[Auto-scaling Agent] Attempting to send metrics to \(sendMetricsPath)")
 
+    print("#### TOBES sending \(asOBJ)")
     KituraRequest.request(.post,
       sendMetricsPath,
       parameters: asOBJ,
