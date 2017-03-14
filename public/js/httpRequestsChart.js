@@ -200,6 +200,7 @@ function resizeHttpChart() {
     chart.selectAll("point")
         .data(httpData)
         .enter().append("circle")
+        .attr("class", "point")
         .attr("r", 4)
         .style("fill", "#5aaafa")
         .style("stroke", "white")
