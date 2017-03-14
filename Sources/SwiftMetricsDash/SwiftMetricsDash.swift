@@ -251,8 +251,8 @@ class SwiftMetricsService: WebSocketService {
             }
         }
     }
+
     func sendhttpData()  {
-        Log.debug("sending Http Data")
         httpQueue.sync {
             let localCopy = self.httpAggregateData
             if localCopy.total > 0 {
