@@ -320,19 +320,39 @@ public class SwiftMetricsBluemix {
     let sendMetricsPath = "\(host):443/services/agent/report"
     Log.debug("[Auto-scaling Agent] Attempting to send metrics to \(sendMetricsPath)")
 
-    print("#### TOBES sending \(asOBJ)")
-    KituraRequest.request(.post,
-      sendMetricsPath,
-      parameters: asOBJ,
-      encoding: JSONEncoding.default,
-      headers: ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
-    ).response {
-      request, response, data, error in
-        Log.debug("[Auto-scaling Agent] sendMetrics:Request: \(request!)")
-        Log.debug("[Auto-scaling Agent] sendMetrics:Response: \(response!)")
-        Log.debug("[Auto-scaling Agent] sendMetrics:Data: \(data!)")
-        Log.debug("[Auto-scaling Agent] sendMetrics:Error: \(error)")}
-  }
+    print("#### TOBES sending asOBJ\(asOBJ)")
+    do {
+      let jsonData = try JSONSerialization.data(withJSONObject: asOBJ, options: .prettyPrinted)
+      let decoded = try JSONSerialization.jsonObject(with: jsonData, options: [])
+      if let dictFromJSON = decoded as? [String:Any] {
+    print("#### TOBES sending dictFromJSON \(dictFromJSON)")
+        KituraRequest.request(.post,
+          sendMetricsPath,
+          parameters: dictFromJSON,
+          encoding: JSONEncoding.default,
+          headers: ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
+        ).response {
+          request, response, data, error in
+            Log.debug("[Auto-scaling Agent] sendMetrics:Request: \(request!)")
+            Log.debug("[Auto-scaling Agent] sendMetrics:Response: \(response!)")
+            Log.debug("[Auto-scaling Agent] sendMetrics:Data: \(data!)")
+            Log.debug("[Auto-scaling Agent] sendMetrics:Error: \(error)")}
+        }
+    } catch {
+      Log.warning("[Auto-Scaling Agent] \(error.localizedDescription)")
+    }
+//     KituraRequest.request(.post,
+//       sendMetricsPath,
+//       parameters: asOBJ,
+//       encoding: JSONEncoding.default,
+//       headers: ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
+//     ).response {
+//       request, response, data, error in
+//         Log.debug("[Auto-scaling Agent] sendMetrics:Request: \(request!)")
+//         Log.debug("[Auto-scaling Agent] sendMetrics:Response: \(response!)")
+//         Log.debug("[Auto-scaling Agent] sendMetrics:Data: \(data!)")
+//         Log.debug("[Auto-scaling Agent] sendMetrics:Error: \(error)")}
+//   }
 
   private func notifyStatus() {
     let notifyStatusPath = "\(host):443/services/agent/status/\(appID)"
