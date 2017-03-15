@@ -112,6 +112,11 @@ function updateHttpData(httpRequest) {
             httpChartPlaceholder.attr("visibility", "hidden");
         }
 
+        httpRequestData.longest = parseFloat(httpRequestData.longest)
+        httpRequestData.average = parseFloat(httpRequestData.average)
+        httpRequestData.time = parseInt(httpRequestData.time)
+        httpRequestData.total = parseInt(httpRequestData.total)
+
         httpData.push(httpRequestData);
 
         // Only keep 30 minutes or 2000 items of data
@@ -159,10 +164,10 @@ function updateHttpData(httpRequest) {
                     } else {
                         return d.total
                          + " requests\n average duration = "
-                         + d3.format(".2s")(d.average)
-                         + "ms\n longest duration = "
-                         +  d3.format(".2s")(d.longest)
-                         + "ms for URL: " + d.url;
+                         + d3.format(".2s")(d.average/1000)
+                         + "s\n longest duration = "
+                         +  d3.format(".2s")(d.longest/1000)
+                         + "s for URL: " + d.url;
                     }
                 });
         }
@@ -195,6 +200,7 @@ function resizeHttpChart() {
     chart.selectAll("point")
         .data(httpData)
         .enter().append("circle")
+        .attr("class", "point")
         .attr("r", 4)
         .style("fill", "#5aaafa")
         .style("stroke", "white")

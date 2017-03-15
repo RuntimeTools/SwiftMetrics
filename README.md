@@ -142,6 +142,8 @@ If you supply a closure that takes either a *[pre-supplied API struct](#api-stru
 ### SwiftMetricsKitura(swiftMetricsInstance: SwiftMetrics) (when importing SwiftMetricsKitura)
 Creates a SwiftMetricsKitura instance, which will monitor Kitura HTTP metrics and emit them via the SwiftMetrics instance specified.
 
+### SwiftMetricsBluemix(swiftMetricsInstance: SwiftMetrics) (when importing SwiftMetricsBluemix)
+Creates a SwiftMetricsBluemix instance, which will send metrics to the [Auto Scale service][7]
 
 <a name="api-structs"></a>
 ## API Data Structures
@@ -256,3 +258,4 @@ Non-release versions of this project (for example on github.com/RuntimeTools/Swi
 [4]: https://docs.npmjs.com/files/folders
 [5]: https://github.com/RuntimeTools/SwiftMetrics/issues
 [6]: https://github.com/RuntimeTools/SwiftMetrics
+[7]: https://www.ibm.com/cloud-computing/bluemix/auto-scale
