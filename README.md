@@ -5,7 +5,7 @@
 # Swift Application Metrics
 Swift Application Metrics monitoring and profiling agent
 
-Swift Application Metrics instruments the Swift runtime for performance monitoring, providing the monitoring data programatically via an API or visually with [an Eclipse Client][1].
+Swift Application Metrics instruments the Swift runtime for performance monitoring, providing the monitoring data programatically via an API or visually with its built in dashboard
 
 Swift Application Metrics provides the following built-in data collection sources:
 
@@ -80,6 +80,34 @@ let sm = try SwiftMetrics()
 SwiftMetricsKitura(swiftMetricsInstance: sm)
 let monitoring = sm.monitor()
 ```
+
+### Swift Metrics Dashboard
+
+To use the built in dashboard, you add the following code to your application
+```swift
+import SwiftMetrics
+import SwiftMetricsDash
+
+// Enable SwiftMetrics Monitoring
+let sm = try SwiftMetrics()   
+
+// Pass SwiftMetrics to the dashboard for visualising
+let smd = try SwiftMetricsDash(swiftMetricsInstance : sm)  
+```
+Amend Package.swift to be 
+```swift
+   dependencies: [
+      .Package(url: "https://github.com/RuntimeTools/SwiftMetrics.git", majorVersion: #, minorVersion: #)
+      ]
+```
+
+By default, SwiftMetricsDash will starts its own Kitura server and serve the page up under <hostname>:<port>/swiftmetrics-dash
+
+The port being used is logged to the console when your application starts:
+
+ * SwiftMetricsDash : Starting on port 8080
+
+### Swift Application Metrics Agent
 
 SwiftMetrics() returns the Swift Application Metrics Agent - this runs parallel to your code and receives and emits data about your application to any connected clients e.g. A Health Center Eclipse IDE Client connected over MQTT. The `sm.monitor()` call returns a Swift Application Metrics Local Client, connected to the Agent `sm` over a local connection.
 
