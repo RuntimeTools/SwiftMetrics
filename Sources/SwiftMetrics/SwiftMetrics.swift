@@ -86,6 +86,7 @@ open class SwiftMetrics {
   var registerListener: monitorRegisterListener?
   var sleepInterval: UInt32 = 2
   var latencyEnabled: Bool = true
+  let jobsQueue = DispatchQueue(label: "Swift Metrics Jobs Queue")
 
   public init() throws{
 
@@ -95,9 +96,7 @@ open class SwiftMetrics {
     loaderApi.setProperty("agentcore.version", loaderApi.getAgentVersion())
     loaderApi.setProperty("swiftmetrics.version", SWIFTMETRICS_VERSION)
     loaderApi.logMessage(info, "Swift Application Metrics")
-    DispatchQueue.global(qos: .background).async {
-        self.snoozeLatencyEmit(Date().timeIntervalSince1970 * 1000)
-    }
+    testLatency()
   }
 
   deinit {
@@ -105,16 +104,19 @@ open class SwiftMetrics {
     self.stop()
   }
 
-  private func snoozeLatencyEmit(_ startTime: Double) {
-      if (latencyEnabled) {
+  private func testLatency() {
+    if(latencyEnabled) {
+      // Run every two seconds
+      jobsQueue.asyncAfter(deadline: .now() + .seconds(2), execute: {
+        let preDispatchTime = Date().timeIntervalSince1970 * 1000;
+        DispatchQueue.global().async {
           let timeNow = Date().timeIntervalSince1970 * 1000
-          let latencyTime = timeNow - startTime
-          emitData(LatencyData(timeOfSample: Int(startTime), duration:latencyTime))
-          sleep(sleepInterval)
-          DispatchQueue.global(qos: .background).async {
-              self.snoozeLatencyEmit(Date().timeIntervalSince1970 * 1000)
-          }
-      }
+          let latencyTime = timeNow - preDispatchTime
+          self.emitData(LatencyData(timeOfSample: Int(preDispatchTime), duration:latencyTime))
+          self.testLatency()
+        }
+      })
+    }
   }
 
   private func setDefaultLibraryPath() {
