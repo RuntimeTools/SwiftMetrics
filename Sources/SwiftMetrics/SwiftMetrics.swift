@@ -86,7 +86,7 @@ open class SwiftMetrics {
   var registerListener: monitorRegisterListener?
   var sleepInterval: UInt32 = 2
   var latencyEnabled: Bool = true
-  let jobsQueue = DispatchQueue(label: "jobsQueue")
+  let jobsQueue = DispatchQueue(label: "Swift Metrics Jobs Queue")
 
   public init() throws{
 
@@ -109,7 +109,7 @@ open class SwiftMetrics {
       // Run every two seconds
       jobsQueue.asyncAfter(deadline: .now() + .seconds(2), execute: {
         let preDispatchTime = Date().timeIntervalSince1970 * 1000;
-        DispatchQueue.global(qos: .default).async {
+        DispatchQueue.global().async {
           let timeNow = Date().timeIntervalSince1970 * 1000
           let latencyTime = timeNow - preDispatchTime
           self.emitData(LatencyData(timeOfSample: Int(preDispatchTime), duration:latencyTime))
