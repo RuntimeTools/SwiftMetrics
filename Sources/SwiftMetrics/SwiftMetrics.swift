@@ -88,7 +88,7 @@ open class SwiftMetrics {
   var latencyEnabled: Bool = true
   let jobsQueue = DispatchQueue(label: "Swift Metrics Jobs Queue")
 
-  public init() throws {
+  public init() throws{
 
     self.loaderApi = loader_entrypoint().pointee
     try self.loadProperties()
@@ -104,7 +104,7 @@ open class SwiftMetrics {
     self.stop()
   }
 
-func testLatency() {
+  private func testLatency() {
     if(latencyEnabled) {
       // Run every two seconds
      jobsQueue.async {
