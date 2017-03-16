@@ -119,10 +119,6 @@ class SwiftMetricsService: WebSocketService {
         monitor.on(sendMEM)
         monitor.on(storeHTTP)
         sendhttpData()
-<<<<<<< HEAD
-=======
-        sendhttpURLData()
->>>>>>> 090c8f53f3121d6d7648fc2f4ad220af194a967d
     }
 
 
@@ -274,17 +270,7 @@ class SwiftMetricsService: WebSocketService {
                 }
                 self.httpAggregateData = HTTPAggregateData()
             }
-<<<<<<< HEAD
         }
-=======
-            jobsQueue.asyncAfter(deadline: .now() + .seconds(2), execute: {
-                self.sendhttpData()
-            })
-        }
-    }
-
-    func sendhttpURLData() {
->>>>>>> 090c8f53f3121d6d7648fc2f4ad220af194a967d
         httpURLsQueue.sync {
             var responseData:[JSON] = []
             let localCopy = self.httpURLData
@@ -308,17 +294,11 @@ class SwiftMetricsService: WebSocketService {
                   connection.send(message: messageToSend2)
               }
             }
-<<<<<<< HEAD
             jobsQueue.async {
                 // re-run this function after 2 seconds
                 sleep(2)
                 self.sendhttpData()
             }
-=======
-            jobsQueue.asyncAfter(deadline: .now() + .seconds(2), execute: {
-                self.sendhttpURLData()
-            })
->>>>>>> 090c8f53f3121d6d7648fc2f4ad220af194a967d
         }
     }
 
