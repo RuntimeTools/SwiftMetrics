@@ -104,7 +104,7 @@ open class SwiftMetrics {
     self.stop()
   }
 
-@objc func testLatency() {
+func testLatency() {
     if(latencyEnabled) {
       // Run every two seconds
      jobsQueue.async {

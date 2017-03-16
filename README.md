@@ -5,7 +5,7 @@
 # Swift Application Metrics
 Swift Application Metrics monitoring and profiling agent
 
-Swift Application Metrics instruments the Swift runtime for performance monitoring, providing the monitoring data programatically via an API or visually with [an Eclipse Client][1].
+Swift Application Metrics instruments the Swift runtime for performance monitoring, providing the monitoring data programatically via an API or visually with its built in dashboard
 
 Swift Application Metrics provides the following built-in data collection sources:
 
@@ -48,12 +48,12 @@ Swift Package manager will automatically clone the code required and build it du
 
 <a name="config"></a>
 ### Configuring Swift Application Metrics
-Swift Application Metrics comes with a configuration file inside the [Packages directory](#install) (`.../Packages/omr-agentcore-<version>/properties/healthcenter.properties`). This is used to configure connection options, logging and data source options.
+Swift Application Metrics comes with a configuration file inside the [Packages directory](#install) (`.../Packages/SwiftMetrics-<version>/swiftmetrics.properties`). This is used to configure connection options, logging and data source options.
 
-Swift Application Metrics will attempt to load `healthcenter.properties` from one of the following locations (in order):
+Swift Application Metrics will attempt to load `swiftmetrics.properties` from one of the following locations (in order):
 
 1. the current working directory
-2. the Packages directory
+2. the Packages/SwiftMetrics-\<version\> directory
 
 The default configuration has minimal logging enabled and will attempt to send data to a local MQTT server on the default port.
 
@@ -81,7 +81,35 @@ SwiftMetricsKitura(swiftMetricsInstance: sm)
 let monitoring = sm.monitor()
 ```
 
-SwiftMetrics() returns the Swift Application Metrics Agent - this runs parallel to your code and receives and emits data about your application to any connected clients e.g. A Health Center Eclipse IDE Client connected over MQTT. The `sm.monitor()` call returns a Swift Application Metrics Local Client, connected to the Agent `sm` over a local connection.
+### Swift Metrics Dashboard
+
+To use the built in dashboard, you add the following code to your application
+```swift
+import SwiftMetrics
+import SwiftMetricsDash
+
+// Enable SwiftMetrics Monitoring
+let sm = try SwiftMetrics()   
+
+// Pass SwiftMetrics to the dashboard for visualising
+let smd = try SwiftMetricsDash(swiftMetricsInstance : sm)  
+```
+Amend Package.swift to be 
+```swift
+   dependencies: [
+      .Package(url: "https://github.com/RuntimeTools/SwiftMetrics.git", majorVersion: #, minorVersion: #)
+   ]
+```
+
+By default, SwiftMetricsDash will starts its own Kitura server and serve the page up under <hostname>:<port>/swiftmetrics-dash
+
+The port being used is logged to the console when your application starts:
+
+ * SwiftMetricsDash : Starting on port 8080
+
+### Swift Application Metrics Agent
+
+SwiftMetrics() returns the Swift Application Metrics Agent - this runs parallel to your code and receives and emits data about your application to any connected clients. The `sm.monitor()` call returns a Swift Application Metrics Local Client, connected to the Agent `sm` over a local connection.
 
 You can then use the monitoring object to register callbacks and request information about the application:
 ```swift
@@ -143,7 +171,7 @@ If you supply a closure that takes either a *[pre-supplied API struct](#api-stru
 Creates a SwiftMetricsKitura instance, which will monitor Kitura HTTP metrics and emit them via the SwiftMetrics instance specified.
 
 ### SwiftMetricsBluemix(swiftMetricsInstance: SwiftMetrics) (when importing SwiftMetricsBluemix)
-Creates a SwiftMetricsBluemix instance, which will send metrics to the [Auto Scale service][7]
+Creates a SwiftMetricsBluemix instance, which will send metrics to the [Auto Scale service][4]
 
 <a name="api-structs"></a>
 ## API Data Structures
@@ -197,7 +225,7 @@ Emitted when a Latency sample is taken.
     * `timeOfSample` (Int) the system time in milliseconds since epoch when the sample was taken.
     * `duration` (Double) the duration the sample waited in the dispatch queue to be executed.
 
-##Samples
+## Samples
 
 There are two samples available:
 * `commonSample` demonstrates how to get data from the common data types, using the API.
@@ -205,17 +233,8 @@ There are two samples available:
 
 To use either, navigate to their directory and issue `swift build` (on macOS, `swift build -Xlinker -lc++`)
 
-## Health Center Eclipse IDE client
-### Connecting to the client
-Connecting to the Health Center client requires the additional installation of a MQTT broker. The Swift Application Metrics agent sends data to the MQTT broker specified in the `healthcenter.properties` file. Installation and configuration documentation for the Health Center client is available from the [Health Center documentation in IBM Knowledge Center][2].
-
-Note that both the API and the Health Center client can be used at the same time and will receive the same data. Use of the API requires application modification (see *[Modifying your application](#run-local)*).
-
-Further information regarding the use of the Health Center client with Swift Application Metrics can be found on the [SwiftMetrics wiki][3]: [Using Swift Application Metrics with the Health Center client](https://github.com/RuntimeTools/SwiftMetrics/wiki/Using-Swift-Application-Metrics-with-the-Health-Center-client).
-
-
 ## Troubleshooting
-Find below some possible problem scenarios and corresponding diagnostic steps. Updates to troubleshooting information will be made available on the [SwiftMetrics wiki][3]: [Troubleshooting](https://github.com/RuntimeTools/SwiftMetrics/wiki/Troubleshooting). If these resources do not help you resolve the issue, you can open an issue on the Swift Application Metrics [issue tracker][5].
+Find below some possible problem scenarios and corresponding diagnostic steps. Updates to troubleshooting information will be made available on the [SwiftMetrics wiki][1]: [Troubleshooting](https://github.com/RuntimeTools/SwiftMetrics/wiki/Troubleshooting). If these resources do not help you resolve the issue, you can open an issue on the Swift Application Metrics [issue tracker][2].
 
 ### Checking Swift Application Metrics has started
 By default, a message similar to the following will be written to console output when Swift Application Metrics starts:
@@ -231,7 +250,7 @@ Check:
 * If you have an appropriate version of `libstdc++`installed, ensure it is on the system library path, or use a method (such as setting `LD_LIBRARY_PATH` environment variable on Linux) to add the library to the search path.
 
 ## Source code
-The source code for Swift Application Metrics is available in the [Swiftmetrics project][6]. Information on working with the source code -- installing from source, developing, contributing -- is available on the [SwiftMetrics wiki][3].
+The source code for Swift Application Metrics is available in the [Swiftmetrics project][3]. Information on working with the source code -- installing from source, developing, contributing -- is available on the [SwiftMetrics wiki][1].
 
 ## License
 This project is released under an Apache 2.0 open source license.  
@@ -240,7 +259,7 @@ This project is released under an Apache 2.0 open source license.
 This project uses a semver-parsable X.0.Z version number for releases, where X is incremented for breaking changes to the public API described in this document and Z is incremented for bug fixes **and** for non-breaking changes to the public API that provide new function.
 
 ### Development versions
-Non-release versions of this project (for example on github.com/RuntimeTools/SwiftMetrics) will use semver-parsable X.0.Z-dev.B version numbers, where X.0.Z is the last release with Z incremented and B is an integer. For further information on the development process go to the  [SwiftMetrics wiki][3]: [Developing](https://github.com/RuntimeTools/SwiftMetrics/wiki/Developing).
+Non-release versions of this project (for example on github.com/RuntimeTools/SwiftMetrics) will use semver-parsable X.0.Z-dev.B version numbers, where X.0.Z is the last release with Z incremented and B is an integer. For further information on the development process go to the  [SwiftMetrics wiki][1]: [Developing](https://github.com/RuntimeTools/SwiftMetrics/wiki/Developing).
 
 ## Version
 0.0.12
@@ -252,10 +271,7 @@ Non-release versions of this project (for example on github.com/RuntimeTools/Swi
 `0.0.9` - Initial development release.  
 
 
-[1]: https://marketplace.eclipse.org/content/ibm-monitoring-and-diagnostic-tools-health-center
-[2]: http://www.ibm.com/support/knowledgecenter/SS3KLZ/com.ibm.java.diagnostics.healthcenter.doc/topics/connecting.html
-[3]: https://github.com/RuntimeTools/SwiftMetrics/wiki
-[4]: https://docs.npmjs.com/files/folders
-[5]: https://github.com/RuntimeTools/SwiftMetrics/issues
-[6]: https://github.com/RuntimeTools/SwiftMetrics
-[7]: https://www.ibm.com/cloud-computing/bluemix/auto-scale
+[1]: https://github.com/RuntimeTools/SwiftMetrics/wiki
+[2]: https://github.com/RuntimeTools/SwiftMetrics/issues
+[3]: https://github.com/RuntimeTools/SwiftMetrics
+[4]: https://www.ibm.com/cloud-computing/bluemix/auto-scale
