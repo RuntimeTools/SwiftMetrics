@@ -88,7 +88,7 @@ open class SwiftMetrics {
   var latencyEnabled: Bool = true
   let jobsQueue = DispatchQueue(label: "Swift Metrics Jobs Queue")
 
-  public init() throws{
+  public init() throws {
 
     self.loaderApi = loader_entrypoint().pointee
     try self.loadProperties()
@@ -104,10 +104,11 @@ open class SwiftMetrics {
     self.stop()
   }
 
-  private func testLatency() {
+@objc func testLatency() {
     if(latencyEnabled) {
       // Run every two seconds
-      jobsQueue.asyncAfter(deadline: .now() + .seconds(2), execute: {
+     jobsQueue.async {
+        sleep(2)
         let preDispatchTime = Date().timeIntervalSince1970 * 1000;
         DispatchQueue.global().async {
           let timeNow = Date().timeIntervalSince1970 * 1000
@@ -115,7 +116,7 @@ open class SwiftMetrics {
           self.emitData(LatencyData(timeOfSample: Int(preDispatchTime), duration:latencyTime))
           self.testLatency()
         }
-      })
+      }
     }
   }
 
