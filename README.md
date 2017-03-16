@@ -7,7 +7,7 @@
 
 # Application Metrics for Swift
 
-[Application Metrics for Swift](https://developer.ibm.com/swift/monitoring-diagnostics/application-metrics-for-swift) instruments the Swift runtime for performance monitoring, providing the monitoring data programatically via an API or visually with its built in dashboard 
+[Application Metrics for Swift](https://developer.ibm.com/swift/monitoring-diagnostics/application-metrics-for-swift) instruments the Swift runtime for performance monitoring, providing the monitoring data programatically via an API or visually with its built in dashboard
 
 Application Metrics for Swift provides the following built-in data collection sources:
 
