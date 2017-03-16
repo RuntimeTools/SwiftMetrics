@@ -3,11 +3,11 @@
 ![Linux](https://img.shields.io/badge/os-linux-green.svg?style=flat)
 ![Apache 2](https://img.shields.io/badge/license-Apache2-blue.svg?style=flat)
 &nbsp;[![Slack Status](http://swift-at-ibm-slack.mybluemix.net/badge.svg)](http://swift-at-ibm-slack.mybluemix.net/)
+[![Homepage](https://img.shields.io/badge/homepage-Application%20Metrics%20for%20Swift-blue.svg)](https://developer.ibm.com/swift/monitoring-diagnostics/application-metrics-for-swift)
 
 # Application Metrics for Swift
-Application Metrics for Swift monitoring and profiling agent
 
-Application Metrics for Swift instruments the Swift runtime for performance monitoring, providing the monitoring data programatically via an API or visually with its built in dashboard
+[Application Metrics for Swift](https://developer.ibm.com/swift/monitoring-diagnostics/application-metrics-for-swift) instruments the Swift runtime for performance monitoring, providing the monitoring data programatically via an API or visually with its built in dashboard 
 
 Application Metrics for Swift provides the following built-in data collection sources:
 
