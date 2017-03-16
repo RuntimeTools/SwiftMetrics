@@ -107,7 +107,8 @@ open class SwiftMetrics {
   private func testLatency() {
     if(latencyEnabled) {
       // Run every two seconds
-      jobsQueue.asyncAfter(deadline: .now() + .seconds(2), execute: {
+     jobsQueue.async {
+        sleep(2)
         let preDispatchTime = Date().timeIntervalSince1970 * 1000;
         DispatchQueue.global().async {
           let timeNow = Date().timeIntervalSince1970 * 1000
@@ -115,7 +116,7 @@ open class SwiftMetrics {
           self.emitData(LatencyData(timeOfSample: Int(preDispatchTime), duration:latencyTime))
           self.testLatency()
         }
-      })
+      }
     }
   }
 
