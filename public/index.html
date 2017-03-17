@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 
-<link rel="stylesheet" href="bootstrap-3.3.7-dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="css/style2.css" title="Light background">
 <link rel="alternate stylesheet" type="text/css" href="css/style.css" title="Dark background">
 
@@ -11,10 +11,9 @@
 
 <body>
     <!-- load the d3.js library -->
-    <script src="d3/d3.v3.min.js"></script>
-    <script src="jquery/jquery-3.1.1.min.js"></script>
-    <script src="bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
-
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+    <script src="https://code.jquery.com/jquery.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
     <div class="headerDiv"><span class="rightHeader"></span><span class="leftHeader"></span></div>
 
     <div class="container-fluid">
@@ -23,7 +22,7 @@
             <div class="col-md-3" id="httpDiv2"></div>
             <div class="col-md-3" id="httpDiv3"></div>
         </div>
-
+  
         <div class="row">
             <div class="col-md-4" id="cpuDiv1"></div>
             <div class="col-md-4" id="memDiv1"></div>
@@ -44,7 +43,7 @@
          shortBottom: 30,
          left: 60
     },
-    canvasWidth = $("#cpuDiv1").width() - 8, // -8 for margins and borders
+     canvasWidth = $("#cpuDiv1").width() - 8, // -8 for margins and borders
     httpCanvasWidth = $("#httpDiv1").width() - 8,
     graphWidth = canvasWidth - margin.left - margin.right,
     httpGraphWidth = httpCanvasWidth - margin.left - margin.right,
