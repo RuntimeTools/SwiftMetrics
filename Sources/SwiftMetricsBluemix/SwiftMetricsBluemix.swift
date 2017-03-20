@@ -25,43 +25,25 @@ import SwiftMetrics
 import SwiftMetricsKitura
 import SwiftyJSON
 
-fileprivate struct HttpStats {
-  fileprivate var count: Double = 0
-  fileprivate var duration: Double = 0
+fileprivate struct Stats {
   fileprivate var average: Double = 0
-}
-
-fileprivate struct LatencyStats {
   fileprivate var count: Double = 0
   fileprivate var sum: Double = 0
-  fileprivate var average: Double = 0
-}
-
-fileprivate struct MemoryStats {
-  fileprivate var count: Float = 0
-  fileprivate var sum: Float = 0
-  fileprivate var average: Float = 0
-}
-
-fileprivate struct CPUStats {
-  fileprivate var count: Float = 0
-  fileprivate var sum: Float = 0
-  fileprivate var average: Float = 0
 }
 
 fileprivate struct ThroughputStats {
   fileprivate var duration: Double = 0
-  fileprivate var lastCalculateTime: Double = Date().timeIntervalSince1970 * 1000
+  fileprivate var lastCalculateTime: TimeInterval = Date().timeIntervalSince1970 * 1000
   fileprivate var requestCount: Double = 0
   fileprivate var throughput: Double = 0
 }
 
 fileprivate struct Metrics {
   //holds the metrics we use for updates and used to create the metrics we send to the auto-scaling service
-  fileprivate var latencyStats: LatencyStats = LatencyStats()
-  fileprivate var httpStats: HttpStats = HttpStats()
-  fileprivate var memoryStats: MemoryStats = MemoryStats()
-  fileprivate var cpuStats: CPUStats = CPUStats()
+  fileprivate var latencyStats: Stats = Stats()
+  fileprivate var httpStats: Stats = Stats()
+  fileprivate var memoryStats: Stats = Stats()
+  fileprivate var cpuStats: Stats = Stats()
   fileprivate var throughputStats: ThroughputStats = ThroughputStats()
 }
 
@@ -69,9 +51,19 @@ fileprivate struct AverageMetrics {
   //Stores averages of metrics to send to the auto-scaling service
   fileprivate var dispatchQueueLatency: Double = 0
   fileprivate var responseTime: Double = 0
-  fileprivate var memory: Float = 0
-  fileprivate var cpu: Float = 0
+  fileprivate var memory: Double = 0
+  fileprivate var cpu: Double = 0
   fileprivate var throughput : Double = 0
+}
+
+fileprivate struct Credentials {
+  fileprivate var host = ""
+  fileprivate var serviceID = ""
+  fileprivate var appID = ""
+  fileprivate var appName = ""
+  fileprivate var instanceIndex = 0
+  fileprivate var instanceId = ""
+  fileprivate var authorization = ""
 }
 
 public class SwiftMetricsBluemix {
@@ -79,33 +71,17 @@ public class SwiftMetricsBluemix {
   var reportInterval: Int = 30
   // the number of s to wait between report thread runs
 
-  var availableMonitorInterval: Int = 5
-  // the number of s to wait before checking if a monitor is available
-
-  var configRefreshInterval: Int = 60
-  // the number of s to wait between refresh thread runs
-
-  var isAgentEnabled: Bool = true
-  // can be turned off from the auto-scaling service in the refresh thread
+  var isAgentDisabled: Bool = false
+  // can be turned on from the auto-scaling service in the refresh thread
 
   var enabledMetrics: [String] = []
   // list of metrics to collect (CPU, Memory, HTTP etc. Can be altered by the auto-scaling service in the refresh thread.
 
-  let autoScalingServiceLabel = "Auto-Scaling"
-  // used to find the AutoScaling service from the Cloud Foundry Application Environment
-
   fileprivate var metrics: Metrics = Metrics() //initialises to defaults above
-
-  var agentUsername = ""
-  var agentPassword = ""
-  var appID = ""
-  var host = ""
-  var auth = ""
-  var authorization = ""
-  var serviceID = ""
-  var appName = ""
-  var instanceIndex = 0
-  var instanceId = ""
+  fileprivate var credentials: Credentials = Credentials()
+  
+  fileprivate let reportQueue = DispatchQueue(label: "SwiftMetricsBluemix Report Queue")
+  fileprivate let refreshQueue = DispatchQueue(label: "SwiftMetricsBluemix Refresh Queue")
 
   public init(metricsToEnable: [String], swiftMetricsInstance: SwiftMetrics) {
     Log.entry("[Auto-Scaling Agent] initialization(\(metricsToEnable))")
@@ -116,10 +92,10 @@ public class SwiftMetricsBluemix {
     self.notifyStatus()
     self.refreshConfig()
     self.setMonitors(monitor: swiftMetricsInstance.monitor())
-    DispatchQueue.global(qos: .background).async {
+    reportQueue.async {
       self.snoozeStartReport()
     }
-    DispatchQueue.global(qos: .background).async {
+    refreshQueue.async {
       self.snoozeRefreshConfig()
     }
   }
@@ -127,35 +103,23 @@ public class SwiftMetricsBluemix {
   private func initCredentials() -> Bool {
     let configMgr = ConfigurationManager().load(.environmentVariables)
     // Find auto-scaling service using convenience method
-    let scalingServ: Service? = configMgr.getServices(type: autoScalingServiceLabel).first
+    let scalingServ: Service? = configMgr.getServices(type: "Auto-Scaling").first
     guard let serv = scalingServ, let autoScalingService = AutoScalingService(withService: serv) else {
       Log.error("[Auto-Scaling Agent] Could not find Auto-Scaling service.")
       return false
     }
-
     Log.debug("[Auto-Scaling Agent] Found Auto-Scaling service: \(autoScalingService.name)")
-
-    // Assign unwrapped values
-    self.host = autoScalingService.url
-    self.serviceID = autoScalingService.serviceID
-    self.appID = autoScalingService.appID
-    self.agentPassword = autoScalingService.password
-    self.agentUsername = autoScalingService.username
-
     guard let app = configMgr.getApp() else {
       Log.error("[Auto-Scaling Agent] Could not get Cloud Foundry app metadata.")
       return false
     }
+    
+    // Assign unwrapped values
+    self.credentials = Credentials(host: autoScalingService.url, serviceID: autoScalingService.serviceID,
+        appID: autoScalingService.appID, appName: app.name, instanceIndex: app.instanceIndex, instanceId: app.instanceId,
+        authorization: Data("\(autoScalingService.username):\(autoScalingService.password)".utf8).base64EncodedString())
 
-    // Extract fields from App object
-    appName = app.name
-    instanceIndex = app.instanceIndex
-    instanceId = app.instanceId
-
-    auth = "\(agentUsername):\(agentPassword)"
-    Log.debug("[Auto-scaling Agent] Authorisation: \(auth)")
-    authorization = Data(auth.utf8).base64EncodedString()
-
+    Log.debug("[Auto-scaling Agent] Authorisation: \(autoScalingService.username):\(autoScalingService.password)")
     return true
   }
 
@@ -163,16 +127,16 @@ public class SwiftMetricsBluemix {
     Log.debug("[Auto-Scaling Agent] waiting to startReport() for \(reportInterval) seconds...")
     sleep(UInt32(reportInterval))
     self.startReport()
-    DispatchQueue.global(qos: .background).async {
+    reportQueue.async {
       self.snoozeStartReport()
     }
   }
 
   private func snoozeRefreshConfig() {
-    Log.debug("[Auto-Scaling Agent] waiting to refreshConfig() for \(configRefreshInterval) seconds...")
-    sleep(UInt32(configRefreshInterval))
+    Log.debug("[Auto-Scaling Agent] waiting to refreshConfig() for 60 seconds...")
+    sleep(UInt32(60))
     self.refreshConfig()
-    DispatchQueue.global(qos: .background).async {
+    refreshQueue.async {
       self.snoozeRefreshConfig()
     }
   }
@@ -184,18 +148,15 @@ public class SwiftMetricsBluemix {
   private func setMonitors(monitor: SwiftMonitor) {
     monitor.on({(mem: MemData) -> () in
       self.metrics.memoryStats.count += 1
-      let memValue = Float(mem.applicationRAMUsed)
-      Log.debug("[Auto-scaling Agent] Memory value received \(memValue) bytes")
-      self.metrics.memoryStats.sum += memValue
+      self.metrics.memoryStats.sum += Double(mem.applicationRAMUsed)
     })
     monitor.on({(cpu: CPUData) -> () in
       self.metrics.cpuStats.count += 1
-      self.metrics.cpuStats.sum += cpu.percentUsedByApplication * 100;
+      self.metrics.cpuStats.sum += Double(cpu.percentUsedByApplication) * 100.0;
     })
     monitor.on({(http: HTTPData) -> () in
       self.metrics.httpStats.count += 1
-      self.metrics.httpStats.duration += http.duration;
-      Log.debug("[Auto-scaling Agent] Http response time received \(http.duration) ")
+      self.metrics.httpStats.sum += http.duration;
       self.metrics.throughputStats.requestCount += 1;
     })
     monitor.on({(latency: LatencyData) -> () in
@@ -205,10 +166,10 @@ public class SwiftMetricsBluemix {
   }
 
   private func startReport() {
-    if (!isAgentEnabled) {
+    if (isAgentDisabled) {
       Log.verbose("[Auto-Scaling Agent] Agent is disabled by server")
       return
-    }
+    } 
 
     let metricsToSend = calculateAverageMetrics()
     let sendObject = constructSendObject(metricsToSend: metricsToSend)
@@ -217,44 +178,36 @@ public class SwiftMetricsBluemix {
   }
 
   private func calculateAverageMetrics() ->  AverageMetrics {
+    let latencyAverage: Double = (metrics.latencyStats.sum > 0 && metrics.latencyStats.count > 0) ? (metrics.latencyStats.sum / metrics.latencyStats.count) : 0.0
+    metrics.latencyStats = Stats(average: latencyAverage, count: 0, sum: 0)
 
-    metrics.latencyStats.average = (metrics.latencyStats.sum > 0 && metrics.latencyStats.count > 0) ? (metrics.latencyStats.sum / metrics.latencyStats.count) : 0.0
-    metrics.latencyStats.count = 0
-    metrics.latencyStats.sum = 0
+    let httpAverage = (metrics.httpStats.sum > 0 && metrics.httpStats.count > 0) ? (metrics.httpStats.sum / metrics.httpStats.count + metrics.latencyStats.average) : 0.0
+    metrics.httpStats = Stats(average: httpAverage, count: 0, sum: 0)
 
-    metrics.httpStats.average = (metrics.httpStats.duration > 0 && metrics.httpStats.count > 0) ? (metrics.httpStats.duration / metrics.httpStats.count + metrics.latencyStats.average) : 0.0
-    metrics.httpStats.count = 0;
-    metrics.httpStats.duration = 0;
+    let memAverage = (metrics.memoryStats.sum > 0 && metrics.memoryStats.count > 0) ? (metrics.memoryStats.sum / metrics.memoryStats.count) : metrics.memoryStats.average;
+    metrics.memoryStats = Stats(average: memAverage, count: 0, sum: 0)
 
-    metrics.memoryStats.average = (metrics.memoryStats.sum > 0 && metrics.memoryStats.count > 0) ? (metrics.memoryStats.sum / metrics.memoryStats.count) : metrics.memoryStats.average;
-    metrics.memoryStats.count = 0;
-    metrics.memoryStats.sum = 0;
-
-    metrics.cpuStats.average = (metrics.cpuStats.sum > 0 && metrics.cpuStats.count > 0) ? (metrics.cpuStats.sum / metrics.cpuStats.count) : metrics.cpuStats.average;
-    metrics.cpuStats.count = 0;
-    metrics.cpuStats.sum = 0;
+    let cpuAverage = (metrics.cpuStats.sum > 0 && metrics.cpuStats.count > 0) ? (metrics.cpuStats.sum / metrics.cpuStats.count) : metrics.cpuStats.average;
+    metrics.cpuStats = Stats(average: cpuAverage, count: 0, sum: 0)
 
     if (metrics.throughputStats.requestCount > 0) {
       let currentTime = Date().timeIntervalSince1970 * 1000
       let duration = currentTime - metrics.throughputStats.lastCalculateTime
-      metrics.throughputStats.throughput = metrics.throughputStats.requestCount / (duration / 1000)
-      metrics.throughputStats.lastCalculateTime = currentTime
-      metrics.throughputStats.duration = duration
+      let throughput = metrics.throughputStats.requestCount / (duration / 1000)
+      metrics.throughputStats = ThroughputStats(duration: duration, lastCalculateTime: currentTime, requestCount: 0, throughput: throughput)
     } else {
-      metrics.throughputStats.throughput = 0
-      metrics.throughputStats.duration = 0
+      let lastCalculateTime = metrics.throughputStats.lastCalculateTime
+      metrics.throughputStats = ThroughputStats(duration: 0, lastCalculateTime: lastCalculateTime, requestCount: 0, throughput: 0)
     }
-    metrics.throughputStats.requestCount = 0
 
-    let metricsToSend = AverageMetrics(
-      dispatchQueueLatency: metrics.latencyStats.average,
-      responseTime: metrics.httpStats.average,
-      memory: metrics.memoryStats.average,
-      cpu: metrics.cpuStats.average,
-      throughput: metrics.throughputStats.throughput
-    )
+    let metricsToSend = AverageMetrics(dispatchQueueLatency: latencyAverage, responseTime: httpAverage, memory: memAverage,
+      cpu: cpuAverage, throughput: metrics.throughputStats.throughput)
     Log.exit("[Auto-Scaling Agent] Average Metrics = \(metricsToSend)")
     return metricsToSend
+  }
+
+  private func constructSendMetric(group: String, name: String, value: Double, unit: String, timestamp: TimeInterval) -> [String:Any] {
+    return ["category": "swift", "group": group, "name": name, "value": value, "unit": unit, "desc": "", "timestamp": timestamp]
   }
 
   private func constructSendObject(metricsToSend: AverageMetrics) -> [String:Any] {
@@ -264,120 +217,71 @@ public class SwiftMetricsBluemix {
     for metric in enabledMetrics {
       switch (metric) {
         case "CPU":
-          var metricDict = [String:Any]()
-          metricDict["category"] = "swift"
-          metricDict["group"] = "ProcessCpuLoad"
-          metricDict["name"] = "ProcessCpuLoad"
-          metricDict["value"] = Double(metricsToSend.cpu) * 100.0
-          metricDict["unit"] = "%%"
-          metricDict["desc"] = ""
-          metricDict["timestamp"] = timestamp
-          metricsArray.append(metricDict)
+          metricsArray.append(constructSendMetric(group: "ProcessCpuLoad", name: "ProcessCpuLoad",
+              value: metricsToSend.cpu * 100.0, unit: "%%", timestamp: timestamp))
         case "Memory":
-          var metricDict = [String:Any]()
-          metricDict["category"] = "swift"
-          metricDict["group"] = "memory"
-          metricDict["name"] = "memory"
-          metricDict["value"] = Double(metricsToSend.memory)
-          metricDict["unit"] = "Bytes"
-          metricDict["desc"] = ""
-          metricDict["timestamp"] = timestamp
-          metricsArray.append(metricDict)
+          metricsArray.append(constructSendMetric(group: "memory", name: "memory",
+              value: metricsToSend.memory, unit: "Bytes", timestamp: timestamp))
         case "Throughput":
-          var metricDict = [String:Any]()
-          metricDict["category"] = "swift"
-          metricDict["group"] = "Web"
-          metricDict["name"] = "throughput"
-          metricDict["value"] = Double(metricsToSend.throughput)
-          metricDict["unit"] = ""
-          metricDict["desc"] = ""
-          metricDict["timestamp"] = timestamp
-          metricsArray.append(metricDict)
+          metricsArray.append(constructSendMetric(group: "Web", name: "throughput",
+              value: metricsToSend.throughput, unit: "", timestamp: timestamp))
         case "ResponseTime":
-          var metricDict = [String:Any]()
-          metricDict["category"] = "swift"
-          metricDict["group"] = "Web"
-          metricDict["name"] = "responseTime"
-          metricDict["value"] = Double(metricsToSend.responseTime)
-          metricDict["unit"] = "ms"
-          metricDict["desc"] = ""
-          metricDict["timestamp"] = timestamp
-          metricsArray.append(metricDict)
+          metricsArray.append(constructSendMetric(group: "Web", name: "responseTime",
+              value: metricsToSend.responseTime, unit: "ms", timestamp: timestamp))
         case "DispatchQueueLatency":
-          var metricDict = [String:Any]()
-          metricDict["category"] = "swift"
-          metricDict["group"] = "Web"
-          metricDict["name"] = "dispatchQueueLatency"
-          metricDict["value"] = Double(metricsToSend.dispatchQueueLatency)
-          metricDict["unit"] = "ms"
-          metricDict["desc"] = ""
-          metricDict["timestamp"] = timestamp
-          metricsArray.append(metricDict)
+          metricsArray.append(constructSendMetric(group: "Web", name: "dispatchQueueLatency",
+              value: metricsToSend.dispatchQueueLatency, unit: "ms", timestamp: timestamp))
         default:
           break
       }
     }
 
-    var dict = [String:Any]()
-    dict["appId"] = appID
-    dict["appName"] = appName
-    dict["appType"] = "swift"
-    dict["serviceId"] = serviceID
-    dict["instanceIndex"] = instanceIndex
-    dict["instanceId"] = instanceId
-    dict["timestamp"] = timestamp
-    dict["metrics"] = metricsArray
+    let dict: [String:Any] = ["appId": credentials.appID, "appName": credentials.appName,
+        "appType": "swift", "serviceId":  credentials.serviceID,
+        "instanceIndex": credentials.instanceIndex, "instanceId": credentials.instanceId,
+        "timestamp": timestamp, "metrics": metricsArray]
 
     Log.exit("[Auto-Scaling Agent] sendObject = \(dict)")
     return dict
   }
 
   private func sendMetrics(asOBJ : [String:Any]) {
-    let sendMetricsPath = "\(host):443/services/agent/report"
+    let sendMetricsPath = "\(credentials.host):443/services/agent/report"
     Log.debug("[Auto-scaling Agent] Attempting to send metrics to \(sendMetricsPath)")
 
-    KituraRequest.request(.post,
-      sendMetricsPath,
-      parameters: asOBJ,
-      encoding: JSONEncoding.default,
-      headers: ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
+    KituraRequest.request(.post, sendMetricsPath, parameters: asOBJ, encoding: JSONEncoding.default,
+      headers: ["Content-Type":"application/json", "Authorization":"Basic \(credentials.authorization)"]
     ).response {
       request, response, data, error in
-        Log.debug("[Auto-scaling Agent] sendMetrics:Request: \(request!)")
-        Log.debug("[Auto-scaling Agent] sendMetrics:Response: \(response!)")
-        Log.debug("[Auto-scaling Agent] sendMetrics:Data: \(data!)")
-        Log.debug("[Auto-scaling Agent] sendMetrics:Error: \(error)")}
+        Log.debug("[Auto-scaling Agent] sendMetrics:Request: \(request!)\n[Auto-scaling Agent] sendMetrics:Response: \(response!)")
+        Log.debug("[Auto-scaling Agent] sendMetrics:Data: \(data!)\n[Auto-scaling Agent] sendMetrics:Error: \(error)")
+    }
   }
 
   private func notifyStatus() {
-    let notifyStatusPath = "\(host):443/services/agent/status/\(appID)"
+    let notifyStatusPath = "\(credentials.host):443/services/agent/status/\(credentials.appID)"
     Log.debug("[Auto-scaling Agent] Attempting notifyStatus request to \(notifyStatusPath)")
-    KituraRequest.request(.put,
-      notifyStatusPath,
-      headers: ["Authorization":"Basic \(authorization)"]
+
+    KituraRequest.request(.put, notifyStatusPath,
+      headers: ["Authorization":"Basic \(credentials.authorization)"]
     ).response {
       request, response, data, error in
-        Log.debug("[Auto-scaling Agent] notifyStatus:Request: \(request!)")
-        Log.debug("[Auto-scaling Agent] notifyStatus:Response: \(response!)")
-        Log.debug("[Auto-scaling Agent] notifyStatus:Data: \(data)")
-        Log.debug("[Auto-scaling Agent] notifyStatus:Error: \(error)")
+        Log.debug("[Auto-scaling Agent] notifyStatus:Request: \(request!)\n[Auto-scaling Agent] notifyStatus:Response: \(response!)")
+        Log.debug("[Auto-scaling Agent] notifyStatus:Data: \(data)\n[Auto-scaling Agent] notifyStatus:Error: \(error)")
     }
   }
 
 
   // Read the config from the autoscaling service to see if any changes have been made
   private func refreshConfig() {
-    let refreshConfigPath = "\(host):443/v1/agent/config/\(serviceID)/\(appID)?appType=swift"
+    let refreshConfigPath = "\(credentials.host):443/v1/agent/config/\(credentials.serviceID)/\(credentials.appID)?appType=swift"
     Log.debug("[Auto-scaling Agent] Attempting requestConfig request to \(refreshConfigPath)")
-    KituraRequest.request(.get,
-      refreshConfigPath,
-      headers: ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
+    KituraRequest.request(.get, refreshConfigPath,
+      headers: ["Content-Type":"application/json", "Authorization":"Basic \(credentials.authorization)"]
     ).response {
       request, response, data, error in
-        Log.debug("[Auto-scaling Agent] requestConfig:Request: \(request!)")
-        Log.debug("[Auto-scaling Agent] requestConfig:Response: \(response!)")
-        Log.debug("[Auto-scaling Agent] requestConfig:Data: \(data!)")
-        Log.debug("[Auto-scaling Agent] requestConfig:Error: \(error)")
+        Log.debug("[Auto-scaling Agent] requestConfig:Request: \(request!)\n[Auto-scaling Agent] requestConfig:Response: \(response!)")
+        Log.debug("[Auto-scaling Agent] requestConfig:Data: \(data!)\n[Auto-scaling Agent] requestConfig:Error: \(error)")
         Log.debug("[Auto-scaling Agent] requestConfig:Body: \(String(data: data!, encoding: .utf8))")
         self.updateConfiguration(response: data!)
     }
@@ -387,18 +291,13 @@ public class SwiftMetricsBluemix {
   private func updateConfiguration(response: Data) {
     let jsonData = JSON(data: response)
     Log.debug("[Auto-scaling Agent] attempting to update configuration with \(jsonData)")
-    if (jsonData == nil) {
-      isAgentEnabled = false
+    guard let jsonInterval = jsonData["reportInterval"].int, let jsonMetrics = jsonData["metricsConfig"]["agent"].array else {
+      isAgentDisabled = true
       return
     }
-    if (jsonData["metricsConfig"]["agent"] == nil) {
-      isAgentEnabled = false
-      return
-    } else {
-      isAgentEnabled = true
-      enabledMetrics=jsonData["metricsConfig"]["agent"].arrayValue.map({$0.stringValue})
-    }
-    reportInterval=jsonData["reportInterval"].intValue
+    isAgentDisabled = false
+    reportInterval = jsonInterval
+    enabledMetrics = jsonMetrics.map({$0.stringValue})
     Log.exit("[Auto-scaling Agent] Updated configuration - enabled metrics: \(enabledMetrics), report interval: \(reportInterval) seconds")
   }
 
