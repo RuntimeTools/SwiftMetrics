@@ -40,7 +40,7 @@ Application Metrics for Swift can be installed by adding a dependency into your 
 
 ```swift
 dependencies: [
-   .Package(url: "https://github.com/RuntimeTools/SwiftMetrics.git", majorVersion: 0),
+   .Package(url: "https://github.com/RuntimeTools/SwiftMetrics.git", majorVersion: #, minorVersion: #),
 ]
 ```
 
@@ -262,9 +262,10 @@ This project uses a semver-parsable X.0.Z version number for releases, where X i
 Non-release versions of this project (for example on github.com/RuntimeTools/SwiftMetrics) will use semver-parsable X.0.Z-dev.B version numbers, where X.0.Z is the last release with Z incremented and B is an integer. For further information on the development process go to the  [SwiftMetrics wiki][1]: [Developing](https://github.com/RuntimeTools/SwiftMetrics/wiki/Developing).
 
 ## Version
-0.0.12
+1.0.0
 
 ## Release History
+`1.0.0` - First GA release.
 `0.0.12` - BlueMix AutoScaling support.  
 `0.0.11` - BlueMix support.  
 `0.0.10` - Addition of Kitura HTTP collection source.  
