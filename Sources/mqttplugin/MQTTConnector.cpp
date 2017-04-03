@@ -34,7 +34,7 @@
 
 extern "C" {
 #define NO_HEAP_TRACKING
-#include "../paho/src/Heap.h"
+#include "../paho/include/Heap.h"
 #undef NO_HEAP_TRACKING
 }
 
