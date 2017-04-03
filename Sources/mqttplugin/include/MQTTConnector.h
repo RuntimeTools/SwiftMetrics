@@ -21,7 +21,7 @@
 #include "../../agentcore/ibmras/monitoring/connector/Connector.h"
 
 extern "C" {
-#include "../../paho/src/MQTTAsync.h"
+#include "../../paho/include/MQTTAsync.h"
 }
 
 namespace ibmras {
