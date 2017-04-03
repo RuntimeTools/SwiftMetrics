@@ -17,9 +17,9 @@
 #ifndef ibmras_monitoring_connector_apiconnector_h
 #define ibmras_monitoring_connector_apiconnector_h
 
-#include "../agentcore/ibmras/monitoring/connector/Connector.h"
+#include "../../agentcore/ibmras/monitoring/connector/Connector.h"
 #include "AgentExtensions.h"
-#include "../agentcore/ibmras/monitoring/Typesdef.h"
+#include "../../agentcore/ibmras/monitoring/Typesdef.h"
 
 #include <cstring>
 

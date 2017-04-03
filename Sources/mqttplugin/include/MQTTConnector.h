@@ -18,10 +18,10 @@
 #ifndef ibmras_monitoring_connector_mqtt_mqttconnector_h
 #define ibmras_monitoring_connector_mqtt_mqttconnector_h
 
-#include "../agentcore/ibmras/monitoring/connector/Connector.h"
+#include "../../agentcore/ibmras/monitoring/connector/Connector.h"
 
 extern "C" {
-#include "../paho/src/MQTTAsync.h"
+#include "../../paho/src/MQTTAsync.h"
 }
 
 namespace ibmras {

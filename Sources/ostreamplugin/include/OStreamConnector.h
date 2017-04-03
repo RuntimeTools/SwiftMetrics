@@ -18,7 +18,7 @@
 #ifndef ibmras_monitoring_connector_ostreamconnector_h
 #define ibmras_monitoring_connector_ostreamconnector_h
 
-#include "../agentcore/ibmras/monitoring/connector/Connector.h"
+#include "../../agentcore/ibmras/monitoring/connector/Connector.h"
 #include <iostream>
 
 namespace OStream {

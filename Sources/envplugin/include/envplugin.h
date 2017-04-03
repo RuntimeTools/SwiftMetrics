@@ -24,7 +24,7 @@
 #define ibmras_monitoring_plugins_common_environment_envplugin_h
 
 #include "AgentExtensions.h"
-#include "../agentcore/ibmras/monitoring/Typesdef.h"
+#include "../../agentcore/ibmras/monitoring/Typesdef.h"
 #include <string>
 
 namespace ibmras {

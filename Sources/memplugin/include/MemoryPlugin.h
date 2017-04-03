@@ -21,7 +21,7 @@
  */
 
 #include "AgentExtensions.h"
-#include "../agentcore/ibmras/monitoring/Typesdef.h"
+#include "../../agentcore/ibmras/monitoring/Typesdef.h"
 #include <string>
 
 namespace ibmras {
