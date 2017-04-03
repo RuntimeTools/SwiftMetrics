@@ -61,6 +61,5 @@ let package = Package(
               "Sources/paho/src/samples",
               excludePortDir
    ]
-
 )
 
