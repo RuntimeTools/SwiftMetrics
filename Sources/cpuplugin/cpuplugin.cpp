@@ -16,7 +16,7 @@
 
 #include "AgentExtensions.h"
 #include "../agentcore/ibmras/monitoring/Typesdef.h"
-#include "include/cpuplugin.h"
+#include "cpuplugin.h"
 #include <cstdio>
 #include <iostream>
 #include <ctime>
