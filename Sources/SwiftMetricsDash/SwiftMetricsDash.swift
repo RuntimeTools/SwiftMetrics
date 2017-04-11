@@ -85,7 +85,7 @@ public class SwiftMetricsDash {
         // Swift 3.1
         let checkoutsPath = packagesPath + ".build/checkouts/"
         if fm.fileExists(atPath: checkoutsPath) {
-           packagesPath = checkoutsPath;       
+           packagesPath = checkoutsPath;
         } else if fm.fileExists(atPath: packagesPath + "Packages/") { // Swift 3.0
           packagesPath.append("Packages/");
         } else {
