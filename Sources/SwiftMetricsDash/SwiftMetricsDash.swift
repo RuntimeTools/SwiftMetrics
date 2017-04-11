@@ -63,7 +63,6 @@ public class SwiftMetricsDash {
     }
 
     func startServer(createServer: Bool, router: Router) throws {
-        
         let fm = FileManager.default
         let currentDir = fm.currentDirectoryPath
         var workingPath = ""
@@ -131,7 +130,6 @@ class SwiftMetricsService: WebSocketService {
 
 
     public init(monitor: SwiftMonitor) {
-      
         self.monitor = monitor
         monitor.on(sendCPU)
         monitor.on(sendMEM)

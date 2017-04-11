@@ -88,8 +88,7 @@ open class SwiftMetrics {
   var latencyEnabled: Bool = true
   let jobsQueue = DispatchQueue(label: "Swift Metrics Jobs Queue")
 
-  public init() throws{
-
+  public init() throws {
     self.loaderApi = loader_entrypoint().pointee
     try self.loadProperties()
     loaderApi.setLogLevels()
@@ -340,7 +339,6 @@ open class SwiftMetrics {
   }
 
   public func monitor() -> SwiftMonitor {
-    
     if swiftMon == nil {
       swiftMon = SwiftMonitor(swiftMetrics: self)
     }
