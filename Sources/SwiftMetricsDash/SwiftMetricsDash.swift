@@ -86,8 +86,8 @@ public class SwiftMetricsDash {
         let checkoutsPath = packagesPath + ".build/checkouts/"
         if fm.fileExists(atPath: checkoutsPath) {
            packagesPath = checkoutsPath;       
-        } else if fm.fileExists(atPath: packagesPath + "/Packages/") { // Swift 3.0
-          packagesPath.append("/Packages/");
+        } else if fm.fileExists(atPath: packagesPath + "Packages/") { // Swift 3.0
+          packagesPath.append("Packages/");
         } else {
          print("SwiftMetricsDash: error finding install directory")
         }

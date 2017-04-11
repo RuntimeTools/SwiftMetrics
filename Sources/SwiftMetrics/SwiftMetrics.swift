@@ -175,7 +175,7 @@ open class SwiftMetrics {
         _ = fm.changeCurrentDirectoryPath(checkoutsPath)
        
       } else { // Swift 3.0
-        packagesPath.append("/Packages/");
+        packagesPath.append("Packages/");
         if fm.fileExists(atPath: packagesPath) {
           _ = fm.changeCurrentDirectoryPath(packagesPath)
         } else {
