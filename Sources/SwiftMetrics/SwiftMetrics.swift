@@ -88,8 +88,7 @@ open class SwiftMetrics {
   var latencyEnabled: Bool = true
   let jobsQueue = DispatchQueue(label: "Swift Metrics Jobs Queue")
 
-  public init() throws{
-
+  public init() throws {
     self.loaderApi = loader_entrypoint().pointee
     try self.loadProperties()
     loaderApi.setLogLevels()
@@ -144,7 +143,7 @@ open class SwiftMetrics {
     let fm = FileManager.default
     var propertiesPath = ""
     let currentDir = fm.currentDirectoryPath
-    var dirContents = try fm.contentsOfDirectory(atPath: currentDir)
+    let dirContents = try fm.contentsOfDirectory(atPath: currentDir)
     for dir in dirContents {
     
       if dir.contains("swiftmetrics.properties") {
@@ -170,16 +169,33 @@ open class SwiftMetrics {
       } else {
         packagesPath = workingPath.substring(to: i!.lowerBound)
       }
-      packagesPath.append("Packages")
-      _ = fm.changeCurrentDirectoryPath(packagesPath)
-      ///omr-agentcore has a version number in it, so search for it
-      dirContents = try fm.contentsOfDirectory(atPath: fm.currentDirectoryPath)
-      for dir in dirContents {
-        if dir.contains("SwiftMetrics") {
-          ///that's where we want to be!
-          _ = fm.changeCurrentDirectoryPath(dir)
+      // Swift 3.1
+      let checkoutsPath = packagesPath + ".build/checkouts/"
+      if fm.fileExists(atPath: checkoutsPath) {
+        _ = fm.changeCurrentDirectoryPath(checkoutsPath)
+       
+      } else { // Swift 3.0
+        packagesPath.append("/Packages/");
+        if fm.fileExists(atPath: packagesPath) {
+          _ = fm.changeCurrentDirectoryPath(packagesPath)
+        } else {
+          print("SwiftMetrics: Error finding install directory")
         }
       }
+
+      do {
+        let dirContents = try fm.contentsOfDirectory(atPath: fm.currentDirectoryPath)
+        for dir in dirContents {
+          if dir.contains("SwiftMetrics") {
+          ///that's where we want to be!
+          _ = fm.changeCurrentDirectoryPath(dir)
+          }
+        }
+      } catch {
+        print("SwiftMetrics: Error searching directory: \(packagesPath), \(error).")
+        throw error
+      }
+
       propertiesPath = "\(fm.currentDirectoryPath)/swiftmetrics.properties"
       _ = fm.changeCurrentDirectoryPath(currentDir)
 
