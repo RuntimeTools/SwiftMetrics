@@ -81,13 +81,29 @@ public class SwiftMetricsDash {
         } else {
             packagesPath = workingPath.substring(to: i!.lowerBound)
         }
-        packagesPath.append("Packages/")
-        let dirContents = try fm.contentsOfDirectory(atPath: packagesPath)
-        for dir in dirContents {
+
+        // Swift 3.1
+        let checkoutsPath = packagesPath + ".build/checkouts/"
+        if fm.fileExists(atPath: checkoutsPath) {
+           packagesPath = checkoutsPath;
+        } else if fm.fileExists(atPath: packagesPath + "Packages/") { // Swift 3.0
+          packagesPath.append("Packages/");
+        } else {
+         print("SwiftMetricsDash: error finding install directory")
+        }
+
+        do {
+          let dirContents = try fm.contentsOfDirectory(atPath: packagesPath)
+          for dir in dirContents {
             if dir.contains("SwiftMetrics") {
                 packagesPath.append("\(dir)/public")
             }
+          }
+        } catch {
+          print("SwiftMetricsDash: Error opening directory: \(packagesPath), \(error).")
+          throw error
         }
+       
         router.all("/swiftmetrics-dash", middleware: StaticFileServer(path: packagesPath))
 
         if createServer {
