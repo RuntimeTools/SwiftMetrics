@@ -41,11 +41,8 @@ enum SwiftMetricsDashError : Swift.Error {
 }
 
 var router = Router()
+
 public class SwiftMetricsDash {
-
-
-
-
     var monitor:SwiftMonitor
     var SM:SwiftMetrics
     var service:SwiftMetricsService
