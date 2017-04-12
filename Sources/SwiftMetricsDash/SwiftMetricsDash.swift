@@ -25,6 +25,7 @@ import Foundation
 import Configuration
 import CloudFoundryConfig
 import Dispatch
+import LoggerAPI
 
 struct HTTPAggregateData: SMData {
   public var timeOfRequest: Int = 0
@@ -33,8 +34,17 @@ struct HTTPAggregateData: SMData {
   public var average: Double = 0
   public var total: Int = 0
 }
+
+
+enum SwiftMetricsDashError : Swift.Error {
+  case DirectoryNotFound(reason: String)
+}
+
 var router = Router()
 public class SwiftMetricsDash {
+
+
+
 
     var monitor:SwiftMonitor
     var SM:SwiftMetrics
@@ -89,7 +99,8 @@ public class SwiftMetricsDash {
         } else if fm.fileExists(atPath: packagesPath + "Packages/") { // Swift 3.0
           packagesPath.append("Packages/");
         } else {
-         print("SwiftMetricsDash: error finding install directory")
+          Log.error("SwiftMetricsDash: Unable to find install directory")
+          throw SwiftMetricsDashError.DirectoryNotFound(reason: "SwiftMetricsDash: Unable to find install directory");
         }
 
         do {
@@ -103,12 +114,12 @@ public class SwiftMetricsDash {
           print("SwiftMetricsDash: Error opening directory: \(packagesPath), \(error).")
           throw error
         }
-       
         router.all("/swiftmetrics-dash", middleware: StaticFileServer(path: packagesPath))
 
         if createServer {
             let configMgr = ConfigurationManager().load(.environmentVariables)
             Kitura.addHTTPServer(onPort: configMgr.port, with: router)
+            Log.info("SwiftMetricsDash : Starting on port \(configMgr.port)")
             print("SwiftMetricsDash : Starting on port \(configMgr.port)")
             Kitura.run()
         }

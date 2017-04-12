@@ -88,9 +88,9 @@ open class SwiftMetrics {
   var latencyEnabled: Bool = true
   let jobsQueue = DispatchQueue(label: "Swift Metrics Jobs Queue")
 
-  public init() throws {
+  public init() {
     self.loaderApi = loader_entrypoint().pointee
-    try self.loadProperties()
+    self.loadProperties()
     loaderApi.setLogLevels()
     loaderApi.setProperty("agentcore.version", loaderApi.getAgentVersion())
     loaderApi.setProperty("swiftmetrics.version", SWIFTMETRICS_VERSION)
@@ -138,17 +138,21 @@ open class SwiftMetrics {
     self.setPluginSearch(toDirectory: URL(fileURLWithPath: defaultLibraryPath, isDirectory: true))
   }
 
-  private func loadProperties() throws {
+  private func loadProperties() {
     ///look for healthcenter.properties in current directory
     let fm = FileManager.default
     var propertiesPath = ""
     let currentDir = fm.currentDirectoryPath
-    let dirContents = try fm.contentsOfDirectory(atPath: currentDir)
-    for dir in dirContents {
-    
-      if dir.contains("swiftmetrics.properties") {
-        propertiesPath = "\(currentDir)/\(dir)"
+    do {
+      let dirContents = try fm.contentsOfDirectory(atPath: currentDir)
+      for dir in dirContents {
+      
+        if dir.contains("swiftmetrics.properties") {
+          propertiesPath = "\(currentDir)/\(dir)"
+        }
       }
+    } catch {
+      loaderApi.logMessage(warning, "SwiftMetrics: Error trying to load properties file from current directory: \(error)")
     }
     if propertiesPath.isEmpty {
       ///need to go and look for it in the program's Packages directory
@@ -179,7 +183,8 @@ open class SwiftMetrics {
         if fm.fileExists(atPath: packagesPath) {
           _ = fm.changeCurrentDirectoryPath(packagesPath)
         } else {
-          print("SwiftMetrics: Error finding install directory")
+          loaderApi.logMessage(warning, "SwiftMetrics: Unable to find install directory to load properties file.")
+          return
         }
       }
 
@@ -192,8 +197,8 @@ open class SwiftMetrics {
           }
         }
       } catch {
-        print("SwiftMetrics: Error searching directory: \(packagesPath), \(error).")
-        throw error
+        loaderApi.logMessage(warning, "SwiftMetrics: Error searching directory: \(fm.currentDirectoryPath), \(error).")
+        return
       }
 
       propertiesPath = "\(fm.currentDirectoryPath)/swiftmetrics.properties"
