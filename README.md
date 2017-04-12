@@ -262,10 +262,11 @@ This project uses a semver-parsable X.0.Z version number for releases, where X i
 Non-release versions of this project (for example on github.com/RuntimeTools/SwiftMetrics) will use semver-parsable X.0.Z-dev.B version numbers, where X.0.Z is the last release with Z incremented and B is an integer. For further information on the development process go to the  [SwiftMetrics wiki][1]: [Developing](https://github.com/RuntimeTools/SwiftMetrics/wiki/Developing).
 
 ## Version
-1.0.0
+1.0.2
 
 ## Release History
-`1.0.0` - First GA release.
+`1.0.2` - Initial Swift 3.1 support (SwiftMetricsDash not working on 3.1).  
+`1.0.0` - First GA release.  
 `0.0.12` - BlueMix AutoScaling support.  
 `0.0.11` - BlueMix support.  
 `0.0.10` - Addition of Kitura HTTP collection source.  
