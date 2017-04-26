@@ -66,7 +66,7 @@ private func receiveAgentCoreData(cSourceId: UnsafePointer<CChar>, cSize: CUnsig
   }
   let source = String(cString: cSourceId)
   if source != "api" {
-    let message = String(bytesNoCopy: data, length: size, encoding: String.Encoding.utf8, freeWhenDone: false) ?? ""
+    let message = String(bytes: data, length: size, encoding: String.Encoding.utf8) ?? ""
     if swiftMon != nil {
       swiftMon!.raiseCoreEvent(topic: source, message: message)
     }
