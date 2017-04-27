@@ -39,6 +39,7 @@ public class SwiftMetricsDash {
     var monitor:SwiftMonitor
     var SM:SwiftMetrics
     var service:SwiftMetricsService
+    var createServer: Bool = false
 
     public convenience init(swiftMetricsInstance : SwiftMetrics) throws {
        try self.init(swiftMetricsInstance : swiftMetricsInstance , endpoint: nil)
@@ -46,23 +47,27 @@ public class SwiftMetricsDash {
 
     public init(swiftMetricsInstance : SwiftMetrics , endpoint: Router!) throws {
         // default to use passed in Router
-        var create = false
-
         if endpoint == nil {
-            create = true
+            self.createServer = true
         } else {
             router =  endpoint
         }
-         self.SM = swiftMetricsInstance
+        self.SM = swiftMetricsInstance
         _ = SwiftMetricsKitura(swiftMetricsInstance: SM)
         self.monitor = SM.monitor()
         self.service = SwiftMetricsService(monitor: monitor)
         WebSocket.register(service: self.service, onPath: "swiftmetrics-dash")
 
-        try startServer(createServer: create, router: router)
+        try startServer(router: router)
     }
 
-    func startServer(createServer: Bool, router: Router) throws {
+    deinit {
+        if self.createServer {
+            Kitura.stop()
+        }
+    }
+
+    func startServer(router: Router) throws {
         let fm = FileManager.default
         let currentDir = fm.currentDirectoryPath
         var workingPath = ""
@@ -106,17 +111,13 @@ public class SwiftMetricsDash {
        
         router.all("/swiftmetrics-dash", middleware: StaticFileServer(path: packagesPath))
 
-        if createServer {
+        if self.createServer {
             let configMgr = ConfigurationManager().load(.environmentVariables)
             Kitura.addHTTPServer(onPort: configMgr.port, with: router)
             print("SwiftMetricsDash : Starting on port \(configMgr.port)")
-            Kitura.run()
+            Kitura.start()
         }
- 	}
-
-
-
-
+     }
 }
 class SwiftMetricsService: WebSocketService {
 
