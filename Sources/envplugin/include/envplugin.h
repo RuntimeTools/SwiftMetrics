@@ -82,8 +82,8 @@ private:
  * These functions will be passed to the agent using the pullsource* structure that is
  * returned by the registerPullSource method.
  *-----------------------------------------------------------------------------------*/
-extern "C" monitordata* pullWrapper();
-extern "C" void pullCompleteWrapper(monitordata* data);
+monitordata* pullWrapper();
+void pullCompleteWrapper(monitordata* data);
 #if defined(__MACH__) || defined(__APPLE__)
 std::string getCommandOutput(std::string command);
 #endif

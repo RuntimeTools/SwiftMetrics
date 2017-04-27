@@ -89,8 +89,8 @@ private:
  * These functions will be passed to the agent using the pullsource* structure that is
  * returned by the registerPullSource method.
  *-----------------------------------------------------------------------------------*/
-extern "C" monitordata* pullWrapper();
-extern "C" void pullCompleteWrapper(monitordata* data);
+monitordata* pullWrapper();
+void pullCompleteWrapper(monitordata* data);
 
 /*
  * These 4 functions are the symbols that the Plugin.scan method will look for when scanning the

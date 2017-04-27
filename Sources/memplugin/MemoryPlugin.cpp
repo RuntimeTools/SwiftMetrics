@@ -205,6 +205,7 @@ pullsource* MemoryPlugin::createPullSource(uint32 srcid, const char* name) {
 }
 
 monitordata* MemoryPlugin::OnRequestData() {
+  aCF.logMessage(debug, ">>>MemoryPlugin::OnRequestData");
 	monitordata *data = new monitordata;
 	data->provID = provID;
 	data->size = 0;
@@ -234,6 +235,7 @@ monitordata* MemoryPlugin::OnRequestData() {
 		data->data = sval;
 
 	}
+	aCF.logMessage(debug, "<<<MemoryPlugin::OnRequestData");
 
 	return data;
 }
@@ -251,11 +253,11 @@ void MemoryPlugin::OnComplete(monitordata* data) {
  * CALLBACK WRAPPERS
  *****************************************************************************/
 
-extern "C" monitordata* pullWrapper() {
+monitordata* pullWrapper() {
 		return MemoryPlugin::getInstance()->OnRequestData();
 }
 
-extern "C" void pullCompleteWrapper(monitordata* data) {
+void pullCompleteWrapper(monitordata* data) {
 	MemoryPlugin::getInstance()->OnComplete(data);
 }
 

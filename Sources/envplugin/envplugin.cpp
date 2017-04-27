@@ -204,11 +204,11 @@ pullsource* EnvPlugin::createPullSource(uint32 srcid, const char* name) {
 	 * CALLBACK WRAPPERS
 	 *****************************************************************************/
 
-	extern "C" monitordata* pullWrapper() {
+	monitordata* pullWrapper() {
 		return EnvPlugin::getInstance()->OnRequestData();
 	}
 
-	extern "C" void pullCompleteWrapper(monitordata* data) {
+	void pullCompleteWrapper(monitordata* data) {
 		EnvPlugin::getInstance()->OnComplete(data);
 	}
 
