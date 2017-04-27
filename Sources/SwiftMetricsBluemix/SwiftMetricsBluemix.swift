@@ -346,7 +346,7 @@ public class SwiftMetricsBluemix {
         Log.debug("[Auto-scaling Agent] sendMetrics:Request: \(request!)")
         Log.debug("[Auto-scaling Agent] sendMetrics:Response: \(response!)")
         Log.debug("[Auto-scaling Agent] sendMetrics:Data: \(data!)")
-        Log.debug("[Auto-scaling Agent] sendMetrics:Error: \(error)")}
+        Log.debug("[Auto-scaling Agent] sendMetrics:Error: \(String(describing: error))")}
   }
 
   private func notifyStatus() {
@@ -359,8 +359,8 @@ public class SwiftMetricsBluemix {
       request, response, data, error in
         Log.debug("[Auto-scaling Agent] notifyStatus:Request: \(request!)")
         Log.debug("[Auto-scaling Agent] notifyStatus:Response: \(response!)")
-        Log.debug("[Auto-scaling Agent] notifyStatus:Data: \(data)")
-        Log.debug("[Auto-scaling Agent] notifyStatus:Error: \(error)")
+        Log.debug("[Auto-scaling Agent] notifyStatus:Data: \(String(describing: data))")
+        Log.debug("[Auto-scaling Agent] notifyStatus:Error: \(String(describing: error))")
     }
   }
 
@@ -376,9 +376,9 @@ public class SwiftMetricsBluemix {
       request, response, data, error in
         Log.debug("[Auto-scaling Agent] requestConfig:Request: \(request!)")
         Log.debug("[Auto-scaling Agent] requestConfig:Response: \(response!)")
-        Log.debug("[Auto-scaling Agent] requestConfig:Data: \(data!)")
-        Log.debug("[Auto-scaling Agent] requestConfig:Error: \(error)")
-        Log.debug("[Auto-scaling Agent] requestConfig:Body: \(String(data: data!, encoding: .utf8))")
+        Log.debug("[Auto-scaling Agent] requestConfig:Data: \(String(describing: data))")
+        Log.debug("[Auto-scaling Agent] requestConfig:Error: \(String(describing: error))")
+        Log.debug("[Auto-scaling Agent] requestConfig:Body: \(String(describing: data))")
         self.updateConfiguration(response: data!)
     }
   }
