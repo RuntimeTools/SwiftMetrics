@@ -57,12 +57,17 @@ var httpTop5ChartPlaceholder = httpTop5Chart.append("text")
     .style("font-size", "18px")
     .text("No Data Available");
 
-function convertURL(url) {
-    if (url.toString().startsWith("http://" + myurl)) {
-        return url.toString().substring(myurl.length + 7)
-    } else {
-        return url.toString()
+function convertURL(url, httpDiv3GraphWidth) {
+    var stringToDisplay = url.toString()
+    if (stringToDisplay.startsWith("http://" + myurl)) {
+        stringToDisplay = stringToDisplay.substring(myurl.length + 7)
+    } 
+    var stringLength = stringToDisplay.length
+    var charSpaceAvailable = Math.floor(httpDiv3GraphWidth/10)
+    if(stringLength > charSpaceAvailable) {
+        stringToDisplay = stringToDisplay.substring(stringLength - charSpaceAvailable);
     }
+    return stringToDisplay;
 }
 
 function updateChart() {
@@ -98,7 +103,7 @@ function updateChart() {
         .attr("dy", ".35em")
         .attr("fill", "white")
         .text(function(d) {
-            return convertURL(d.url)
+            return convertURL(d.url, httpDiv3GraphWidth)
         });
 
     bar.append("text")
