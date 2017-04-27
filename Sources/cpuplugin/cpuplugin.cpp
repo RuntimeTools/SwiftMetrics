@@ -221,11 +221,11 @@ agentCoreFunctions CpuPlugin::aCF;
 	 * CALLBACK WRAPPERS
 	 *****************************************************************************/
 
-	extern "C" monitordata* pullWrapper() {
+	monitordata* pullWrapper() {
 			return CpuPlugin::getInstance()->OnRequestData();
 	}
 
-	extern "C" void pullCompleteWrapper(monitordata* data) {
+	void pullCompleteWrapper(monitordata* data) {
 		CpuPlugin::getInstance()->OnComplete(data);
 	}
 

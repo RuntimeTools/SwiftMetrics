@@ -73,8 +73,8 @@ static IDATA readProcStatField(UDATA index, const char *format, ...);
 
 #endif
 
-extern "C" monitordata* pullWrapper();
-extern "C" void pullCompleteWrapper(monitordata* data);
+monitordata* pullWrapper();
+void pullCompleteWrapper(monitordata* data);
 
 extern "C" {
 PLUGIN_API_DECL pullsource* ibmras_monitoring_registerPullSource(agentCoreFunctions aCF, uint32 provID);
