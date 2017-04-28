@@ -87,9 +87,65 @@ open class SwiftMetrics {
   var sleepInterval: UInt32 = 2
   var latencyEnabled: Bool = true
   let jobsQueue = DispatchQueue(label: "Swift Metrics Jobs Queue")
+  public let localSourceDirectory: String
 
   public init() throws {
     self.loaderApi = loader_entrypoint().pointee
+    //find the SwiftMetrics directory where swiftmetrics.properties and SwiftMetricsDash public folder are
+    let fm = FileManager.default
+    let currentDir = fm.currentDirectoryPath
+    let configMgr = ConfigurationManager().load(.environmentVariables)
+    var applicationPath = ""
+    if (configMgr.isLocal) {
+      var workingPath = ""
+      if currentDir.contains(".build") {
+        ///we're below the Packages directory
+        workingPath = currentDir
+      } else {
+        ///we're above the Packages directory
+        workingPath = CommandLine.arguments[0]
+      }
+      if let i = workingPath.range(of: ".build") {
+        applicationPath = workingPath.substring(to: i.lowerBound)
+      } else {
+        print("SwiftMetrics: Error finding .build directory")
+      }
+    } else {
+      // We're in Bluemix, use the path the swift-buildpack saves libraries to
+      applicationPath = "/home/vcap/app/"
+    }
+    // Swift 3.1
+    let checkoutsPath = applicationPath + ".build/checkouts/"
+    if fm.fileExists(atPath: checkoutsPath) {
+      _ = fm.changeCurrentDirectoryPath(checkoutsPath)
+    } else { // Swift 3.0
+      let packagesPath = applicationPath + "Packages/"
+      if fm.fileExists(atPath: packagesPath) {
+        _ = fm.changeCurrentDirectoryPath(packagesPath)
+      } else {
+        print("SwiftMetrics: Error finding directory containing source code in \(applicationPath)")
+      }
+    }
+    do {
+      let dirContents = try fm.contentsOfDirectory(atPath: fm.currentDirectoryPath)
+      for dir in dirContents {
+        if dir.contains("SwiftMetrics") {
+          ///that's where we want to be!
+          _ = fm.changeCurrentDirectoryPath(dir)
+        }
+      }
+    } catch {
+      print("SwiftMetrics: Error obtaining contents of directory: \(fm.currentDirectoryPath), \(error).")
+      throw error
+    }
+    let propertiesPath = "\(fm.currentDirectoryPath)/swiftmetrics.properties"
+    if fm.fileExists(atPath: propertiesPath) {
+      self.localSourceDirectory = fm.currentDirectoryPath
+    } else {
+      print("SwiftMetrics: Error: \(fm.currentDirectoryPath) incorrectly identified as SwiftMetrics Source dir")
+      self.localSourceDirectory = ""
+    }
+    _ = fm.changeCurrentDirectoryPath(currentDir)
     try self.loadProperties()
     loaderApi.setLogLevels()
     loaderApi.setProperty("agentcore.version", loaderApi.getAgentVersion())
@@ -124,14 +180,14 @@ open class SwiftMetrics {
     let configMgr = ConfigurationManager().load(.environmentVariables)
     loaderApi.logMessage(debug, "setDefaultLibraryPath(): isLocal: \(configMgr.isLocal)")
     if (configMgr.isLocal) {
-      //if local, use the directory that the swift program lives in
+      // if local, use the directory that the swift program lives in
       let programPath = CommandLine.arguments[0]
       let i = programPath.range(of: "/", options: .backwards)
       if i != nil {
         defaultLibraryPath = programPath.substring(to: i!.lowerBound)
       }
     } else {
-      //if we're in Bluemix, use the path the swift-buildpack saves libraries to
+      // We're in Bluemix, use the path the swift-buildpack saves libraries to
       defaultLibraryPath = "/home/vcap/app/.swift-lib"
     }
     loaderApi.logMessage(fine, "setDefaultLibraryPath(): to \(defaultLibraryPath)")
@@ -142,63 +198,12 @@ open class SwiftMetrics {
     ///look for healthcenter.properties in current directory
     let fm = FileManager.default
     var propertiesPath = ""
-    let currentDir = fm.currentDirectoryPath
-    let dirContents = try fm.contentsOfDirectory(atPath: currentDir)
-    for dir in dirContents {
-    
-      if dir.contains("swiftmetrics.properties") {
-        propertiesPath = "\(currentDir)/\(dir)"
-      }
-    }
-    if propertiesPath.isEmpty {
-      ///need to go and look for it in the program's Packages directory
-      var workingPath = ""
-      if currentDir.contains(".build") {
-        ///we're below the Packages directory
-        workingPath = currentDir
-      } else {
-        ///we're above the Packages directory
-        workingPath = CommandLine.arguments[0]
-      }
-
-      let i = workingPath.range(of: ".build")
-      var packagesPath = ""
-      if i == nil {
-        // we could be in bluemix
-        packagesPath="/home/vcap/app"
-      } else {
-        packagesPath = workingPath.substring(to: i!.lowerBound)
-      }
-      // Swift 3.1
-      let checkoutsPath = packagesPath + ".build/checkouts/"
-      if fm.fileExists(atPath: checkoutsPath) {
-        _ = fm.changeCurrentDirectoryPath(checkoutsPath)
-       
-      } else { // Swift 3.0
-        packagesPath.append("Packages/");
-        if fm.fileExists(atPath: packagesPath) {
-          _ = fm.changeCurrentDirectoryPath(packagesPath)
-        } else {
-          print("SwiftMetrics: Error finding install directory")
-        }
-      }
-
-      do {
-        let dirContents = try fm.contentsOfDirectory(atPath: fm.currentDirectoryPath)
-        for dir in dirContents {
-          if dir.contains("SwiftMetrics") {
-          ///that's where we want to be!
-          _ = fm.changeCurrentDirectoryPath(dir)
-          }
-        }
-      } catch {
-        print("SwiftMetrics: Error searching directory: \(packagesPath), \(error).")
-        throw error
-      }
-
-      propertiesPath = "\(fm.currentDirectoryPath)/swiftmetrics.properties"
-      _ = fm.changeCurrentDirectoryPath(currentDir)
-
+    let localPropertiesPath = fm.currentDirectoryPath + "/swiftmetrics.properties"
+    if fm.fileExists(atPath: localPropertiesPath) {
+      propertiesPath = localPropertiesPath
+    } else {
+      ///use the one in the SwiftMetrics source
+      propertiesPath = self.localSourceDirectory + "/swiftmetrics.properties"
     }
     _ = loaderApi.loadPropertiesFile(propertiesPath)
   }
