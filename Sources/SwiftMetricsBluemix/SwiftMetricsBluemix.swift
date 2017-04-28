@@ -24,6 +24,7 @@ import KituraRequest
 import SwiftMetrics
 import SwiftMetricsKitura
 import SwiftyJSON
+import SwiftBAMDC
 
 fileprivate struct HttpStats {
   fileprivate var count: Double = 0
@@ -76,6 +77,8 @@ fileprivate struct AverageMetrics {
 
 public class SwiftMetricsBluemix {
 
+  var SM:SwiftMetrics
+
   var reportInterval: Int = 30
   // the number of s to wait between report thread runs
 
@@ -94,6 +97,10 @@ public class SwiftMetricsBluemix {
   let autoScalingServiceLabel = "Auto-Scaling"
   // used to find the AutoScaling service from the Cloud Foundry Application Environment
 
+  let bamServiceLabel = "AvailabilityMonitoring.*"
+  let bamDebugLabel = "IBAM_ENABLE_DC"
+  // used to find the BAM service from the Cloud Foundry Application Environment
+
   fileprivate var metrics: Metrics = Metrics() //initialises to defaults above
 
   var agentUsername = ""
@@ -107,12 +114,18 @@ public class SwiftMetricsBluemix {
   var instanceIndex = 0
   var instanceId = ""
 
-  public init(metricsToEnable: [String], swiftMetricsInstance: SwiftMetrics) {
-    Log.entry("[Auto-Scaling Agent] initialization(\(metricsToEnable))")
+  public init(metricsToEnable: [String], swiftMetricsInstance: SwiftMetrics) throws  {
+
+    self.SM = swiftMetricsInstance
+    try self.detectBAMBinding(swiftMetricsInstance: self.SM)
+
+    Log.entry("[SwiftMetricsBluemix] initialization(\(metricsToEnable))")
     enabledMetrics = metricsToEnable
+
     if !self.initCredentials() {
       return
     }
+
     self.notifyStatus()
     self.refreshConfig()
     self.setMonitors(monitor: swiftMetricsInstance.monitor())
@@ -122,6 +135,27 @@ public class SwiftMetricsBluemix {
     DispatchQueue.global(qos: .background).async {
       self.snoozeRefreshConfig()
     }
+  }
+
+  private func detectBAMBinding(swiftMetricsInstance: SwiftMetrics) throws {
+    let configMgr = ConfigurationManager().load(.environmentVariables)
+    // Find BAM service using convenience method
+    let bamServ: Service? = configMgr.getServices(type: bamServiceLabel).first
+    
+    if let dcEn = ProcessInfo.processInfo.environment[bamDebugLabel],  dcEn == "true" {
+        Log.info("[SwiftMetricsBluemix] Detected BAM debug environment setting, enabling SwiftBAMDC")
+
+        var _ = try SwiftDataCollector(swiftMetricsInstance: swiftMetricsInstance)
+    }
+    else if let bamS = bamServ {
+        Log.info("[SwiftMetricsBluemix] Detected BAM Service \(bamS), enabling SwiftBAMDC ")
+        var _ = try SwiftDataCollector(swiftMetricsInstance: swiftMetricsInstance)
+    }
+    else {
+        Log.info("[SwiftMetricsBluemix] Could not find BAM service.")
+        return
+    }
+
   }
 
   private func initCredentials() -> Bool {
@@ -177,8 +211,9 @@ public class SwiftMetricsBluemix {
     }
   }
 
-  public convenience init(swiftMetricsInstance: SwiftMetrics) {
-    self.init(metricsToEnable: ["CPU", "Memory", "Throughput", "ResponseTime", "DispatchQueueLatency"], swiftMetricsInstance: swiftMetricsInstance)
+  public convenience init(swiftMetricsInstance: SwiftMetrics) throws {
+  print("[SwiftMetricsBluemix] in init.")
+    try self.init(metricsToEnable: ["CPU", "Memory", "Throughput", "ResponseTime", "DispatchQueueLatency"], swiftMetricsInstance: swiftMetricsInstance)
   }
 
   private func setMonitors(monitor: SwiftMonitor) {
