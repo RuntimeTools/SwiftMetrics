@@ -68,7 +68,6 @@ public class SwiftMetricsDash {
     }
 
     func startServer(router: Router) throws {
-        print("SwiftMetricsDash: Attempting to host middleware located at \(self.SM.localSourceDirectory)/public")
         router.all("/swiftmetrics-dash", middleware: StaticFileServer(path: self.SM.localSourceDirectory + "/public"))
 
         if self.createServer {
