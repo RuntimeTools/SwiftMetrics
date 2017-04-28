@@ -68,48 +68,8 @@ public class SwiftMetricsDash {
     }
 
     func startServer(router: Router) throws {
-        let fm = FileManager.default
-        let currentDir = fm.currentDirectoryPath
-        var workingPath = ""
-        if currentDir.contains(".build") {
-            //we're below the Packages directory
-            workingPath = currentDir
-        } else {
-         	//we're above the Packages directory
-            workingPath = CommandLine.arguments[0]
-        }
-        let i = workingPath.range(of: ".build")
-        var packagesPath = ""
-        if i == nil {
-            // we could be in bluemix
-            packagesPath="/home/vcap/app/"
-        } else {
-            packagesPath = workingPath.substring(to: i!.lowerBound)
-        }
-
-        // Swift 3.1
-        let checkoutsPath = packagesPath + ".build/checkouts/"
-        if fm.fileExists(atPath: checkoutsPath) {
-           packagesPath = checkoutsPath;
-        } else if fm.fileExists(atPath: packagesPath + "Packages/") { // Swift 3.0
-          packagesPath.append("Packages/");
-        } else {
-         print("SwiftMetricsDash: error finding install directory")
-        }
-
-        do {
-          let dirContents = try fm.contentsOfDirectory(atPath: packagesPath)
-          for dir in dirContents {
-            if dir.contains("SwiftMetrics") {
-                packagesPath.append("\(dir)/public")
-            }
-          }
-        } catch {
-          print("SwiftMetricsDash: Error opening directory: \(packagesPath), \(error).")
-          throw error
-        }
-       
-        router.all("/swiftmetrics-dash", middleware: StaticFileServer(path: packagesPath))
+        print("SwiftMetricsDash: Attempting to host middleware located at \(self.SM.localSourceDirectory)/public")
+        router.all("/swiftmetrics-dash", middleware: StaticFileServer(path: self.SM.localSourceDirectory + "/public"))
 
         if self.createServer {
             let configMgr = ConfigurationManager().load(.environmentVariables)
