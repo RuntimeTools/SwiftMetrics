@@ -1,5 +1,5 @@
 /**
-* Copyright IBM Corporation 2016
+* Copyright IBM Corporation 2017
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ public class SwiftMetricsDash {
     var monitor:SwiftMonitor
     var SM:SwiftMetrics
     var service:SwiftMetricsService
+    var createServer: Bool = false
 
     public convenience init(swiftMetricsInstance : SwiftMetrics) throws {
        try self.init(swiftMetricsInstance : swiftMetricsInstance , endpoint: nil)
@@ -46,23 +47,27 @@ public class SwiftMetricsDash {
 
     public init(swiftMetricsInstance : SwiftMetrics , endpoint: Router!) throws {
         // default to use passed in Router
-        var create = false
-
         if endpoint == nil {
-            create = true
+            self.createServer = true
         } else {
             router =  endpoint
         }
-         self.SM = swiftMetricsInstance
+        self.SM = swiftMetricsInstance
         _ = SwiftMetricsKitura(swiftMetricsInstance: SM)
         self.monitor = SM.monitor()
         self.service = SwiftMetricsService(monitor: monitor)
         WebSocket.register(service: self.service, onPath: "swiftmetrics-dash")
 
-        try startServer(createServer: create, router: router)
+        try startServer(router: router)
     }
 
-    func startServer(createServer: Bool, router: Router) throws {
+    deinit {
+        if self.createServer {
+            Kitura.stop()
+        }
+    }
+
+    func startServer(router: Router) throws {
         let fm = FileManager.default
         let currentDir = fm.currentDirectoryPath
         var workingPath = ""
@@ -81,26 +86,38 @@ public class SwiftMetricsDash {
         } else {
             packagesPath = workingPath.substring(to: i!.lowerBound)
         }
-        packagesPath.append("Packages/")
-        let dirContents = try fm.contentsOfDirectory(atPath: packagesPath)
-        for dir in dirContents {
+
+        // Swift 3.1
+        let checkoutsPath = packagesPath + ".build/checkouts/"
+        if fm.fileExists(atPath: checkoutsPath) {
+           packagesPath = checkoutsPath;
+        } else if fm.fileExists(atPath: packagesPath + "Packages/") { // Swift 3.0
+          packagesPath.append("Packages/");
+        } else {
+         print("SwiftMetricsDash: error finding install directory")
+        }
+
+        do {
+          let dirContents = try fm.contentsOfDirectory(atPath: packagesPath)
+          for dir in dirContents {
             if dir.contains("SwiftMetrics") {
                 packagesPath.append("\(dir)/public")
             }
+          }
+        } catch {
+          print("SwiftMetricsDash: Error opening directory: \(packagesPath), \(error).")
+          throw error
         }
+       
         router.all("/swiftmetrics-dash", middleware: StaticFileServer(path: packagesPath))
 
-        if createServer {
+        if self.createServer {
             let configMgr = ConfigurationManager().load(.environmentVariables)
             Kitura.addHTTPServer(onPort: configMgr.port, with: router)
             print("SwiftMetricsDash : Starting on port \(configMgr.port)")
-            Kitura.run()
+            Kitura.start()
         }
- 	}
-
-
-
-
+     }
 }
 class SwiftMetricsService: WebSocketService {
 
@@ -119,7 +136,6 @@ class SwiftMetricsService: WebSocketService {
         monitor.on(sendMEM)
         monitor.on(storeHTTP)
         sendhttpData()
-        gethttpURLs()
     }
 
 
@@ -253,7 +269,6 @@ class SwiftMetricsService: WebSocketService {
     }
 
     func sendhttpData()  {
-        sleep(UInt32(2))
         httpQueue.sync {
             let localCopy = self.httpAggregateData
             if localCopy.total > 0 {
@@ -265,21 +280,14 @@ class SwiftMetricsService: WebSocketService {
                     "average":"\(localCopy.average)",
                     "total":"\(localCopy.total)"]])
 
-                    for (_,connection) in self.connections {
-                        if let messageToSend = httpLine.rawString() {
-                            connection.send(message: messageToSend)
-                        }
+                for (_,connection) in self.connections {
+                    if let messageToSend = httpLine.rawString() {
+                        connection.send(message: messageToSend)
                     }
+                }
                 self.httpAggregateData = HTTPAggregateData()
             }
-            jobsQueue.async {
-                self.sendhttpData()
-            }
         }
-    }
-
-    func gethttpURLs() {
-        sleep(UInt32(2))
         httpURLsQueue.sync {
             var responseData:[JSON] = []
             let localCopy = self.httpURLData
@@ -303,9 +311,10 @@ class SwiftMetricsService: WebSocketService {
                   connection.send(message: messageToSend2)
               }
             }
-
             jobsQueue.async {
-                self.gethttpURLs()
+                // re-run this function after 2 seconds
+                sleep(2)
+                self.sendhttpData()
             }
         }
     }

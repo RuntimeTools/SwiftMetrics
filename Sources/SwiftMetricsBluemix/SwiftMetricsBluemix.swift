@@ -1,3 +1,19 @@
+/**
+* Copyright IBM Corporation 2017
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+**/
+
 import Foundation
 import Dispatch
 import LoggerAPI
@@ -58,9 +74,9 @@ fileprivate struct AverageMetrics {
   fileprivate var throughput : Double = 0
 }
 
-public class AutoScalar {
+public class SwiftMetricsBluemix {
 
-  var reportInterval: Int = 1
+  var reportInterval: Int = 30
   // the number of s to wait between report thread runs
 
   var availableMonitorInterval: Int = 5
@@ -92,58 +108,55 @@ public class AutoScalar {
   var instanceId = ""
 
   public init(metricsToEnable: [String], swiftMetricsInstance: SwiftMetrics) {
-    print("JS top of init")
     Log.entry("[Auto-Scaling Agent] initialization(\(metricsToEnable))")
     enabledMetrics = metricsToEnable
     if !self.initCredentials() {
       return
     }
-//    self.notifyStatus()
-//    self.refreshConfig()
+    self.notifyStatus()
+    self.refreshConfig()
     self.setMonitors(monitor: swiftMetricsInstance.monitor())
     DispatchQueue.global(qos: .background).async {
       self.snoozeStartReport()
     }
-//    DispatchQueue.global(qos: .background).async {
-//      self.snoozeRefreshConfig()
-//    }
-    print("JS bottom of init")
+    DispatchQueue.global(qos: .background).async {
+      self.snoozeRefreshConfig()
+    }
   }
 
   private func initCredentials() -> Bool {
-    return true
-//    let configMgr = ConfigurationManager().load(.environmentVariables)
+    let configMgr = ConfigurationManager().load(.environmentVariables)
     // Find auto-scaling service using convenience method
-//    let scalingServ: Service? = configMgr.getServices(type: autoScalingServiceLabel).first
-//    guard let serv = scalingServ, let autoScalingService = AutoScalingService(withService: serv) else {
-//      Log.error("[Auto-Scaling Agent] Could not find Auto-Scaling service.")
-//      return false
-//    }
+    let scalingServ: Service? = configMgr.getServices(type: autoScalingServiceLabel).first
+    guard let serv = scalingServ, let autoScalingService = AutoScalingService(withService: serv) else {
+      Log.error("[Auto-Scaling Agent] Could not find Auto-Scaling service.")
+      return false
+    }
 
-//    Log.debug("[Auto-Scaling Agent] Found Auto-Scaling service: \(autoScalingService.name)")
+    Log.debug("[Auto-Scaling Agent] Found Auto-Scaling service: \(autoScalingService.name)")
 
     // Assign unwrapped values
-//    self.host = autoScalingService.url
-//    self.serviceID = autoScalingService.serviceID
- //   self.appID = autoScalingService.appID
-//    self.agentPassword = autoScalingService.password
-//    self.agentUsername = autoScalingService.username
+    self.host = autoScalingService.url
+    self.serviceID = autoScalingService.serviceID
+    self.appID = autoScalingService.appID
+    self.agentPassword = autoScalingService.password
+    self.agentUsername = autoScalingService.username
 
-//    guard let app = configMgr.getApp() else {
-//      Log.error("[Auto-Scaling Agent] Could not get Cloud Foundry app metadata.")
-//      return false
-//    }
+    guard let app = configMgr.getApp() else {
+      Log.error("[Auto-Scaling Agent] Could not get Cloud Foundry app metadata.")
+      return false
+    }
 
     // Extract fields from App object
-//    appName = app.name
-//    instanceIndex = app.instanceIndex
-//    instanceId = app.instanceId
+    appName = app.name
+    instanceIndex = app.instanceIndex
+    instanceId = app.instanceId
 
-//    auth = "\(agentUsername):\(agentPassword)"
-//    Log.debug("[Auto-scaling Agent] Authorisation: \(auth)")
-//    authorization = Data(auth.utf8).base64EncodedString()
+    auth = "\(agentUsername):\(agentPassword)"
+    Log.debug("[Auto-scaling Agent] Authorisation: \(auth)")
+    authorization = Data(auth.utf8).base64EncodedString()
 
-//    return true
+    return true
   }
 
   private func snoozeStartReport() {
@@ -166,7 +179,6 @@ public class AutoScalar {
 
   public convenience init(swiftMetricsInstance: SwiftMetrics) {
     self.init(metricsToEnable: ["CPU", "Memory", "Throughput", "ResponseTime", "DispatchQueueLatency"], swiftMetricsInstance: swiftMetricsInstance)
-    print("JS convenience init")
   }
 
   private func setMonitors(monitor: SwiftMonitor) {
@@ -193,11 +205,10 @@ public class AutoScalar {
   }
 
   private func startReport() {
-    print("JS start report")
-//    if (!isAgentEnabled) {
-//      Log.verbose("[Auto-Scaling Agent] Agent is disabled by server")
-//      return
-//    }
+    if (!isAgentEnabled) {
+      Log.verbose("[Auto-Scaling Agent] Agent is disabled by server")
+      return
+    }
 
     let metricsToSend = calculateAverageMetrics()
     let sendObject = constructSendObject(metricsToSend: metricsToSend)
@@ -234,8 +245,6 @@ public class AutoScalar {
       metrics.throughputStats.duration = 0
     }
     metrics.throughputStats.requestCount = 0
-    
-    print("Average memory  \(metrics.memoryStats.average)")
 
     let metricsToSend = AverageMetrics(
       dispatchQueueLatency: metrics.latencyStats.average,
@@ -327,25 +336,17 @@ public class AutoScalar {
     let sendMetricsPath = "\(host):443/services/agent/report"
     Log.debug("[Auto-scaling Agent] Attempting to send metrics to \(sendMetricsPath)")
 
-    do {
-      let jsonData = try JSONSerialization.data(withJSONObject: asOBJ, options: .prettyPrinted)
-      let decoded = try JSONSerialization.jsonObject(with: jsonData, options: [])
-//      if let dictFromJSON = decoded as? [String:Any] {
-//        KituraRequest.request(.post,
-//          sendMetricsPath,
-//          parameters: dictFromJSON,
-//          encoding: JSONEncoding.default,
-//          headers: ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
-//        ).response {
-//          request, response, data, error in
-//            Log.debug("[Auto-scaling Agent] sendMetrics:Request: \(request!)")
-//            Log.debug("[Auto-scaling Agent] sendMetrics:Response: \(response!)")
-//            Log.debug("[Auto-scaling Agent] sendMetrics:Data: \(data!)")
-//            Log.debug("[Auto-scaling Agent] sendMetrics:Error: \(error)")}
-//        }
-    } catch {
-      Log.warning("[Auto-Scaling Agent] \(error.localizedDescription)")
-    }
+    KituraRequest.request(.post,
+      sendMetricsPath,
+      parameters: asOBJ,
+      encoding: JSONEncoding.default,
+      headers: ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
+    ).response {
+      request, response, data, error in
+        Log.debug("[Auto-scaling Agent] sendMetrics:Request: \(request!)")
+        Log.debug("[Auto-scaling Agent] sendMetrics:Response: \(response!)")
+        Log.debug("[Auto-scaling Agent] sendMetrics:Data: \(data!)")
+        Log.debug("[Auto-scaling Agent] sendMetrics:Error: \(error)")}
   }
 
   private func notifyStatus() {
