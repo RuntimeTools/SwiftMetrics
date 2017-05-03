@@ -95,7 +95,11 @@
 <script type="text/javascript" src="js/memChart.js"></script>
 <script>
     var myurl = location.host;
-    var client = new WebSocket("ws://" + myurl + "/swiftmetrics-dash","swiftmetrics-dash")
+    var webSocketProtocol = "ws://"
+    if(location.protocol === "https:") {
+      webSocketProtocol = "wss://"
+    }
+    var client = new WebSocket(webSocketProtocol + myurl + "/swiftmetrics-dash","swiftmetrics-dash")
 
     client.onmessage = function(message) {
         received = JSON.parse(message.data);
