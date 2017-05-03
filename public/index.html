@@ -106,8 +106,6 @@
         topic = received.topic;
         payload = JSON.stringify(received.payload);
 
-
-        console.log(topic);
         switch (topic) {
             case 'cpu':
                 updateCPUData(payload);
