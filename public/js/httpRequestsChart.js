@@ -120,7 +120,7 @@ function updateHttpData(httpRequest) {
         // Check to see if the request started before previous request(s)
 		if (httpLength > 0 && (httpRequestData.time < httpData[httpLength-1].time)) {
 			var i = httpLength - 1;
-			while (httpRequestData.time < httpData[i].time {
+			while (httpRequestData.time < httpData[i].time) {
 				i--;
 			}
             httpData.splice(i+1, 0, httpRequestData);
