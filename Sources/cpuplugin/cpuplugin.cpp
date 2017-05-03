@@ -35,6 +35,8 @@
 #include <unistd.h>
 #include <sys/sysctl.h>
 #include <mach/machine.h>
+#include <mach/mach_types.h>
+#include <mach/mach.h>
 #include <errno.h>
 #include <time.h>
 #endif
@@ -407,12 +409,19 @@ struct CPUTime* CpuPlugin::getCPUTime() {
 		}
 //We do now get the PROCESS usage.
 		struct rusage usage;
+        kern_return_t kr;
+        mach_msg_type_number_t count;
+        host_cpu_load_info_data_t r_load;
+        const double ticks_per_sec = (double)sysconf(_SC_CLK_TCK);
+        count = HOST_CPU_LOAD_INFO_COUNT;
+
 		nsStart = time_microseconds() * 1000;
 		err = getrusage(RUSAGE_SELF, &usage);
+        kr = host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO, (int *)&r_load, &count);
 		nsEnd = time_microseconds() * 1000;
-		if(!err) {
+		if(!err && kr == KERN_SUCCESS) {
 			cputime->process = (usage.ru_utime.tv_sec*1000000 + usage.ru_utime.tv_usec + usage.ru_stime.tv_sec*1000000 + usage.ru_stime.tv_usec)*1000/cputime->nprocs;
-			cputime->total = 0;//TODO implement total cpu time (the API used by the top command is subject to change and would require testing on more than one platform, eg, not only 10.9.5)
+			cputime->total = (r_load.cpu_ticks[CPU_STATE_SYSTEM]/ticks_per_sec)*1000000000/cputime->nprocs;
 			cputime->time = nsStart + ((nsEnd - nsStart) / 2);
 		}
 
