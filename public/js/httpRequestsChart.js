@@ -107,7 +107,7 @@ function updateHttpData(httpRequest) {
         // Send data to throughput chart so as not to duplicate requests
         updateThroughPutData(httpRequestData)
    
-        if(httpLength === 0) {
+        if (httpLength === 0) {
             // first data - remove "No Data Available" label
             httpChartPlaceholder.attr("visibility", "hidden");
         }
@@ -118,15 +118,16 @@ function updateHttpData(httpRequest) {
         httpRequestData.total = parseInt(httpRequestData.total)
 
         // Check to see if the request started before previous request(s)
-		if (httpLength > 0 && (httpRequestData.time < httpData[httpLength-1].time)) {
-			var i = httpLength - 1;
-			while (httpRequestData.time < httpData[i].time) {
-				i--;
-			}
+        if (httpLength > 0 && (httpRequestData.time < httpData[httpLength-1].time)) {
+            var i = httpLength - 1;
+            while (httpRequestData.time < httpData[i].time) {
+                i--;
+            }
+            // Insert the data into the right place            
             httpData.splice(i+1, 0, httpRequestData);
         } else {
-			httpData.push(httpRequestData);
-		}
+            httpData.push(httpRequestData);
+        }
 
         // Only keep 30 minutes or 2000 items of data
         var currentTime = Date.now()
