@@ -118,17 +118,17 @@ public class IBAMConfig {
         dcId         = UUID().uuidString.lowercased()
         sbURL        = getEnvironmentVal(name: "IBAM_SB_URL")
         sbToken      = getEnvironmentVal(name: "IBAM_SB_TOKEN")
-        //sbPath  = bamLocalEnv["IBAM_SB_PATH"] ?? SB_PATH
+        //sbPath     = bamLocalEnv["IBAM_SB_PATH"] ?? SB_PATH
         ingressURL   = getEnvironmentVal(name: "IBAM_INGRESS_URL")
         ingressPath  = inPath
         ingressToken = getEnvironmentVal(name: "IBAM_TOKEN")
         
-        topoPath   = getEnvironmentVal(name: "IBAM_TOPO_PATH", defVal: (inPath + "?type=resources"))
+        topoPath     = getEnvironmentVal(name: "IBAM_TOPO_PATH", defVal: (inPath + "?type=resources"))
         providerPath = getEnvironmentVal(name: "IBAM_PROVIDER_PATH", defVal: (inPath + "?type=providers"))
-        metricPath = getEnvironmentVal(name: "IBAM_METRIC_PATH", defVal: (inPath + "?type=metric"))
-        aarPath = getEnvironmentVal(name: "IBAM_AAR_PATH", defVal: (inPath + "?type=aar/middleware"))
-        adrPath = getEnvironmentVal(name: "IBAM_ADR_PATH", defVal: (inPath + "?type=adr"))
-        serviceName = getEnvironmentVal(name: "IBAM_SVC_NAME", defVal: "AvailabilityMonitoring")
+        metricPath   = getEnvironmentVal(name: "IBAM_METRIC_PATH", defVal: (inPath + "?type=metric"))
+        aarPath      = getEnvironmentVal(name: "IBAM_AAR_PATH", defVal: (inPath + "?type=aar/middleware"))
+        adrPath      = getEnvironmentVal(name: "IBAM_ADR_PATH", defVal: (inPath + "?type=adr"))
+        serviceName  = getEnvironmentVal(name: "IBAM_SVC_NAME", defVal: "AvailabilityMonitoring")
         
         if let limit = Int(getEnvironmentVal(name: "IBAM_MAX_RETRY_LIMIT", defVal: "3")) {
             self.maxRetryLimit = limit
@@ -191,38 +191,27 @@ public class BMConfig : IBAMConfig {
     //public var cfAppEnv : AppEnv?
     var configManager: ConfigurationManager?
     
-
-    
     // lazily initialized
-    
     static let sharedInstance: BMConfig = {
         let instance = BMConfig()
         // any set up code goes here
         return instance
     }()
     
-    
     private override init() {
-        
         super.init()
         
         cloudFoundryBasedInitialization()
         vcapEnvBasedInitialization()
-        
     }
     
     // Initialize environment based on CloudFoundry Object
-    
     private func cloudFoundryBasedInitialization() {
-        
-        
-        /*self.cfAppEnv = try CloudFoundryEnv.getAppEnv()
-         if let app = self.cfAppEnv?.getApp() {*/
         
         self.configManager = ConfigurationManager()
         self.configManager?.load(.environmentVariables)
         
-        Log.info("## ConfigManager: \(self.configManager)")
+        Log.info("## ConfigManager: \(String(describing:self.configManager))")
         
         if let app = self.configManager?.getApp() {
             
@@ -248,7 +237,6 @@ public class BMConfig : IBAMConfig {
                 self.instanceIndex = "\(app.instanceIndex)"
             }
         }
-        
         
         if self.tenantId.isEmpty {
             self.tenantId = self.spaceId
@@ -471,6 +459,11 @@ public class BMConfig : IBAMConfig {
             return
         }
         
+        if self.ingressURL.characters.count > 0 && self.ingressToken.characters.count > 0 {
+            refreshBAMConfigWithBasicAuth()
+            return
+        }
+        
         //this does not appear to be threadsafe
         if self.sbURL.characters.count > 0 {
             
@@ -532,13 +525,47 @@ public class BMConfig : IBAMConfig {
                     }
                 }
                 else {
-                    Log.info("BAM credentials request failed, Response: \(response)")
+                    Log.info("BAM credentials request failed, Response: \(String(describing:response))")
                 }
                 //waiter.signal()
             })
 
             //let waitTime	= DispatchTime.now() + DispatchTimeInterval.seconds(15)
             //waiter.wait(timeout: waitTime)
+        }
+    }
+    
+    public func refreshBAMConfigWithBasicAuth() {
+        
+        Log.info("## Refreshing BAM Configuration with Basic Auth:  \(sbURL)")
+        
+        if(self.backendReady) {
+            return
+        }
+        
+        if self.ingressURL.characters.count > 0 {
+            
+            //URLEscape tenantId since can be set via env var
+            let tId = self.tenantId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
+            let me  = "&tenant=" + tId + "&origin=" + self.dcId
+            
+            self.ingressHeaders["Authorization"] = "Basic " + self.ingressToken
+            self.ingressHeaders["X-TenantId"] = self.tenantId
+            self.ingressHeaders["BM-ApplicationId"] = self.appId
+            
+            self.topoURL       = self.ingressURL + self.topoPath + me
+            self.providerURL   = self.ingressURL + self.providerPath + me
+            self.metricURL     = self.ingressURL + self.metricPath + me
+            self.aarURL        = self.ingressURL + self.aarPath + me
+            self.adrURL        = self.ingressURL + self.adrPath + me
+            self.backendReady  = true
+            
+            // TODO: comment out token
+            Log.info("BAM initialization successful, backend ready to accept requests, URL: \(self.ingressURL) BAM token: \(self.ingressToken)")
+            
+            // TODO: don't log token in headers
+            Log.info("BAM backend Urls: \(self.metricURL) Header: \(self.ingressHeaders)")
+            
         }
     }
     
@@ -584,16 +611,26 @@ public class BMConfig : IBAMConfig {
             
             (passed, statusCode, response) in
             
-            Log.info(" APM data upload: \(postURL) Passed: \(passed) Response status: \(statusCode)  Response: \(response)")
+            Log.info(" APM data upload: \(postURL) Passed: \(passed) Response status: \(statusCode)  Response: \(String(describing:response))")
             
         })
         
     }
     
-    public func getResourceId(resName: String) -> String {
+    public func getInstanceResourceId(resName: String) -> String {
         
         
         let fullStr = self.dcId + resName;
+        
+        let str = TokenUtil.md5(resName: fullStr)
+        
+        return str
+    }
+    
+    public func getResourceId(resName: String) -> String {
+        
+        
+        let fullStr = self.appId + resName;
         
         let str = TokenUtil.md5(resName: fullStr)
         
@@ -668,17 +705,17 @@ public class BMConfig : IBAMConfig {
                 case 200...299:
                     
                     // Temporarily put to info as static method is disabling it, will debug later
-                    Log.info("\(request.httpMethod) successful: StatusCode: \(httpResponse.statusCode) Response: \(response), JSON: \(json)")
+                    Log.info("\(String(describing:request.httpMethod)) successful: StatusCode: \(httpResponse.statusCode) Response: \(String(describing:response)), JSON: \(String(describing:json))")
                     
                     taskCallback(true, httpResponse.statusCode, json as Any?)
                     
                 default:
-                    Log.error("\(request.httpMethod) request got response \(httpResponse.statusCode) and response \(httpResponse)")
+                    Log.error("\(String(describing:request.httpMethod)) request got response \(httpResponse.statusCode) and response \(httpResponse)")
                     taskCallback(false, httpResponse.statusCode, receivedData as Any?)
                 }
             }
             else {
-                Log.error("Error sending data: URL: \(urlString) : Response: \(data), Error: \(error)")
+                Log.error("Error sending data: URL: \(urlString) : Response: \(String(describing:data)), Error: \(String(describing:error))")
                 taskCallback(false, -1, nil)
             }
             
@@ -726,10 +763,19 @@ public class BMConfig : IBAMConfig {
                                       headers: headers
                     ).response {
                         request, response, data, error in
-                        Log.debug("sendMetrics:Request: \(request!)")
-                        Log.debug(" sendMetrics:Response: \(response!)")
-                        Log.debug(" sendMetrics:Data: \(data!)")
-                        Log.debug(" sendMetrics:Error: \(error)")
+                        if request != nil {
+                            Log.debug("sendMetrics:Request: \(request!)")
+                        }
+                        if response != nil {
+                            Log.debug(" sendMetrics:Response: \(response!)")
+                        }
+                        if data != nil {
+                            Log.debug(" sendMetrics:Data: \(data!)")
+                        }
+                        //Log.debug("sendMetrics:Request: \(request!)")
+                        //Log.debug(" sendMetrics:Response: \(response!)")
+                        //Log.debug(" sendMetrics:Data: \(data!)")
+                        Log.debug(" sendMetrics:Error: \(String(describing:error))")
                         
                         
                         if let e = error {
@@ -750,17 +796,17 @@ public class BMConfig : IBAMConfig {
                             case 200...299:
                                 
                                 // Temporarily put to info as static method is disabling it, will debug later
-                                Log.info("\(request?.method) successful: StatusCode: \(httpResponse.statusCode) Response: \(response), JSON: \(json)")
+                                Log.info("\(String(describing:request?.method)) successful: StatusCode: \(httpResponse.statusCode) Response: \(String(describing:response)), JSON: \(String(describing:json))")
                                 
                                 taskCallback(true, httpResponse.httpStatusCode.rawValue, json as Any?)
                                 
                             default:
-                                Log.error("\(request?.method) request got response \(httpResponse.httpStatusCode.rawValue) and response \(httpResponse)")
+                                Log.error("\(String(describing:request?.method)) request got response \(httpResponse.httpStatusCode.rawValue) and response \(httpResponse)")
                                 taskCallback(false, httpResponse.httpStatusCode.rawValue, receivedData as Any?)
                             }
                         }
                         else {
-                            Log.error("Error sending data: URL: \(urlString) : Response: \(data), Error: \(error)")
+                            Log.error("Error sending data: URL: \(urlString) : Response: \(String(describing:data)), Error: \(String(describing:error))")
                             taskCallback(false, -1, nil)
                         }
                 }
@@ -858,7 +904,7 @@ public class TokenUtil {
         
         let digestStr = CryptoUtils.hexString(from: digFin) // String(data: digest, encoding: String.Encoding.utf8)
         
-        Log.debug("MD5 update, \(resName) \(upd) \(digestStr)")
+        Log.debug("MD5 update, \(resName) \(String(describing:upd)) \(digestStr)")
         
         return digestStr
     }
@@ -875,7 +921,7 @@ extension Dictionary {
 ////////////// Global Functions
 
 func doNothing(passed: Bool, statusCode: Int, response: Any?) -> () {
-    Log.debug("Status Passed: \(passed), statusCode: \(statusCode) Response: \(response)")
+    Log.debug("Status Passed: \(passed), statusCode: \(statusCode) Response: \(String(describing:response))")
     return
 }
 
