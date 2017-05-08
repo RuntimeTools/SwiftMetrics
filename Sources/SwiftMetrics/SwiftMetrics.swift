@@ -58,7 +58,7 @@ public struct LatencyData: SMData {
 
 public var swiftMon: SwiftMonitor?
 
-
+private var initialized = false;
 private func receiveAgentCoreData(cSourceId: UnsafePointer<CChar>, cSize: CUnsignedInt, data: UnsafeMutableRawPointer) -> Void {
   let size = Int(cSize)
   if size <= 0 {
@@ -155,6 +155,7 @@ open class SwiftMetrics {
   }
 
   deinit {
+    print("deinit\n")
     self.latencyEnabled = false
     self.stop()
   }
@@ -223,6 +224,7 @@ open class SwiftMetrics {
       running = false
       loaderApi.stop()
       loaderApi.shutdown()
+      swiftMon = nil;
     } else {
       loaderApi.logMessage(fine, "stop(): Swift Application Metrics has already stopped")
     }
@@ -236,13 +238,17 @@ open class SwiftMetrics {
       if pluginSearchPath == "" {
         self.setDefaultLibraryPath()
       }
-      _ = loaderApi.initialize()
+      if(!initialized) {
+        _ = loaderApi.initialize()
+        initialized = true
+      }
+
+        if !initMonitorApi() {
+          loaderApi.logMessage(warning, "Failed to initialize monitoring API")
+        }
       loaderApi.start()
     } else {
       loaderApi.logMessage(fine, "start(): Swift Application Metrics has already started")
-    }
-    if !initMonitorApi() {
-      loaderApi.logMessage(warning, "Failed to initialize monitoring API")
     }
   }
 

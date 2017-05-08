@@ -29,6 +29,7 @@
 #include <map>
 #include <stack>
 #include <list>
+#include <cstdio>
 
 namespace ibmras {
 namespace common {
@@ -61,6 +62,7 @@ void* wrapper(void *params) {
 
 uintptr_t createThread(ThreadData* data) {
 	IBMRAS_DEBUG(fine,"in thread.cpp->createThread");
+	printf("in thread.cpp->createThread\n");
 	uintptr_t retval;
 	// lock the threadMap as we might be making updates to it
 	pthread_mutex_lock(&threadMapMux);
@@ -69,11 +71,13 @@ uintptr_t createThread(ThreadData* data) {
 		retval = pthread_create(&thread, NULL, wrapper, data);
 		if (retval == 0) {
 			IBMRAS_DEBUG(debug,"Thread created successfully");
+			printf("Thread created successfully\n");
 			// only store valid threads
 			threadMap.push(thread);
 		}
 	} else {
 		IBMRAS_DEBUG(debug,"Trying to stop - thread not created");
+		printf("Trying to stop - thread not created\n");
 		retval = ECANCELED;
 	}
 	pthread_mutex_unlock(&threadMapMux);
@@ -123,19 +127,30 @@ void condBroadcast() {
 }
 
 void stopAllThreads() {
-	IBMRAS_DEBUG(fine,"in thread.cpp->stopAllThreads");
+	IBMRAS_DEBUG(fine,"in thread.cpp->stopAllThreads\n");
+	printf("in thread.cpp->stopAllThreads");
 	//prevent new thread creation
 	pthread_mutex_lock(&threadMapMux);
 	stopping = true;
 	// wake currently sleeping threads
 	condBroadcast();
 	while (!threadMap.empty()) {
-		pthread_cancel(threadMap.top());
-		//wait for the thread to stop
-		pthread_join(threadMap.top(), NULL);
+    if ( pthread_cancel(threadMap.top()) == -1 ) {                                            
+       perror("pthread_cancel failed");                                             
+       //exit(3);                                                                     
+     } else {
+
+		//pthread_cancel(threadMap.top());
+		  //wait for the thread to stop
+		  if ( pthread_join(threadMap.top(), NULL) == -1 ) {                                            
+       perror("pthread_join failed"); 
+      }  
+    }
 		threadMap.pop();
 	}
 	pthread_mutex_unlock(&threadMapMux);
+  stopping = false;
+	printf("exiting thread.cpp->stopAllThreads\n");
 }
 
 Semaphore::Semaphore(uint32 initial, uint32 max) {

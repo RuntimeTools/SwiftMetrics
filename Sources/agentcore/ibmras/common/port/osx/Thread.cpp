@@ -72,6 +72,7 @@ void* wrapper(void *params) {
 
 uintptr_t createThread(ThreadData* data) {
 	IBMRAS_DEBUG(fine,"in thread.cpp->createThread");
+	printf("in thread.cpp->createThread");
 	uintptr_t retval;
 	// lock the threadMap as we might be making updates to it
 	pthread_mutex_lock(&threadMapMux);
@@ -79,12 +80,15 @@ uintptr_t createThread(ThreadData* data) {
 		pthread_t thread;
 		retval = pthread_create(&thread, NULL, wrapper, data);
 		if (retval == 0) {
+
+			printf("Thread created successfully");
 			IBMRAS_DEBUG(debug,"Thread created successfully");
 			// only store valid threads
 			threadMap.push(thread);
 		}
 	} else {
 		IBMRAS_DEBUG(debug,"Trying to stop - thread not created");
+		printf("Trying to stop - thread not created");
 		retval = ECANCELED;
 	}
 	pthread_mutex_unlock(&threadMapMux);
@@ -92,6 +96,7 @@ uintptr_t createThread(ThreadData* data) {
 }
 
 void exitThread(void *val) {
+	printf("in thread.cpp->exitThread");
 	IBMRAS_DEBUG(fine,"in thread.cpp->exitThread");
 	pthread_exit(NULL);
 }
@@ -136,6 +141,7 @@ void condBroadcast() {
 
 void stopAllThreads() {
 	IBMRAS_DEBUG(fine,"in thread.cpp->stopAllThreads");
+	printf("in thread.cpp->stopAllThreads");
 	//prevent new thread creation
 	pthread_mutex_lock(&threadMapMux);
 	stopping = true;
@@ -150,6 +156,7 @@ void stopAllThreads() {
 	}
     */ 
 	pthread_mutex_unlock(&threadMapMux);
+  stopping = false;
 }
 
 Semaphore::Semaphore(uint32 initial, uint32 max) {

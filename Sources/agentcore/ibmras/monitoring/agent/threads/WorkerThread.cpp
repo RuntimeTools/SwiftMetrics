@@ -18,6 +18,7 @@
 #include "WorkerThread.h"
 #include "../Agent.h"
 #include "../../../common/logging.h"
+#include <cstdio>
 
 namespace ibmras {
 namespace monitoring {
@@ -36,7 +37,7 @@ WorkerThread::WorkerThread(pullsource* pullSource) : semaphore(0, 1), data(threa
 
 
 void WorkerThread::start() {
-	IBMRAS_DEBUG_1(fine, "Starting worker thread for %s", source->header.name);
+	IBMRAS_DEBUG_1(fine, "Starting worker thread for %s\n", source->header.name);
 	running = true;
 	stopped = false;
 	ibmras::common::port::createThread(&data);
@@ -46,6 +47,7 @@ void WorkerThread::stop() {
 	running = false;
 	semaphore.inc();
 	IBMRAS_DEBUG_1(debug, "Worker thread for %s stopped", source->header.name);
+	printf("Worker thread for %s stopped\n", source->header.name);
 }
 
 void* WorkerThread::cleanUp(ibmras::common::port::ThreadData* data) {
@@ -74,15 +76,18 @@ bool WorkerThread::isStopped() {
 }
 
 void* WorkerThread::processLoop() {
-	IBMRAS_DEBUG_1(finest, "Worker thread started for %s", source->header.name);
+	IBMRAS_DEBUG_1(finest, "Worker thread started for %s\n", source->header.name);
+	printf("Worker thread started for %s", source->header.name);
 	Agent* agent = Agent::getInstance();
 	while (running) {
 		if (semaphore.wait(1) && running) {
-			IBMRAS_DEBUG_1(fine, "Pulling data from source %s", source->header.name);
+			IBMRAS_DEBUG_1(fine, "Pulling data from source %s\n", source->header.name);
+			printf("Pulling data from source %s", source->header.name);
 			monitordata* data = source->callback();
 			if (data != NULL) {
 				if (data->size > 0) {
 					IBMRAS_DEBUG_2(finest, "%d bytes of data pulled from source %s", data->size, source->header.name);
+					printf("%d bytes of data pulled from source %s", data->size, source->header.name);
 					agent->addData(data); /* put pulled data on queue for processing */
 				}
 				source->complete(data);
@@ -93,6 +98,7 @@ void* WorkerThread::processLoop() {
 	source->complete(NULL);
 	stopped = true;
 	IBMRAS_DEBUG_1(finest, "Worker thread for %s exiting process loop", source->header.name);
+	printf("Worker thread for %s exiting process loop", source->header.name);
 	return NULL;
 }
 
