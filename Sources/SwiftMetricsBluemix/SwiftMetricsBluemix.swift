@@ -141,7 +141,7 @@ public class SwiftMetricsBluemix {
     let configMgr = ConfigurationManager().load(.environmentVariables)
     // Find BAM service using convenience method
     let bamServ: Service? = configMgr.getServices(type: bamServiceLabel).first
-    
+
     if let dcEn = ProcessInfo.processInfo.environment[bamDebugLabel],  dcEn == "true" {
         Log.info("[SwiftMetricsBluemix] Detected BAM debug environment setting, enabling SwiftBAMDC")
 
@@ -212,7 +212,6 @@ public class SwiftMetricsBluemix {
   }
 
   public convenience init(swiftMetricsInstance: SwiftMetrics) throws {
-  print("[SwiftMetricsBluemix] in init.")
     try self.init(metricsToEnable: ["CPU", "Memory", "Throughput", "ResponseTime", "DispatchQueueLatency"], swiftMetricsInstance: swiftMetricsInstance)
   }
 
