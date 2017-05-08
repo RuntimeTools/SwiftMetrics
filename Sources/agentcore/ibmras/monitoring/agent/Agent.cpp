@@ -336,7 +336,6 @@ void* endPullSourceLoop(ibmras::common::port::ThreadData* data) {
 }
 
 void* processPullSourceLoop(ibmras::common::port::ThreadData* data) {
-  printf("\nprocess pull source loop\n");
 	Agent* agent = Agent::getInstance();
 	uint32 pullcount = agent->getPullSources().getSize();
 
@@ -346,8 +345,6 @@ void* processPullSourceLoop(ibmras::common::port::ThreadData* data) {
 		DataSource<pullsource> *dsrc = agent->getPullSources().getItem(i);
 		if (!(dsrc->getSource()->callback && dsrc->getSource()->complete)) {
 			IBMRAS_DEBUG_1(warning, "Pull source %s disabled due to missing callback or complete function",
-					dsrc->getUniqueID().c_str());
-			printf("\nPull source %s disabled due to missing callback or complete function\n",
 					dsrc->getUniqueID().c_str());
 		} else {
 			pool.addPullSource(dsrc->getSource());
@@ -414,8 +411,6 @@ void Agent::addPullSource(std::vector<ibmras::monitoring::Plugin*>::iterator i,
 			IBMRAS_DEBUG_1(info, "Pull source list size now : %d",
 					pullSourceList.getSize());
 			IBMRAS_DEBUG(debug, pullSourceList.toString().c_str());
-			printf("pull source list::\n");
-			printf(pullSourceList.toString().c_str());
 		} else {
 			IBMRAS_DEBUG(info, "No pull sources were defined !");
 		}
@@ -538,7 +533,6 @@ bool Agent::readOnly() {
 
 
 void Agent::start() {
-  printf("\n*** agent start \n");
 	int result = 0;
 	IBMRAS_DEBUG(info, "Agent start : begin");
 
@@ -559,15 +553,12 @@ void Agent::start() {
 			new ibmras::common::port::ThreadData(processPullSourceLoop, endPullSourceLoop);
 	result = ibmras::common::port::createThread(data);
 	if (result) {
-    printf("not running\n");
 		running = false;
 	} else {
-    printf("running\n");
 		activeThreadCount++;
 		data = new ibmras::common::port::ThreadData(processPublishLoop);
 		result = ibmras::common::port::createThread(data);
 		if (result) {
-      printf("not running2\n");
 			running = false;
 		}
 	}
@@ -676,15 +667,16 @@ void Agent::stop() {
 		ibmras::common::port::stopAllThreads();
 #endif
 
+
 		IBMRAS_DEBUG(fine, "All active threads now quit");
 
 		stopPlugins();
-   // plugins.clear();
-		connectionManager.stop();
+ //   plugins.clear();
 		connectionManager.removeAllReceivers();
-	//	connectionManager.removeAllConnectors();
-   // pullSourceList.clear();
-   // pushSourceList.clear();
+		connectionManager.removeAllConnectors();
+		connectionManager.stop();
+ //   pullSourceList.clear();
+ //   pushSourceList.clear();
 
 		IBMRAS_DEBUG(info, "Agent stop : finish");
 	}
