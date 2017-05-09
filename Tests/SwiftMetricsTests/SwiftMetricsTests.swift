@@ -48,7 +48,12 @@ class SwiftMetricsTests: XCTestCase {
 
         func processCPU(cpu: CPUData) {
             if(!fulfilled) {
-                print("\nThis is a custom CPU event response.\n cpu.timeOfSample = \(cpu.timeOfSample), \n cpu.percentUsedByApplication = \(cpu.percentUsedByApplication), \n cpu.percentUsedBySystem = \(cpu.percentUsedBySystem).\n")
+ 					      XCTAssertNotNil(cpu, "CPU Data should not be nil")
+                XCTAssertGreaterThan(cpu.timeOfSample, 0, " cpu.timeOfSample = \(cpu.timeOfSample), should be greater than zero")
+                XCTAssertGreaterThan(cpu.percentUsedByApplication, 0, " cpu.percentUsedByApplication = \(cpu.percentUsedByApplication), should be greater than zero")
+                XCTAssertGreaterThan(cpu.percentUsedBySystem, 0, " cpu.percentUsedBySystem = \(cpu.percentUsedBySystem), should be greater than zero")
+                XCTAssertLessThan(cpu.percentUsedByApplication, 100, " cpu.percentUsedByApplication = \(cpu.percentUsedByApplication), should be less than 100")
+                XCTAssertLessThan(cpu.percentUsedBySystem, 100, " cpu.percentUsedBySystem = \(cpu.percentUsedBySystem), should be less than 100")
                 expectCPU.fulfill()
                 fulfilled = true;
             }
@@ -65,12 +70,11 @@ class SwiftMetricsTests: XCTestCase {
         let expectInit = expectation(description: "Expect an Init event")
         var fulfilled = false;
 
-        func processInit(env: InitData) {
+        func processInit(initData: InitData) {
             if(!fulfilled) {
-                print("\nThis is a custom Environment event response.")
-                for (key, value) in env.data {
-                   print(" \(key) = \(value)")
-                }
+ 					      XCTAssertNotNil(initData, "InitData should not be nil")
+ 					      XCTAssertNotNil(initData.data, "InitData.data should not be nil")
+                XCTAssertGreaterThan(initData.data.count, 0, "InitData.data should contain some environment variables")
                 expectInit.fulfill()
                 fulfilled = true;
             }
@@ -89,6 +93,9 @@ class SwiftMetricsTests: XCTestCase {
 
         func processEnv(env: EnvData) {
             if(!fulfilled) {
+ 					      XCTAssertNotNil(env, "EnvData should not be nil")
+ 					      XCTAssertNotNil(env.data, "EnvData.data should not be nil")
+                XCTAssertGreaterThan(env.data.count, 0, "EnvData.data should contain some environment variables")
                 expectEnv.fulfill()
                 fulfilled = true;
             }
@@ -108,7 +115,14 @@ class SwiftMetricsTests: XCTestCase {
 
         func processMem(mem: MemData) {
             if(!fulfilled) {
-                print("\nThis is a custom Memory event response.\n mem.timeOfSample = \(mem.timeOfSample), \n mem.totalRAMOnSystem = \(mem.totalRAMOnSystem), \n mem.totalRAMUsed = \(mem.totalRAMUsed), \n mem.totalRAMFree = \(mem.totalRAMFree), \n mem.applicationAddressSpaceSize = \(mem.applicationAddressSpaceSize), \n mem.applicationPrivateSize = \(mem.applicationPrivateSize), \n mem.applicationRAMUsed = \(mem.applicationRAMUsed).\n")
+ 					  XCTAssertNotNil(mem, "MemData should not be nil")
+                XCTAssertGreaterThan(mem.timeOfSample, 0, "mem.timeOfSample = \(mem.timeOfSample), should be greater than zero")
+                XCTAssertGreaterThan(mem.totalRAMOnSystem, 0, "mem.totalRAMOnSystem = \(mem.totalRAMOnSystem), should be greater than zero")
+                XCTAssertGreaterThan(mem.totalRAMUsed, 0, "mem.totalRAMUsed = \(mem.totalRAMUsed), should be greater than zero")
+                XCTAssertGreaterThan(mem.totalRAMFree, 0, "mem.totalRAMFree = \(mem.totalRAMFree), should be greater than zero")
+                XCTAssertGreaterThan(mem.applicationAddressSpaceSize, 0, "mem.applicationAddressSpaceSize = \(mem.applicationAddressSpaceSize), should be greater than zero")
+                XCTAssertGreaterThan(mem.applicationPrivateSize, 0, "mem.applicationPrivateSize = \(mem.applicationPrivateSize), should be greater than zero")
+                XCTAssertGreaterThan(mem.applicationRAMUsed, 0, "mem.applicationRAMUsed = \(mem.applicationRAMUsed), should be greater than zero")
                 expectMem.fulfill()
                 fulfilled = true;
             }
