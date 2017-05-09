@@ -22,7 +22,6 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <cstdio>
 
 #include "Agent.h"
 #include "../../common/logging.h"
@@ -339,7 +338,6 @@ void* processPullSourceLoop(ibmras::common::port::ThreadData* data) {
     Agent* agent = Agent::getInstance();
 
     if(!agent->startupLock.acquire()) {
-     // printf("gained startupLock");
 	    uint32 pullcount = agent->getPullSources().getSize();
 
 	    ibmras::monitoring::agent::threads::ThreadPool pool;
@@ -356,9 +354,7 @@ void* processPullSourceLoop(ibmras::common::port::ThreadData* data) {
 
 	    IBMRAS_DEBUG(info, "Starting agent process pull source loop");
 
-    //  printf("calling startAll\n");
 	    pool.startAll();
-     // printf("releasing startupLock\n");
       agent->startupLock.release();
 	    while (running) {
 		    ibmras::common::port::sleep(1); /* polling interval for thread */

@@ -162,7 +162,6 @@ public class SwiftMonitor {
               applicationPrivateSize: applicationPrivateSize,
               applicationRAMUsed: applicationRAMUsed)
               raiseEvent(data: memory)
-            
           }
         }
       }

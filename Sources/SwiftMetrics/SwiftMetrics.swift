@@ -227,8 +227,6 @@ open class SwiftMetrics {
       loaderApi.stop()
       loaderApi.shutdown()
       swiftMon = nil
-
-      //loaderApi.logMessage(fine, "stop(): Stopped")
     } else {
       loaderApi.logMessage(fine, "stop(): Swift Application Metrics has already stopped")
     }

@@ -124,7 +124,7 @@ void condBroadcast() {
 }
 
 void stopAllThreads() {
-	IBMRAS_DEBUG(fine,"in thread.cpp->stopAllThreads\n");
+	IBMRAS_DEBUG(fine,"in thread.cpp->stopAllThreads");
 	//prevent new thread creation
 	pthread_mutex_lock(&threadMapMux);
 	stopping = true;

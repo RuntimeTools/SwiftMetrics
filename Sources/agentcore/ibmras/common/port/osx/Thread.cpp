@@ -79,7 +79,6 @@ uintptr_t createThread(ThreadData* data) {
 		pthread_t thread;
 		retval = pthread_create(&thread, NULL, wrapper, data);
 		if (retval == 0) {
-
 			IBMRAS_DEBUG(debug,"Thread created successfully");
 			// only store valid threads
 			threadMap.push(thread);
