@@ -16,7 +16,6 @@
 
 #include "ConnectorManager.h"
 #include "../../common/logging.h"
-#include <cstdio>
 
 namespace ibmras {
 namespace monitoring {
@@ -110,7 +109,6 @@ void ConnectorManager::processReceivedMessages() {
 
 int ConnectorManager::sendMessage(const std::string &sourceId, uint32 size,
 		void *data) {
-      printf("\n*** send message from %s\n", sourceId.c_str());
 	int count = 0;
 	if (running && !sendLock.acquire()) {
 		try {
@@ -123,7 +121,6 @@ int ConnectorManager::sendMessage(const std::string &sourceId, uint32 size,
 			}
 
 		} catch (...) {
-      printf("ERROR ERROR ERROR ERROR \n");
 		  sendLock.release();
       throw;
 		}
