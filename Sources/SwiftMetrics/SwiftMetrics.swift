@@ -60,7 +60,6 @@ public var swiftMon: SwiftMonitor?
 
 private var initialized = false;
 private func receiveAgentCoreData(cSourceId: UnsafePointer<CChar>, cSize: CUnsignedInt, data: UnsafeMutableRawPointer) -> Void {
-  print("receiveAgentCoreData")
   let size = Int(cSize)
   if size <= 0 {
     return
@@ -156,7 +155,6 @@ open class SwiftMetrics {
   }
 
   deinit {
-    print("deinit\n")
     self.latencyEnabled = false
     self.stop()
   }
@@ -230,7 +228,7 @@ open class SwiftMetrics {
       loaderApi.shutdown()
       swiftMon = nil
 
-      loaderApi.logMessage(fine, "stop(): Stopped")
+      //loaderApi.logMessage(fine, "stop(): Stopped")
     } else {
       loaderApi.logMessage(fine, "stop(): Swift Application Metrics has already stopped")
     }
@@ -245,7 +243,6 @@ open class SwiftMetrics {
         self.setDefaultLibraryPath()
       }
       if(!initialized) {
-        print("_NOT INITIALIZED_")
         _ = loaderApi.initialize()
         initialized = true
       }

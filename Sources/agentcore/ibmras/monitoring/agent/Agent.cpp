@@ -50,7 +50,6 @@ const char* LIBSUFFIX = ".so";
 #endif
 #endif
 
-
 namespace ibmras {
 namespace monitoring {
 namespace agent {
@@ -336,39 +335,48 @@ void* endPullSourceLoop(ibmras::common::port::ThreadData* data) {
 }
 
 void* processPullSourceLoop(ibmras::common::port::ThreadData* data) {
-	Agent* agent = Agent::getInstance();
-	uint32 pullcount = agent->getPullSources().getSize();
+  if(running) {
+    Agent* agent = Agent::getInstance();
 
-	ibmras::monitoring::agent::threads::ThreadPool pool;
+    if(!agent->startupLock.acquire()) {
+     // printf("gained startupLock");
+	    uint32 pullcount = agent->getPullSources().getSize();
 
-	for (uint32 i = 0; i < pullcount; i++) {
-		DataSource<pullsource> *dsrc = agent->getPullSources().getItem(i);
-		if (!(dsrc->getSource()->callback && dsrc->getSource()->complete)) {
-			IBMRAS_DEBUG_1(warning, "Pull source %s disabled due to missing callback or complete function",
-					dsrc->getUniqueID().c_str());
-		} else {
-			pool.addPullSource(dsrc->getSource());
-		}
-	}
+	    ibmras::monitoring::agent::threads::ThreadPool pool;
 
-	IBMRAS_DEBUG(info, "Starting agent process pull source loop");
+	    for (uint32 i = 0; i < pullcount; i++) {
+		    DataSource<pullsource> *dsrc = agent->getPullSources().getItem(i);
+		    if (!(dsrc->getSource()->callback && dsrc->getSource()->complete)) {
+			    IBMRAS_DEBUG_1(warning, "Pull source %s disabled due to missing callback or complete function",
+					    dsrc->getUniqueID().c_str());
+		    } else {
+			    pool.addPullSource(dsrc->getSource());
+		    }
+	    }
 
-	pool.startAll();
-	while (running) {
-		ibmras::common::port::sleep(1); /* polling interval for thread */
-		if (running) {
-			pool.process(updateNow); /* process the pull sources */
-			updateNow = false;
-		}
-	}
+	    IBMRAS_DEBUG(info, "Starting agent process pull source loop");
 
-#if defined(_WINDOWS) || defined(_ZOS)
-	pool.stopAll();
-	agent->threadStop();
-#endif
+    //  printf("calling startAll\n");
+	    pool.startAll();
+     // printf("releasing startupLock\n");
+      agent->startupLock.release();
+	    while (running) {
+		    ibmras::common::port::sleep(1); /* polling interval for thread */
+		    if (running) {
+			    pool.process(updateNow); /* process the pull sources */
+			    updateNow = false;
+		    }
+	    }
 
-	IBMRAS_DEBUG(info, "Exiting agent process pull source loop");
-	ibmras::common::port::exitThread(NULL);
+    #if defined(_WINDOWS) || defined(_ZOS)
+	    pool.stopAll();
+	    agent->threadStop();
+    #endif
+
+	    IBMRAS_DEBUG(info, "Exiting agent process pull source loop");
+	    ibmras::common::port::exitThread(NULL);
+    }
+  }
 	return NULL;
 }
 
@@ -653,9 +661,12 @@ void Agent::startConnectors() {
 }
 
 void Agent::stop() {
-	if(running) {
+  // must wait for all threads to be started before we stop them (start is asynchronous)
+	if(running && !startupLock.acquire()) {
 		IBMRAS_DEBUG(info, "Agent stop : begin");
 		running = false;
+		connectionManager.stop();
+
 		IBMRAS_DEBUG(fine, "Waiting for active threads to stop");
 #if defined(_WINDOWS) || defined(_ZOS)
 		while (activeThreadCount) {
@@ -674,11 +685,11 @@ void Agent::stop() {
  //   plugins.clear();
 		connectionManager.removeAllReceivers();
 		connectionManager.removeAllConnectors();
-		connectionManager.stop();
  //   pullSourceList.clear();
  //   pushSourceList.clear();
 
 		IBMRAS_DEBUG(info, "Agent stop : finish");
+    startupLock.release();
 	}
 }
 
