@@ -678,11 +678,8 @@ void Agent::stop() {
 		IBMRAS_DEBUG(fine, "All active threads now quit");
 
 		stopPlugins();
- //   plugins.clear();
 		connectionManager.removeAllReceivers();
 		connectionManager.removeAllConnectors();
- //   pullSourceList.clear();
- //   pushSourceList.clear();
 
 		IBMRAS_DEBUG(info, "Agent stop : finish");
     startupLock.release();
