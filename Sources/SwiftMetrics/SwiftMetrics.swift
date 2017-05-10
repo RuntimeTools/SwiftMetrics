@@ -85,7 +85,7 @@ open class SwiftMetrics {
   var sendControl: monitorSendControl?
   var registerListener: monitorRegisterListener?
   var sleepInterval: UInt32 = 2
-  var latencyEnabled: Bool = true
+  var latencyEnabled: Bool = false
   let jobsQueue = DispatchQueue(label: "Swift Metrics Jobs Queue")
   public let localSourceDirectory: String
 
@@ -151,11 +151,9 @@ open class SwiftMetrics {
     loaderApi.setProperty("agentcore.version", loaderApi.getAgentVersion())
     loaderApi.setProperty("swiftmetrics.version", SWIFTMETRICS_VERSION)
     loaderApi.logMessage(info, "Swift Application Metrics")
-    testLatency()
   }
 
   deinit {
-    self.latencyEnabled = false
     self.stop()
   }
 
@@ -223,6 +221,7 @@ open class SwiftMetrics {
   }
 
   public func stop() {
+    self.latencyEnabled = false
     if (running) {
       if swiftMon != nil {
         swiftMon!.stop()
@@ -257,6 +256,8 @@ open class SwiftMetrics {
     } else {
       loaderApi.logMessage(fine, "start(): Swift Application Metrics has already started")
     }
+    self.latencyEnabled = true
+    testLatency()
   }
 
   public func enable(type: String, config: Any? = nil) {
