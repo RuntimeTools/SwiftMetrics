@@ -173,6 +173,34 @@ open class SwiftMetrics {
     }
   }
 
+private func executableFolderURL() -> URL {
+#if os(Linux)
+    let actualExecutableURL = Bundle.main.executableURL
+                              ?? URL(fileURLWithPath: "/proc/self/exe").resolvingSymlinksInPath()
+    return actualExecutableURL.appendingPathComponent("..").standardized
+#else
+    let actualExecutableURL = Bundle.main.executableURL
+                              ?? URL(fileURLWithPath: CommandLine.arguments[0]).standardized
+    let actualExecutableFolderURL = actualExecutableURL.appendingPathComponent("..").standardized
+
+    if (Bundle.main.executableURL?.lastPathComponent != "xctest") {
+        return actualExecutableFolderURL
+    } else {
+        // We are running under the test runner, we may be able to work out the build directory that
+        // contains the test program which is testing libraries in the project. That build directory
+        // should also contain any executables associated with the project until this build type
+        // (eg: release or debug)
+        let loadedTestBundles = Bundle.allBundles.filter({ $0.isLoaded }).filter({ $0.bundlePath.hasSuffix(".xctest") })
+        if loadedTestBundles.count > 0 {
+            return loadedTestBundles[0].bundleURL.appendingPathComponent("..").standardized
+        } else {
+            return actualExecutableFolderURL
+        }
+    }
+#endif
+}
+
+
   private func setDefaultLibraryPath() {
     var defaultLibraryPath = "."
     let configMgr = ConfigurationManager().load(.environmentVariables)
@@ -183,21 +211,14 @@ open class SwiftMetrics {
       print("CommandLine.arguments = \(CommandLine.arguments)")
       print("currentDirectoryPath = \(FileManager.default.currentDirectoryPath)")
 
-      #if os(Linux)
-      let executableURL = Bundle.main.executableURL
-                          ?? URL(fileURLWithPath: "/proc/self/exe").resolvingSymlinksInPath()
-      #else
-      let executableURL = Bundle.main.executableURL
-                          ?? URL(fileURLWithPath: CommandLine.arguments[0]).standardized
-      #endif
-
+     
       /// Absolute path to the executable's folder
-      let executableFolder = executableURL.appendingPathComponent("..").standardized.path
+      let executableFolder = executableFolderURL().path
 
       print("executableFolder = \(executableFolder)")
 
       if(programPath.contains("xctest")) { // running tests on Mac
-        defaultLibraryPath = FileManager.default.currentDirectoryPath + "/.build/debug"
+        defaultLibraryPath = executableFolder
       } else {
         let i = programPath.range(of: "/", options: .backwards)
         if i != nil {
