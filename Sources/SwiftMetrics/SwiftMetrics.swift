@@ -185,7 +185,7 @@ open class SwiftMetrics {
         if(programPath.contains("xctest")) { // running tests on Mac
             // Temporary hack to work with codecov
             if(FileManager.default.currentDirectoryPath == "/private/tmp") {
-              defaultLibraryPath = "/Users/travis/build/RuntimeTools/SwiftMetrics"
+              defaultLibraryPath = "/Users/travis/build/RuntimeTools/SwiftMetrics/.build/debug"
             } else {
               defaultLibraryPath = FileManager.default.currentDirectoryPath + "/.build/debug"
             }
