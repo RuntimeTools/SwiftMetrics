@@ -179,18 +179,16 @@ open class SwiftMetrics {
     loaderApi.logMessage(debug, "setDefaultLibraryPath(): isLocal: \(configMgr.isLocal)")
     if (configMgr.isLocal) {
       // if local, use the directory that the swift program lives in
-      let programPath = CommandLine.arguments[0]
-        print("programPath = \(programPath)")
-        print("currentDirectoryPath = \(FileManager.default.currentDirectoryPath)")
-        if(programPath.contains("xctest")) {
-            // running tests
-            defaultLibraryPath = FileManager.default.currentDirectoryPath + "/.build/debug"
-        } else {
-            let i = programPath.range(of: "/", options: .backwards)
-            if i != nil {
-                defaultLibraryPath = programPath.substring(to: i!.lowerBound)
-            }
-        }
+      
+      #if os(Linux)
+        let executableURL = Bundle.main.executableURL
+          ?? URL(fileURLWithPath: "/proc/self/exe").resolvingSymlinksInPath()
+      #else
+        let executableURL = Bundle.main.executableURL
+          ?? URL(fileURLWithPath: CommandLine.arguments[0]).standardized
+      #endif
+      /// Absolute path to the executable's folder
+      defaultLibraryPath = executableURL.appendingPathComponent("..").standardized.path
     } else {
       // We're in Bluemix, use the path the swift-buildpack saves libraries to
       defaultLibraryPath = "/home/vcap/app/.swift-lib"
