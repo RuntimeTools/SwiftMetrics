@@ -178,23 +178,32 @@ open class SwiftMetrics {
     let configMgr = ConfigurationManager().load(.environmentVariables)
     loaderApi.logMessage(debug, "setDefaultLibraryPath(): isLocal: \(configMgr.isLocal)")
     if (configMgr.isLocal) {
-        let programPath = CommandLine.arguments[0]
-        print("programPath = \(programPath)")
-        print("CommandLine.arguments = \(CommandLine.arguments)")
-        print("currentDirectoryPath = \(FileManager.default.currentDirectoryPath)")
-        if(programPath.contains("xctest")) { // running tests on Mac
-            // Temporary hack to work with codecov
-            if(FileManager.default.currentDirectoryPath == "/private/tmp") {
-              defaultLibraryPath = "/Users/travis/build/RuntimeTools/SwiftMetrics/.build/debug"
-            } else {
-              defaultLibraryPath = FileManager.default.currentDirectoryPath + "/.build/debug"
-            }
-        } else {
-            let i = programPath.range(of: "/", options: .backwards)
-            if i != nil {
-                defaultLibraryPath = programPath.substring(to: i!.lowerBound)
-            }
+      let programPath = CommandLine.arguments[0]
+      print("programPath = \(programPath)")
+      print("CommandLine.arguments = \(CommandLine.arguments)")
+      print("currentDirectoryPath = \(FileManager.default.currentDirectoryPath)")
+
+      #if os(Linux)
+      let executableURL = Bundle.main.executableURL
+                          ?? URL(fileURLWithPath: "/proc/self/exe").resolvingSymlinksInPath()
+      #else
+      let executableURL = Bundle.main.executableURL
+                          ?? URL(fileURLWithPath: CommandLine.arguments[0]).standardized
+      #endif
+
+      /// Absolute path to the executable's folder
+      let executableFolder = executableURL.appendingPathComponent("..").standardized.path
+
+      print("executableFolder = \(executableFolder)")
+
+      if(programPath.contains("xctest")) { // running tests on Mac
+        defaultLibraryPath = FileManager.default.currentDirectoryPath + "/.build/debug"
+      } else {
+        let i = programPath.range(of: "/", options: .backwards)
+        if i != nil {
+          defaultLibraryPath = programPath.substring(to: i!.lowerBound)
         }
+      }
     } else {
       // We're in Bluemix, use the path the swift-buildpack saves libraries to
       defaultLibraryPath = "/home/vcap/app/.swift-lib"
