@@ -85,7 +85,7 @@ open class SwiftMetrics {
   var sendControl: monitorSendControl?
   var registerListener: monitorRegisterListener?
   var sleepInterval: UInt32 = 2
-  var latencyEnabled: Bool = true
+  var latencyEnabled: Bool = false
   let jobsQueue = DispatchQueue(label: "Swift Metrics Jobs Queue")
   public let localSourceDirectory: String
     private var builtWithXcode = false
@@ -152,11 +152,9 @@ open class SwiftMetrics {
     loaderApi.setProperty("agentcore.version", loaderApi.getAgentVersion())
     loaderApi.setProperty("swiftmetrics.version", SWIFTMETRICS_VERSION)
     loaderApi.logMessage(info, "Swift Application Metrics")
-    testLatency()
   }
 
   deinit {
-    self.latencyEnabled = false
     self.stop()
   }
 
@@ -176,26 +174,63 @@ open class SwiftMetrics {
     }
   }
 
+private func executableFolderURL() -> URL {
+#if os(Linux)
+    let actualExecutableURL = Bundle.main.executableURL
+                              ?? URL(fileURLWithPath: "/proc/self/exe").resolvingSymlinksInPath()
+    return actualExecutableURL.appendingPathComponent("..").standardized
+#else
+    let actualExecutableURL = Bundle.main.executableURL
+                              ?? URL(fileURLWithPath: CommandLine.arguments[0]).standardized
+    let actualExecutableFolderURL = actualExecutableURL.appendingPathComponent("..").standardized
+
+    if (Bundle.main.executableURL?.lastPathComponent != "xctest") {
+        return actualExecutableFolderURL
+    } else {
+        // We are running under the test runner, we may be able to work out the build directory that
+        // contains the test program which is testing libraries in the project. That build directory
+        // should also contain any executables associated with the project until this build type
+        // (eg: release or debug)
+        let loadedTestBundles = Bundle.allBundles.filter({ $0.isLoaded }).filter({ $0.bundlePath.hasSuffix(".xctest") })
+        if loadedTestBundles.count > 0 {
+            return loadedTestBundles[0].bundleURL.appendingPathComponent("..").standardized
+        } else {
+            return actualExecutableFolderURL
+        }
+    }
+#endif
+}
+
+
   private func setDefaultLibraryPath() {
     var defaultLibraryPath = "."
     let configMgr = ConfigurationManager().load(.environmentVariables)
     loaderApi.logMessage(debug, "setDefaultLibraryPath(): isLocal: \(configMgr.isLocal)")
     if (configMgr.isLocal) {
-      // if local, use the directory that the swift program lives in
       let programPath = CommandLine.arguments[0]
-        if(programPath.contains("xctest")) {
-            // running tests
-            defaultLibraryPath = FileManager.default.currentDirectoryPath + "/.build/debug"
-        } else {
-            let i = programPath.range(of: "/", options: .backwards)
-            if i != nil {
-                defaultLibraryPath = programPath.substring(to: i!.lowerBound)
-            }
+      print("programPath = \(programPath)")
+      print("CommandLine.arguments = \(CommandLine.arguments)")
+      print("currentDirectoryPath = \(FileManager.default.currentDirectoryPath)")
+
+     
+      /// Absolute path to the executable's folder
+      let executableFolder = executableFolderURL().path
+
+      print("executableFolder = \(executableFolder)")
+
+      if(programPath.contains("xctest")) { // running tests on Mac
+        defaultLibraryPath = executableFolder
+      } else {
+        let i = programPath.range(of: "/", options: .backwards)
+        if i != nil {
+          defaultLibraryPath = programPath.substring(to: i!.lowerBound)
         }
+      }
     } else {
       // We're in Bluemix, use the path the swift-buildpack saves libraries to
       defaultLibraryPath = "/home/vcap/app/.swift-lib"
     }
+    print("setDefaultLibraryPath(): to \(defaultLibraryPath)")
     loaderApi.logMessage(fine, "setDefaultLibraryPath(): to \(defaultLibraryPath)")
     self.setPluginSearch(toDirectory: URL(fileURLWithPath: defaultLibraryPath, isDirectory: true))
   }
@@ -224,6 +259,7 @@ open class SwiftMetrics {
   }
 
   public func stop() {
+    self.latencyEnabled = false
     if (running) {
       if swiftMon != nil {
         swiftMon!.stop()
@@ -266,6 +302,8 @@ open class SwiftMetrics {
       loaderApi.logMessage(
         fine, "start(): Swift Application Metrics has already started")
     }
+    self.latencyEnabled = true
+    testLatency()
   }
 
   public func enable(type: String, config: Any? = nil) {
