@@ -88,6 +88,7 @@ open class SwiftMetrics {
   var latencyEnabled: Bool = true
   let jobsQueue = DispatchQueue(label: "Swift Metrics Jobs Queue")
   public let localSourceDirectory: String
+    private var builtWithXcode = false
 
   public init() throws {
     self.loaderApi = loader_entrypoint().pointee
@@ -241,21 +242,29 @@ open class SwiftMetrics {
     if (!running) {
       loaderApi.logMessage(fine, "start(): Starting Swift Application Metrics")
       running = true
-      let pluginSearchPath = String(cString: loaderApi.getProperty("com.ibm.diagnostics.healthcenter.plugin.path")!)
-      if pluginSearchPath == "" {
-        self.setDefaultLibraryPath()
+      if !initMonitorApi() {
+        loaderApi.logMessage(warning, "Failed to initialize monitoring API")
       }
       if(!initialized) {
+        if(builtWithXcode) {
+          // Add plugins one by one as plugin search path won't work
+          loaderApi.addPlugin("@rpath/envplugin.framework/Versions/A/envplugin")
+          loaderApi.addPlugin("@rpath/memplugin.framework/Versions/A/memplugin")
+          loaderApi.addPlugin("@rpath/cpuplugin.framework/Versions/A/cpuplugin")
+          loaderApi.addPlugin("@rpath/hcapiplugin.framework/Versions/A/hcapiplugin")
+        } else {
+          let pluginSearchPath = String(cString: loaderApi.getProperty("com.ibm.diagnostics.healthcenter.plugin.path")!)
+          if pluginSearchPath == "" {
+            self.setDefaultLibraryPath()
+          }
+        }
         _ = loaderApi.initialize()
         initialized = true
       }
-
-        if !initMonitorApi() {
-          loaderApi.logMessage(warning, "Failed to initialize monitoring API")
-        }
       loaderApi.start()
     } else {
-      loaderApi.logMessage(fine, "start(): Swift Application Metrics has already started")
+      loaderApi.logMessage(
+        fine, "start(): Swift Application Metrics has already started")
     }
   }
 
@@ -302,10 +311,19 @@ open class SwiftMetrics {
 
   private func getFunctionFromLibrary(libraryPath: String, functionName: String) -> UnsafeMutableRawPointer? {
     loaderApi.logMessage(debug, "getFunctionFromLibrary(): Looking for function \(functionName) in library \(libraryPath)")
-    guard let handle = dlopen(libraryPath, RTLD_LAZY) else {
-      let error = String(cString: dlerror())
-      loaderApi.logMessage(warning, "Failed to open library \(libraryPath): \(error)")
-      return nil
+    var handle = dlopen(libraryPath, RTLD_LAZY)
+    if(handle == nil) {
+        let error = String(cString: dlerror())
+        loaderApi.logMessage(warning, "Failed to open library \(libraryPath): \(error)")
+        // try xcode location
+        handle = dlopen("@rpath/hcapiplugin.framework/Versions/A/hcapiplugin", RTLD_LAZY)
+        if(handle == nil) {
+            let error = String(cString: dlerror())
+            loaderApi.logMessage(warning, "Failed to open library \("@rpath/agentcore.framework/Versions/A/agentcore"): \(error)")
+            return nil
+        } else {
+            builtWithXcode = true
+        }
     }
     guard let function = dlsym(handle, functionName) else {
       let error = String(cString: dlerror())
