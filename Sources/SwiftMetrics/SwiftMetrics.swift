@@ -205,7 +205,7 @@ private func executableFolderURL() -> URL {
   private func setDefaultLibraryPath() {
     var defaultLibraryPath = "."
     let configMgr = ConfigurationManager().load(.environmentVariables)
-    loaderApi.logMessage(debug, "setDefaultLibraryPath(): isLocal: \(configMgr.isLocal)")
+    loaderApi.logMessage(warning, "setDefaultLibraryPath(): isLocal: \(configMgr.isLocal)")
     if (configMgr.isLocal) {
       let programPath = CommandLine.arguments[0]
       print("programPath = \(programPath)")
@@ -278,6 +278,10 @@ private func executableFolderURL() -> URL {
     if (!running) {
       loaderApi.logMessage(fine, "start(): Starting Swift Application Metrics")
       running = true
+      let pluginSearchPath = String(cString: loaderApi.getProperty("com.ibm.diagnostics.healthcenter.plugin.path")!)
+      if pluginSearchPath == "" {
+        self.setDefaultLibraryPath()
+      }
       if !initMonitorApi() {
         loaderApi.logMessage(warning, "Failed to initialize monitoring API")
       }
@@ -288,11 +292,6 @@ private func executableFolderURL() -> URL {
           loaderApi.addPlugin("@rpath/memplugin.framework/Versions/A/memplugin")
           loaderApi.addPlugin("@rpath/cpuplugin.framework/Versions/A/cpuplugin")
           loaderApi.addPlugin("@rpath/hcapiplugin.framework/Versions/A/hcapiplugin")
-        } else {
-          let pluginSearchPath = String(cString: loaderApi.getProperty("com.ibm.diagnostics.healthcenter.plugin.path")!)
-          if pluginSearchPath == "" {
-            self.setDefaultLibraryPath()
-          }
         }
         _ = loaderApi.initialize()
         initialized = true
@@ -366,11 +365,11 @@ private func executableFolderURL() -> URL {
     guard let function = dlsym(handle, functionName) else {
       let error = String(cString: dlerror())
       loaderApi.logMessage(warning, "Failed to find symbol \(functionName) in library \(libraryPath): \(error)")
-      dlclose(handle)
+      dlclose(handle!)
       return nil
     }
-    dlclose(handle)
-    loaderApi.logMessage(debug, "getFunctionFromLibrary(): Function found")
+    dlclose(handle!)
+    loaderApi.logMessage(warning, "getFunctionFromLibrary(): Function found")
     return function
   }
 

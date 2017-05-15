@@ -130,13 +130,22 @@ std::vector<Plugin*> Plugin::scan(const std::string& dir) {
 			std::string filePath = dir;
 			filePath += "/";
 			filePath += entry->d_name;
-
+#if defined(__MACH__) || defined(__APPLE__)
+       std::size_t found = filePath.rfind(".dylib", filePath.size() - 6);
+       if (found != std::string::npos) {
+          Plugin *plugin = processLibrary(filePath);
+         if (plugin != NULL) {
+           IBMRAS_LOG_2(fine, "%s, version %s", (plugin->name).c_str(), (plugin->getVersion()));
+           plugins.push_back(plugin);
+         }
+       }
+#else
 			Plugin *plugin = processLibrary(filePath);
 			if (plugin != NULL) {
 				IBMRAS_LOG_2(fine, "%s, version %s", (plugin->name).c_str(), (plugin->getVersion()));
 				plugins.push_back(plugin);
 			}
-
+#endif
 		}
 	}
 	closedir(dp);
