@@ -45,31 +45,95 @@ let HTTP_GET: String = "GET"
 let SB_PATH: String = "/1.0/credentials/app/"
 let INGRESS_PATH: String = "/1.0/data"
 
-
 /*
  This Class represents basic BAM Configuration interface. Each environments can subclass this class for
  adaption to their environment
  
  */
 
-
-public class IBAMConfig {
+public class IBAMConfigIDs {
     
     public var appId    : String
     public var appName  : String
     public var tenantId : String
     public var dcId     : String
+    
     public var logLevel : LoggerMessageType = .info
+
+    init() {
+        var spaceId : String = ""
+        var instanceId : String = ""
+        var instanceIndex : String = ""
+        
+        var configManager: ConfigurationManager?
+        let logLevelString = getEnvironmentVal(name: "IBAM_LOG_LEVEL", defVal: ".info")
+        
+        self.appId        = getEnvironmentVal(name: "IBAM_APPLICATION_ID")
+        self.appName      = getEnvironmentVal(name: "IBAM_APPLICATION_NAME")
+        self.tenantId     = getEnvironmentVal(name: "X-TenantId")
+        self.dcId         = UUID().uuidString.lowercased()
+        
+        logLevel = stringToLoggerMessageType(logLevelString: logLevelString)
+        HeliumLogger.use(logLevel)
+        
+        configManager = ConfigurationManager()
+        configManager?.load(.environmentVariables)
+        
+        if let app = configManager?.getApp() {
+            
+            Log.info("Retrieving application info from CloudFoundryEnv \(app)")
+            
+            if self.appId.isEmpty {
+                self.appId = app.id
+            }
+            if spaceId.isEmpty {
+                spaceId = app.spaceId
+            }
+            if self.appName.isEmpty {
+                self.appName = app.name
+            }
+            if instanceId.isEmpty {
+                instanceId = app.instanceId
+            }
+            if instanceIndex.isEmpty {
+                instanceIndex = "\(app.instanceIndex)"
+            }
+        }
+        
+        if self.tenantId.isEmpty {
+            self.tenantId = spaceId
+        }
+        
+        self.dcId = TokenUtil.md5(resName: self.appId + instanceIndex)
+        
+        Log.info("IBAMConfigIDs default init, tenantId: \(self.tenantId) AppName: \(self.appName) InstanceId: \(instanceId) InstanceIndex: \(instanceIndex) DCID: \(dcId)")
+
+    }
     
-    // service broker url & token if any
-    public var sbURL   : String
-    //public var sbPath  : String
-    public var sbToken : String
-    
-    
-    // BAM server properties required by users
-    public var ingressURL: String
-    public var ingressToken: String
+    public func stringToLoggerMessageType(logLevelString: String) -> LoggerMessageType {
+        
+        switch logLevelString {
+        case ".entry":
+            return .entry
+        case ".exit":
+            return .exit
+        case ".debug":
+            return .debug
+        case ".verbose":
+            return .verbose
+        case ".info":
+            return .info
+        case ".warning":
+            return .warning
+        case ".error":
+            return .error
+        default:
+            return .info
+        }
+    }
+}
+
+public class IBAMConfig : IBAMConfigIDs {
     
     public var topoURL: String = ""
     public var providerURL: String = ""
@@ -77,24 +141,8 @@ public class IBAMConfig {
     public var aarURL: String = ""
     public var adrURL: String = ""
     
-    // default env vals
-    fileprivate var ingressPath: String
-    fileprivate var topoPath: String
-    fileprivate var providerPath: String
-    fileprivate var metricPath: String
-    fileprivate var aarPath: String
-    fileprivate var adrPath: String
-    fileprivate var serviceName: String
-    
-    fileprivate var isDebugEnabled : Bool = false
-    
-    fileprivate var maxRetryLimit : Int = 3
-    fileprivate var retryCount = 0
     // by default queue is serial attributes: .serial
     fileprivate let queue = DispatchQueue(label: "com.ibm.bam", qos: .background, target: nil)
-    //fileprivate let waiter = DispatchSemaphore(value: 0)
-    
-    //public var bamLocalEnv : [String:String] = [:]
     
     public var ingressHeaders : [String: String] = [
         "Content-Type": "application/json",
@@ -107,42 +155,16 @@ public class IBAMConfig {
     //This will get overwritten by VCAP_SERVICES and VCAP_APPLICATION below.
     //  These env should take precedence so even in Bluemix they can be
     //  use as overrides to VCAP_* not the other way around
-    init() {
+    override init() {
         
-        let inPath = getEnvironmentVal(name: "IBAM_INGRESS_PATH", defVal: INGRESS_PATH)
-        let logLevelString = getEnvironmentVal(name: "IBAM_LOG_LEVEL", defVal: ".info")
-        
-        appId        = getEnvironmentVal(name: "IBAM_APPLICATION_ID")
-        appName      = getEnvironmentVal(name: "IBAM_APPLICATION_NAME")
-        tenantId     = getEnvironmentVal(name: "X-TenantId")
-        dcId         = UUID().uuidString.lowercased()
-        sbURL        = getEnvironmentVal(name: "IBAM_SB_URL")
-        sbToken      = getEnvironmentVal(name: "IBAM_SB_TOKEN")
-        //sbPath     = bamLocalEnv["IBAM_SB_PATH"] ?? SB_PATH
-        ingressURL   = getEnvironmentVal(name: "IBAM_INGRESS_URL")
-        ingressPath  = inPath
-        ingressToken = getEnvironmentVal(name: "IBAM_TOKEN")
-        
-        topoPath     = getEnvironmentVal(name: "IBAM_TOPO_PATH", defVal: (inPath + "?type=resources"))
-        providerPath = getEnvironmentVal(name: "IBAM_PROVIDER_PATH", defVal: (inPath + "?type=providers"))
-        metricPath   = getEnvironmentVal(name: "IBAM_METRIC_PATH", defVal: (inPath + "?type=metric"))
-        aarPath      = getEnvironmentVal(name: "IBAM_AAR_PATH", defVal: (inPath + "?type=aar/middleware"))
-        adrPath      = getEnvironmentVal(name: "IBAM_ADR_PATH", defVal: (inPath + "?type=adr"))
-        serviceName  = getEnvironmentVal(name: "IBAM_SVC_NAME", defVal: "AvailabilityMonitoring")
-        
-        if let limit = Int(getEnvironmentVal(name: "IBAM_MAX_RETRY_LIMIT", defVal: "3")) {
-            self.maxRetryLimit = limit
-        }
-        
-        logLevel = stringToLoggerMessageType(logLevelString: logLevelString)
-        HeliumLogger.use(logLevel)
-        
+        super.init()
         populateLocalEnvironment() // must be the first line
         
     }
     
-    
     private func populateLocalEnvironment() {
+        
+        var isDebugEnabled : Bool = false
         
         let debugEnvStr = getEnvironmentVal(name: "IBAM_DEBUG_ENV")
         
@@ -156,40 +178,22 @@ public class IBAMConfig {
                 bamLocalEnv[key] = val
             }
         }
-        
         Log.info("## Environment: \(bamLocalEnv)")
-    }
-    
-    public func stringToLoggerMessageType(logLevelString: String) -> LoggerMessageType {
-            
-            switch logLevelString {
-            case ".entry":
-                return .entry
-            case ".exit":
-                return .exit
-            case ".debug":
-                return .debug
-            case ".verbose":
-                return .verbose
-            case ".info":
-                return .info
-            case ".warning":
-                return .warning
-            case ".error":
-                return .error
-            default:
-                return .info
-            }
     }
 }
 
 public class BMConfig : IBAMConfig {
+
+    // service broker url & token if any
+    public var sbURL   : String
+    public var sbToken : String
     
-    public var spaceId : String = ""
-    public var instanceId : String = ""
-    public var instanceIndex : String = ""
-    //public var cfAppEnv : AppEnv?
-    var configManager: ConfigurationManager?
+    // BAM server properties required by users
+    public var ingressURL: String
+    public var ingressToken: String
+    
+    fileprivate var maxRetryLimit : Int = 3
+    fileprivate var retryCount = 0
     
     // lazily initialized
     static let sharedInstance: BMConfig = {
@@ -199,48 +203,32 @@ public class BMConfig : IBAMConfig {
     }()
     
     private override init() {
-        super.init()
         
+        sbURL        = getEnvironmentVal(name: "IBAM_SB_URL")
+        sbToken      = getEnvironmentVal(name: "IBAM_SB_TOKEN")
+    
+        ingressURL   = getEnvironmentVal(name: "IBAM_INGRESS_URL")
+        ingressToken = getEnvironmentVal(name: "IBAM_TOKEN")
+        
+        if let limit = Int(getEnvironmentVal(name: "IBAM_MAX_RETRY_LIMIT", defVal: "3")) {
+            self.maxRetryLimit = limit
+        }
+        
+        super.init()
         cloudFoundryBasedInitialization()
-        vcapEnvBasedInitialization()
     }
     
     // Initialize environment based on CloudFoundry Object
     private func cloudFoundryBasedInitialization() {
+        var configManager: ConfigurationManager?
+        var serviceName: String
         
-        self.configManager = ConfigurationManager()
-        self.configManager?.load(.environmentVariables)
+        serviceName  = getEnvironmentVal(name: "IBAM_SVC_NAME", defVal: "AvailabilityMonitoring")
         
-        Log.info("## ConfigManager: \(String(describing:self.configManager))")
+        configManager = ConfigurationManager()
+        configManager?.load(.environmentVariables)
         
-        if let app = self.configManager?.getApp() {
-            
-            Log.info("Retrieving application info from CloudFoundryEnv \(app)")
-            
-            if self.appId.isEmpty {
-                self.appId = app.id
-            }
-            
-            if self.spaceId.isEmpty {
-                self.spaceId = app.spaceId
-            }
-            
-            if self.appName.isEmpty {
-                self.appName = app.name
-            }
-            
-            if self.instanceId.isEmpty {
-                self.instanceId = app.instanceId
-            }
-            
-            if self.instanceIndex.isEmpty {
-                self.instanceIndex = "\(app.instanceIndex)"
-            }
-        }
-        
-        if self.tenantId.isEmpty {
-            self.tenantId = self.spaceId
-        }
+        Log.info("## ConfigManager: \(String(describing: configManager))")
         
         // VCAP_SERVICES initialization
         // Service name can be changed by the user and hence name based query is NOT used
@@ -249,12 +237,12 @@ public class BMConfig : IBAMConfig {
         var servCreds : [String:Any] = [:]
         
         //if let vcapServices = self.cfAppEnv?.getServices() {
-        if let vcapServices = self.configManager?.getServices() {
+        if let vcapServices = configManager?.getServices() {
             Log.info("Retrieving vcapservice info from CloudFoundryEnv \(vcapServices)")
             
             for (serName, service) in vcapServices {
                 
-                if(service.label.range(of: self.serviceName) != nil) {
+                if(service.label.range(of: serviceName) != nil) {
                     if let creds = service.credentials {
                         Log.info("Retrieving cred info from CloudFoundryEnv \(creds)")
                         servCreds = creds
@@ -287,143 +275,15 @@ public class BMConfig : IBAMConfig {
         //     appName can change fairly frequently and instanceId always
         //     changes unless should be new dc
         //  maybe: dcId = TokenUtil.md5(resName: self.appId + self.instance_index)?
-        dcId = TokenUtil.md5(resName: self.appId + self.instanceIndex)
         
-        Log.info("BMConfig default init, SBURL: \(self.sbURL) SBToken: \(tmpSBToken) ServCreds: \(servCreds) tenantId: \(self.tenantId) AppName: \(self.appName) InstanceId: \(self.instanceId) InstanceIndex: \(self.instanceIndex) DCID: \(dcId)")
+        //dcId = TokenUtil.md5(resName: self.appId + self.instanceIndex)
         
-        self.refreshBAMConfigTask()
-
+        //Log.info("BMConfig default init, SBURL: \(self.sbURL) SBToken: \(tmpSBToken) ServCreds: \(servCreds) tenantId: \(self.tenantId) AppName: \(self.appName) InstanceId: \(self.instanceId) InstanceIndex: \(self.instanceIndex) DCID: \(dcId)")
         
-    }
-    
-    // This can be temporary till the CF bug is fixed
-    // TODO: take it out once bug fixed
-    
-    private func vcapEnvBasedInitialization() {
-        
-        if !self.sbURL.isEmpty {
-            Log.info("BAM Config already initialized using CloudFoundry env, returning..")
-            return
-        }
-        
-        
-        //let configManager = ConfigurationManager()
-        
-        //if let app = self.cfAppEnv?.getApp() {
-        if let app = self.configManager?.getApp() {
-            Log.debug("Retrieving application info from CloudFoundryEnv")
-            if self.appId.isEmpty {
-                self.appId = app.id
-            }
-            
-            if self.spaceId.isEmpty {
-                self.spaceId = app.spaceId
-            }
-            
-            if self.appName.isEmpty {
-                self.appName = app.name
-            }
-            
-            if self.instanceId.isEmpty {
-                self.instanceId = app.instanceId
-            }
-            
-            if self.instanceIndex.isEmpty {
-                self.instanceIndex = "\(app.instanceIndex)"
-            }
-        }
-        
-        if let vApp = stringToJSON(text: getEnvironmentVal(name: "VCAP_APPLICATION")) {
-            //In dev env, CloudFoundryEnv doesn't always work
-            Log.debug("Retrieving application info from VCAP_APPLICATION env var")
-            if self.appId.isEmpty {
-                self.appId = vApp["application_id"] as? String ?? UUID().uuidString.lowercased()
-            }
-            if self.spaceId.isEmpty {
-                self.spaceId = vApp["space_id"] as? String ?? UUID().uuidString.lowercased()
-            }
-            if self.appName.isEmpty {
-                self.appName = vApp["application_name"] as? String ?? ""
-            }
-            if self.instanceId.isEmpty {
-                self.instanceId = vApp["instance_id"] as? String ?? UUID().uuidString.lowercased()
-            }
-            
-            if self.instanceIndex.isEmpty {
-                self.instanceIndex = vApp["instance_index"] as? String ?? UUID().uuidString.lowercased()
-            }
-        }
-        if self.tenantId.isEmpty {
-            self.tenantId = self.spaceId
-        }
-        
-        
-        let servName = self.serviceName
-        
-        Log.info("Using IBAM_SVC_NAME \(servName)")
-        
-        //We cannot use cfAppEnv here because it gets the services by
-        //  name, not type/id, and the customer can rename the service to
-        //  anything they want.
-        var servCreds : [String:Any] = [:]
-        let svcs = stringToJSON(text: getEnvironmentVal(name: "VCAP_SERVICES")) ?? [:]
-        
-        Log.info("Retrieving vcapservice info from env variable \(svcs)")
-        
-        for (serName, service) in svcs {
-            Log.debug("Service Name: \(serName) Service: \(service)")
-            
-            if let svcArr = service as? [Any] {
-                
-                for svcObj in svcArr {
-                    if let servDic = svcObj as? [String:Any] {
-                        if let label = servDic["label"] as? String {
-                            if(label.range(of: self.serviceName) != nil) {
-                                if let creds = servDic["credentials"] as? [String: Any] {
-                                    Log.info("Retrieving cred info from CloudFoundryEnv \(creds)")
-                                    servCreds = creds
-                                    Log.info("cloudFoundryBasedInitialization: Service credentials successfully obtained for \(serName) Creds: \(servCreds)")
-                                    break
-                                }
-                            }
-                        }
-                    }
-                }
-                
-            }
-            
-        }
-        
-        
-        Log.info("cloudFoundryBasedInitialization, service creds: \(servCreds)")
-        
-        var tmpSBToken: String = self.sbToken
-        
-        if tmpSBToken.isEmpty, let sbt = servCreds["token"] as? String {
-            tmpSBToken = sbt
-        }
-        
-        if tmpSBToken.characters.count > 0 {
-            self.sbToken = TokenUtil.unobfuscate(key: appId, value: tmpSBToken)
-        }
-        
-        if self.sbURL.isEmpty, let surl = servCreds["cred_url"] as? String {
-            self.sbURL = surl + SB_PATH + self.appId
-        }
-        
-        dcId = TokenUtil.md5(resName: self.appName + self.instanceIndex)
-        
-        Log.info("BMConfig default init, SBURL: \(self.sbURL) SBToken: \(tmpSBToken) ServCreds: \(servCreds) tenantId: \(self.tenantId) AppName: \(self.appName) InstanceId: \(self.instanceId) InstanceIndex: \(self.instanceIndex) DCID: \(dcId)")
-        
+        Log.info("BMConfig default init, SBURL: \(self.sbURL) SBToken: \(tmpSBToken) ServCreds: \(servCreds) tenantId: \(self.tenantId) AppName: \(self.appName) DCID: \(dcId)")
         
         self.refreshBAMConfigTask()
-        
-        Log.info("BMConfig initialized")
-
-        
     }
-    
-    
     
     /*
      SB Query:
@@ -454,7 +314,6 @@ public class BMConfig : IBAMConfig {
         
         Log.info("## Refreshing BAM Configuration:  \(sbURL)")
         
-        
         if(self.backendReady) {
             return
         }
@@ -465,23 +324,18 @@ public class BMConfig : IBAMConfig {
         }
         
         //this does not appear to be threadsafe
-        if self.sbURL.characters.count > 0 {
-            
+        if !(self.sbURL.characters.count > 0) {
+            Log.error("No AvailabilityMonitoring Service connected and no IBAM_INGRESS_URL/IBAM_TOKEN set.")
+            return
+        }
+        
             /*"cred_url": "https://perfbroker-apd.stage1.ng.bluemix.net/1.0/credentials/app/55486f24-cd6e-440b-9589-3e2e5000095e"
              */
             
             let auth = "bamtoken " + self.sbToken
-            let hdrs = ["Accept": "application/json",
-                        "X-TenantId": self.tenantId,
-                        "Authorization": auth,
-                        "User-Agent": "SwiftDC"]
+            let hdrs = ["Accept": "application/json", "X-TenantId": self.tenantId, "Authorization": auth, "User-Agent": "SwiftDC"]
             
             Log.info("## BAM credentials request initiated, URL: \(sbURL) BAM headers: \(hdrs) ")
-            
-            
-            
-            //makeHttpRequest should probably retry internally?
-            //BMConfig.makeHttpRequest(apmData: [:], urlString: self.sbURL, reqType: HTTP_GET, headers: hdrs, taskCallback: {
             
             BMConfig.makeKituraHttpRequest(apmData: [:], urlString: self.sbURL, reqType: HTTP_GET, headers: hdrs, taskCallback: {
                 (passed, statusCode, response) in
@@ -502,19 +356,8 @@ public class BMConfig : IBAMConfig {
                             self.ingressToken = it
                         }
                         
-                        //URLEscape tenantId since can be set via env var
-                        let tId = self.tenantId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
-                        let me  = "&tenant=" + tId + "&origin=" + self.dcId
+                        self.getBAMURLs(authorization: "bamtoken ")
                         
-                        self.ingressHeaders["Authorization"] = "bamtoken " + self.ingressToken
-                        self.ingressHeaders["X-TenantId"] = self.tenantId
-                        self.ingressHeaders["BM-ApplicationId"] = self.appId
-                        
-                        self.topoURL       = self.ingressURL + self.topoPath + me
-                        self.providerURL   = self.ingressURL + self.providerPath + me
-                        self.metricURL     = self.ingressURL + self.metricPath + me
-                        self.aarURL        = self.ingressURL + self.aarPath + me
-                        self.adrURL        = self.ingressURL + self.adrPath + me
                         self.backendReady  = true
                         
                         // TODO: comment out token
@@ -529,10 +372,9 @@ public class BMConfig : IBAMConfig {
                 }
                 //waiter.signal()
             })
-
+            
             //let waitTime	= DispatchTime.now() + DispatchTimeInterval.seconds(15)
             //waiter.wait(timeout: waitTime)
-        }
     }
     
     public func refreshBAMConfigWithBasicAuth() {
@@ -546,18 +388,9 @@ public class BMConfig : IBAMConfig {
         if self.ingressURL.characters.count > 0 {
             
             //URLEscape tenantId since can be set via env var
-            let tId = self.tenantId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
-            let me  = "&tenant=" + tId + "&origin=" + self.dcId
             
-            self.ingressHeaders["Authorization"] = "Basic " + self.ingressToken
-            self.ingressHeaders["X-TenantId"] = self.tenantId
-            self.ingressHeaders["BM-ApplicationId"] = self.appId
+            self.getBAMURLs(authorization: "Basic ")
             
-            self.topoURL       = self.ingressURL + self.topoPath + me
-            self.providerURL   = self.ingressURL + self.providerPath + me
-            self.metricURL     = self.ingressURL + self.metricPath + me
-            self.aarURL        = self.ingressURL + self.aarPath + me
-            self.adrURL        = self.ingressURL + self.adrPath + me
             self.backendReady  = true
             
             // TODO: comment out token
@@ -567,6 +400,36 @@ public class BMConfig : IBAMConfig {
             Log.info("BAM backend Urls: \(self.metricURL) Header: \(self.ingressHeaders)")
             
         }
+    }
+    
+    func getBAMURLs(authorization: String) {
+        
+        var topoPath: String
+        var providerPath: String
+        var metricPath: String
+        var aarPath: String
+        var adrPath: String
+        
+        let inPath   = getEnvironmentVal(name: "IBAM_INGRESS_PATH", defVal: INGRESS_PATH)
+        topoPath     = getEnvironmentVal(name: "IBAM_TOPO_PATH", defVal: (inPath + "?type=resources"))
+        providerPath = getEnvironmentVal(name: "IBAM_PROVIDER_PATH", defVal: (inPath + "?type=providers"))
+        metricPath   = getEnvironmentVal(name: "IBAM_METRIC_PATH", defVal: (inPath + "?type=metric"))
+        aarPath      = getEnvironmentVal(name: "IBAM_AAR_PATH", defVal: (inPath + "?type=aar/middleware"))
+        adrPath      = getEnvironmentVal(name: "IBAM_ADR_PATH", defVal: (inPath + "?type=adr"))
+        
+        //URLEscape tenantId since can be set via env var
+        let tId = self.tenantId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
+        let me  = "&tenant=" + tId + "&origin=" + self.dcId
+        
+        self.ingressHeaders["Authorization"] = authorization + self.ingressToken
+        self.ingressHeaders["X-TenantId"] = self.tenantId
+        self.ingressHeaders["BM-ApplicationId"] = self.appId
+        
+        self.topoURL       = self.ingressURL + topoPath + me
+        self.providerURL   = self.ingressURL + providerPath + me
+        self.metricURL     = self.ingressURL + metricPath + me
+        self.aarURL        = self.ingressURL + aarPath + me
+        self.adrURL        = self.ingressURL + adrPath + me
     }
     
     /*
@@ -619,9 +482,7 @@ public class BMConfig : IBAMConfig {
     
     public func getInstanceResourceId(resName: String) -> String {
         
-        
         let fullStr = self.dcId + resName;
-        
         let str = TokenUtil.md5(resName: fullStr)
         
         return str
@@ -629,102 +490,11 @@ public class BMConfig : IBAMConfig {
     
     public func getResourceId(resName: String) -> String {
         
-        
         let fullStr = self.appId + resName;
-        
         let str = TokenUtil.md5(resName: fullStr)
         
         return str
     }
-    
-    
-    public static func makeHttpRequest(apmData: Dictionary<String,Any>, urlString: String, reqType: String, headers: [String:String], taskCallback: @escaping (Bool, Int, Any?) -> () = doNothing) {
-        
-        if(urlString.isEmpty) {
-            Log.warning("urlString parameter is not set")
-            return
-        }
-        
-        let url = URL(string:urlString)!
-        let session = URLSession(configuration: URLSessionConfiguration.default)
-        //let request : MutableURLRequest = MutableURLRequest(url:url)
-        
-        var request : URLRequest = URLRequest(url:url)
-        
-        //request.url = URL(string: urlString)
-        request.httpMethod = reqType.uppercased()
-        request.timeoutInterval = 30
-        
-        for (key, val) in headers {
-            request.addValue(val, forHTTPHeaderField: key)
-        }
-        
-        //transaction ID is required by backend
-        let key = "X-TransactionId"
-        if !headers.keys.contains(key) {
-            request.addValue(UUID().uuidString.lowercased(), forHTTPHeaderField: key)
-        }
-        
-        if reqType != "GET" {
-            if let jsonData = try? JSONSerialization.data(withJSONObject: apmData, options: []) {
-                request.httpBody = jsonData
-            }
-            else {
-                let res = "Not making http request. Error converting input data into JSON: \(urlString)"
-                Log.error(res)
-                
-                return
-            }
-        }
-        
-        //TODO: don't log token in headers, temporarily changed to info
-        Log.info("Initiating http request \(request) Headers: " +
-            request.allHTTPHeaderFields!.description +
-            " APMData: \(apmData)")
-        
-        // make the http request once all the params are populated
-        
-        let task = session.dataTask(with: request as URLRequest, completionHandler: {
-            data, response, error in
-            
-            if let e = error {
-                //client side error
-                Log.error("Failed to create connection to \(url): " + e.localizedDescription)
-            }
-            else if let httpResponse = response as? HTTPURLResponse, let receivedData = data {
-                
-                if let ds = String(data: receivedData, encoding: String.Encoding.utf8) {
-                    Log.debug("response as string =>" + ds + "<=")
-                }
-                
-                //var result: String = NSString (data: receivedData, encoding: String.Encoding.utf8.rawValue)
-                let json = try? JSONSerialization.jsonObject(with: receivedData, options: [])
-                
-                switch (httpResponse.statusCode) {
-                    
-                case 200...299:
-                    
-                    // Temporarily put to info as static method is disabling it, will debug later
-                    Log.info("\(String(describing:request.httpMethod)) successful: StatusCode: \(httpResponse.statusCode) Response: \(String(describing:response)), JSON: \(String(describing:json))")
-                    
-                    taskCallback(true, httpResponse.statusCode, json as Any?)
-                    
-                default:
-                    Log.error("\(String(describing:request.httpMethod)) request got response \(httpResponse.statusCode) and response \(httpResponse)")
-                    taskCallback(false, httpResponse.statusCode, receivedData as Any?)
-                }
-            }
-            else {
-                Log.error("Error sending data: URL: \(urlString) : Response: \(String(describing:data)), Error: \(String(describing:error))")
-                taskCallback(false, -1, nil)
-            }
-            
-        })
-        
-        task.resume()
-        
-    }
-    
     
     
     private static func makeKituraHttpRequest(apmData: Dictionary<String,Any>, urlString: String, reqType: String, headers: [String:String], taskCallback: @escaping (Bool, Int, Any?) -> () = doNothing) {
@@ -739,13 +509,12 @@ public class BMConfig : IBAMConfig {
             let decoded = try JSONSerialization.jsonObject(with: jsonData, options: [])
             if let dictFromJSON = decoded as? [String:Any] {
                 
-                
-                let key = "X-TransactionId"
+                /*let key = "X-TransactionId"
                 var headerCopy = headers
                 
                 if !headerCopy.keys.contains(key) {
                     headerCopy["X-TransactionId"] = UUID().uuidString.lowercased()
-                }
+                }*/
                 
                 var kitReqType = Request.Method.post
                 
@@ -754,16 +523,12 @@ public class BMConfig : IBAMConfig {
                 }
                 
                 //TODO: don't log token in headers, temporarily changed to info
-                Log.info("Initiating http request  Headers: \(headerCopy) APMData: \(apmData)")
+                //Log.info("Initiating http request  Headers: \(headerCopy) APMData: \(apmData)")
+                Log.info("Initiating http request  Headers: \(headers) APMData: \(apmData)")
                 
-                KituraRequest.request(kitReqType,
-                                      urlString,
-                                      parameters: dictFromJSON,
-                                      encoding: JSONEncoding.default,
-                                      headers: headers
-                    ).response {
+                KituraRequest.request(kitReqType, urlString, parameters: dictFromJSON, encoding: JSONEncoding.default, headers: headers).response {
                         request, response, data, error in
-                        if request != nil {
+                        /*if request != nil {
                             Log.debug("sendMetrics:Request: \(request!)")
                         }
                         if response != nil {
@@ -772,11 +537,8 @@ public class BMConfig : IBAMConfig {
                         if data != nil {
                             Log.debug(" sendMetrics:Data: \(data!)")
                         }
-                        //Log.debug("sendMetrics:Request: \(request!)")
-                        //Log.debug(" sendMetrics:Response: \(response!)")
-                        //Log.debug(" sendMetrics:Data: \(data!)")
-                        Log.debug(" sendMetrics:Error: \(String(describing:error))")
                         
+                        Log.debug(" sendMetrics:Error: \(String(describing:error))") */
                         
                         if let e = error {
                             //client side error
@@ -818,10 +580,10 @@ public class BMConfig : IBAMConfig {
     } // end of makeKituraHttpRequest
 }
 
-
-
 public class TokenUtil {
+    
     private static func cipher_init(key: String) -> [ String: [UInt8] ] {
+        
         let dig = Digest(using: .sha256).update(string: key)?.final()
         let ks = dig![0..<16]
         let vs = dig![16..<32]
@@ -832,6 +594,7 @@ public class TokenUtil {
     }
     
     public static func obfuscate(key: String, value: String) -> String {
+        
         let i = cipher_init(key: key)
         
         if let ky = i["key"], let vl = i["iv"] {
@@ -891,14 +654,10 @@ public class TokenUtil {
     
     public static func md5(resName: String) -> String {
         
-        
         // String...
         // CryptoUtils.hexString
         let md5Dig = Digest(using: .md5)
-        
         let upd = md5Dig.update(string: resName)
-        
-        
         let digFin = md5Dig.final()
         //let paddedDigest = CryptoUtils.zeroPad(byteArray: digest, blockSize: 16)
         
@@ -936,7 +695,6 @@ func stringToJSON(text: String?) -> [String:Any]? {
         return nil
     }
     
-    
     guard let data = actData.data(using: String.Encoding.utf8) else {
         Log.error("Could not generate JSON object as conversion to utf8 failed \(actData)")
         return nil
@@ -953,19 +711,15 @@ func stringToJSON(text: String?) -> [String:Any]? {
     catch {
         Log.debug("Error: " + error.localizedDescription + " Input: \(actData)")
     }
-    
     return nil
 }
 
 public func getEnvironmentVal(name: String, defVal : String = "") -> String {
     
     if let val = bamLocalEnv[name] as? String {
-        
         Log.debug("Env name: \(name), Val: \(val)\n")
-        
         return val
     }
-    
     return defVal
 }
 
@@ -1011,6 +765,5 @@ public func getEnvironmentVal(name: String, defVal : String = "") -> String {
  }
  ]
  }
- 
  */
 
