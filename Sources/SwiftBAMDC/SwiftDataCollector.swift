@@ -20,57 +20,31 @@ import Foundation
 import HeliumLogger
 import LoggerAPI
 
-public class SwiftDataCollector {
+public class SwiftDataCollectorInit {
     
     public var monitor:SwiftMonitor
-    public var sm:SwiftMetrics
+    var resRegistered : [String: Bool] = [
+        "providerRegistered": false, "osRegistered": false,
+        "appRegistered": false, "appInstanceRegistered": false,
+        "interfaceRegistered": false]
     
-    var logLevel : LoggerMessageType = .info
-    var swiftDataCollectorInited = false
-    var providerRegistered = false
-    var osRegistered = false
-    var appRegistered = false
-    var appInstanceRegistered = false
-    var interfaceRegistered = false
     var envData: [String:String]!
     var vcapAppDictionary : [String: Any]!
     
-    var applicationName: String = "Unknown"
-    var hostName : String = "Unknown"
-    var version : String = ""
-    var osName : String = ""
-    var osArch : String = ""
-    var osVersion : String = ""
-    var processID: String = "Unknown"
-    var serverAddress: String = "Unknown"
-    
-    var formatter = DateFormatter()
-    var cpuSampleTime: TimeInterval = 0
-    var memSampleTime: TimeInterval = 0
-    
-    var appResourceID: String = ""
-    var osResourceID: String = ""
-    var origin: String = ""
-    var tenant: String = ""
     var interfaceIDs:[String] = []
-    
     
     let bamConfig = BMConfig.sharedInstance
     
-    public init(swiftMetricsInstance : SwiftMetrics) throws {
+    init(swiftMetricsInstance : SwiftMetrics) throws {
         
-        self.logLevel = self.bamConfig.logLevel
-        HeliumLogger.use(self.logLevel)
+        var sm:SwiftMetrics
         
-        self.formatter.dateFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'SSS'Z'"
-        self.formatter.timeZone = TimeZone(abbreviation: "UTC") as TimeZone!
-
-        self.appResourceID = self.bamConfig.appId
-        self.origin = self.bamConfig.dcId
-        self.tenant = self.bamConfig.tenantId
-        self.osResourceID = self.bamConfig.getInstanceResourceId(resName: "osID")
+        var logLevel : LoggerMessageType = .info
         
-        self.sm = swiftMetricsInstance
+        logLevel = self.bamConfig.logLevel
+        HeliumLogger.use(logLevel)
+        
+        sm = swiftMetricsInstance
         self.monitor = sm.monitor()
         
         monitor.on({ (_: InitData) in
@@ -78,279 +52,123 @@ public class SwiftDataCollector {
         })
         _ = SwiftMetricsKitura(swiftMetricsInstance: sm)
         
-        Log.debug("SwiftDataCollector init: origin = \(origin), appResourceID = \(appResourceID), osResourceID = \(osResourceID),  tenant = \(tenant)")
-        
-        monitor.on(sendCPUMetrics)
-        monitor.on(sendMemMetrics)
-        monitor.on(sendAARData)
         monitor.on(envUpdate)
-
-    }
-    
-    func sendCPUMetrics(cpu: CPUData) {
-        
-        let timeAsInterval: TimeInterval = Double(cpu.timeOfSample)/1000
-        let dataDate = Date(timeIntervalSince1970: timeAsInterval)
-        let dataTimeStamp = self.formatter.string(from: dataDate as Date)
-        
-        if self.swiftDataCollectorInited {
-            if ((self.cpuSampleTime == 0)||((timeAsInterval - self.cpuSampleTime) > 60)){
-                
-                self.cpuSampleTime = timeAsInterval
-                
-                let systemCPUMetrics : Dictionary<String,Any> = [
-                    "timestamp": dataTimeStamp,
-                    "resourceID": osResourceID,
-                    "dimensions": ["name": "system"],
-                    "metrics": ["system_cpuPercentUsed" : cpu.percentUsedBySystem]]
-                
-                Log.debug("systemCPUMetrics: \(systemCPUMetrics)")
-                
-                self.bamConfig.makeAPMRequest(perfData: systemCPUMetrics, postURL: bamConfig.metricURL)
-                
-                let appCPUMetrics : Dictionary<String,Any> = [
-                    "timestamp": dataTimeStamp,
-                    "resourceID": appResourceID,
-                    "dimensions": ["name": self.applicationName],
-                    "metrics": ["app_cpuPercentUsed" : cpu.percentUsedByApplication]]
-                
-                Log.debug("appCPUMetrics: \(appCPUMetrics)")
-                
-                self.bamConfig.makeAPMRequest(perfData: appCPUMetrics, postURL: bamConfig.metricURL)
-            }
-        }
-    }
-    
-    func sendMemMetrics(mem: MemData) {
-        
-        let timeAsInterval: TimeInterval = Double(mem.timeOfSample)/1000
-        let dataDate = Date(timeIntervalSince1970: timeAsInterval)
-        let dataTimeStamp = self.formatter.string(from: dataDate as Date)
-        
-        if self.swiftDataCollectorInited {
-            if ((self.memSampleTime == 0)||((timeAsInterval - self.memSampleTime) > 60)){
-                
-                self.memSampleTime = timeAsInterval
-                
-                let systemMemMetrics : Dictionary<String,Any> = [
-                    "timestamp": dataTimeStamp,
-                    "resourceID": osResourceID,
-                    "dimensions": ["name": "system"],
-                    "metrics": ["system_totalMemory" : mem.totalRAMOnSystem,
-                                "system_totalMemoryUsed" : mem.totalRAMUsed,
-                                "system_totalMemoryFree" : mem.totalRAMFree]
-                ]
-                
-                Log.debug("systemMemMetrics: \(systemMemMetrics)")
-                
-                self.bamConfig.makeAPMRequest(perfData: systemMemMetrics, postURL: bamConfig.metricURL)
-                
-                let appMemMetrics : Dictionary<String,Any> = [
-                    "timestamp": dataTimeStamp,
-                    "resourceID": appResourceID,
-                    "dimensions": ["name": self.applicationName],
-                    "metrics": ["app_memAddressSpaceSize" : mem.applicationAddressSpaceSize,
-                                "app_memPrivateSize" : mem.applicationPrivateSize,
-                                "app_memUsed" : mem.applicationRAMUsed]]
-                
-                Log.debug("appMemMetrics: \(appMemMetrics)")
-                
-                self.bamConfig.makeAPMRequest(perfData: appMemMetrics, postURL: bamConfig.metricURL)
-            }
-        }
-    }
-    
-    func sendAARData(httpData: HTTPData) {
-        
-        let startTimeInterval: TimeInterval = Double(httpData.timeOfRequest)/1000
-        let finishTimeInterval: TimeInterval = (Double(httpData.timeOfRequest) + Double (httpData.duration))/1000
-        let startTime = Date(timeIntervalSince1970: startTimeInterval)
-        let startTimeStamp = self.formatter.string(from: startTime as Date)
-        let finishTime = Date(timeIntervalSince1970: finishTimeInterval)
-        let finishTimeStamp = self.formatter.string(from: finishTime as Date)
-        
-        if self.swiftDataCollectorInited {
-            
-            let aarMetrics : Dictionary<String,Any> = [
-                "status": "\(String(describing: httpData.statusCode))",
-                "responseTime": httpData.duration]
-            
-            let documentID: String = NSUUID().uuidString
-            
-            let aarProperties : Dictionary<String,Any> = [
-                "documentType": "/AAR/MIDDLEWARE/SWIFT",
-                "softwareServerType": "http://open-services.net/ns/crtv#Swift",
-                "resourceID": self.appResourceID,
-                "diagnosticsEnabled": false,
-                "documentVersion": "2.0",
-                "startTime": startTimeStamp,
-                "finishTime": finishTimeStamp,
-                "documentID": documentID,
-                "requestName": httpData.url,
-                "serverName": self.hostName,
-                "processID": self.processID,
-                "serverAddress": self.serverAddress,
-                "applicationName": self.applicationName,
-                "originID": self.origin,
-                "tenantID": self.tenant]
-            
-            /*if self.hostName != "Unknown" {
-             aarProperties ["serverName"] = self.hostName
-             }
-             
-             if self.processID != "Unknown" {
-             aarProperties ["processID"] = self.processID
-             }
-             
-             if self.serverAddress != "Unknown" {
-             aarProperties ["serverAddress"] = self.serverAddress
-             }
-             
-             if self.applicationName != "Unknown" {
-             aarProperties ["applicationName"] = self.applicationName
-             }*/
-            
-            let aarData: Dictionary<String,Any> = [
-                "metrics": aarMetrics,
-                "properties": aarProperties]
-            
-            Log.debug("aarData: \(aarData)")
-            
-            self.bamConfig.makeAPMRequest(perfData: aarData, postURL: bamConfig.aarURL)
-        }
     }
     
     func envInitandTopoRegister() -> Void {
         
-        Log.debug("envInitandTopoRegister() enter")
+        if (self.resRegistered["providerRegistered"]! && self.resRegistered["osRegistered"]! && self.resRegistered["appRegistered"]! && self.resRegistered["interfaceRegistered"]! && self.resRegistered["appInstanceRegistered"]!) {
+            return
+        }
         
-        if (!self.providerRegistered || !self.osRegistered || !self.appRegistered || !self.interfaceRegistered || !self.appInstanceRegistered) {
-            
-            self.envData = self.monitor.getEnvironmentData()
-            
-            if self.envData != nil {
-                
-                Log.debug("Before envData:")
-                
-                Log.debug("envData: \(self.envData)")
-                
-                for (param, value) in self.envData {
-                    switch param {
-                    case "environment.VCAP_APPLICATION":
-                        if !value.isEmpty{
-                            Log.debug("environment.VCAP_APPLICATION: \(value)")
-                            
-                            let data = value.data(using: String.Encoding.utf8)! as Data
-                            self.vcapAppDictionary = try! JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableContainers) as? [String: Any]
-                            if self.vcapAppDictionary != nil {
-                                self.applicationName = self.vcapAppDictionary["application_name"] as! String
-                            }
-                            self.swiftDataCollectorInited = true
-                            
-                            Log.debug("vcapAppDictionary: \(vcapAppDictionary)")
-                        }
-                    case "environment.HOSTNAME":
-                        self.hostName = value
-                        Log.debug("hostName: \(value)")
-                    case "os.version":
-                        self.osVersion = value
-                        Log.debug("version: \(value)")
-                    case "os.name":
-                        self.osName = value
-                        Log.debug("os.name: \(value)")
-                    case "os.arc":
-                        self.osArch = value
-                        Log.debug("os.arc: \(value)")
-                    case "pid":
-                        self.processID = value
-                        Log.debug("processID: \(value)")
-                    case "environment.CF_INSTANCE_ADDR":
-                        self.serverAddress = value
-                        Log.debug("serverAddress: \(value)")
-                    default:
-                        continue
-                    }
+        self.envData = self.monitor.getEnvironmentData()
+        
+        if self.envData != nil {
+            for (param, value) in self.envData {
+                switch param {
+                case "environment.VCAP_APPLICATION":
+                    Log.debug("environment.VCAP_APPLICATION: \(value)")
+                    
+                    let data = value.data(using: String.Encoding.utf8)! as Data
+                    self.vcapAppDictionary = try! JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableContainers) as? [String: Any]
+                default:
+                    continue
                 }
-                
-                self.version = self.osName + self.osArch + self.osVersion
-                
-                if !self.providerRegistered {
-                    registerProvider()
-                }
-                if !self.osRegistered {
-                    registerOS()
-                }
-                if !self.appRegistered {
-                    registerApplication()
-                }
-                if !self.interfaceRegistered {
-                    registerInterfaces()
-                }
-                if !self.appInstanceRegistered {
-                    registerApplicationInstance()
-                }
-                
-            }else{
-                Log.info("The environment data is not available yet, initialization failed")
             }
+        }
+        else{
+            Log.info("The environment data is not available yet, initialization failed")
+        }
+        
+        if !self.resRegistered["providerRegistered"]! {
+            registerProvider()
+        }
+        if !self.resRegistered["osRegistered"]! {
+            registerOS()
+        }
+        if !self.resRegistered["appRegistered"]! {
+            registerApplication()
+        }
+        if !self.resRegistered["interfaceRegistered"]! {
+            registerInterfaces()
+        }
+        if !self.resRegistered["appInstanceRegistered"]! {
+            registerApplicationInstance()
         }
     }
     
     func registerProvider() -> Void {
         
         let currentTime = Date()
-        let utcTimeZoneStr = self.formatter.string(from: currentTime as Date)
-        let swiftDCName : String = "SwiftDC-"+self.applicationName
+        let utcTimeZoneStr = getISOTimeStamp(time: currentTime as Date)
+        let swiftDCName : String = "SwiftDC-"+self.bamConfig.appName
         
         let swiftProvider : Dictionary<String,Any> = [
-            "uniqueId": self.origin,
-            "displayLabel": swiftDCName,
-            "name": swiftDCName,
-            "sourceDomain": "Bluemix",
-            "entityTypes": ["datacollector"],
-            "startTime":utcTimeZoneStr,
-            "version":"1.0",
-            "monitoringLevel": "L1"
-        ]
+            "uniqueId": self.bamConfig.dcId, "displayLabel": swiftDCName,
+            "name": swiftDCName, "sourceDomain": "Bluemix",
+            "entityTypes": ["datacollector"], "startTime":utcTimeZoneStr,
+            "version":"1.0", "monitoringLevel": "L1"]
         Log.debug("swiftProvider: \(swiftProvider)")
         
         self.bamConfig.makeAPMRequest(perfData: swiftProvider, postURL: bamConfig.providerURL)
-        if (self.applicationName != "Unknown") {
-            self.providerRegistered = true
-            Log.debug("providerRegistered: \(self.providerRegistered)")
+        if (self.bamConfig.appName != "") {
+            self.resRegistered["providerRegistered"] = true
+            Log.debug("providerRegistered: \(String(describing: self.resRegistered["providerRegistered"]))")
         }
     }
     
     func registerOS() -> Void {
         
         let currentTime = Date()
-        let utcTimeZoneStr = self.formatter.string(from: currentTime as Date)
+        let utcTimeZoneStr = getISOTimeStamp(time: currentTime as Date)
+        
+        var hostName : String = "Unknown"
+        var version : String = ""
+        var osName : String = ""
+        var osArch : String = ""
+        var osVersion : String = ""
+        
+        if self.envData != nil {
+            for (param, value) in self.envData {
+                switch param {
+                case "environment.HOSTNAME":
+                    hostName = value
+                //Log.debug("hostName: \(value)")
+                case "os.version":
+                    osVersion = value
+                //Log.debug("version: \(value)")
+                case "os.name":
+                    osName = value
+                //Log.debug("os.name: \(value)")
+                case "os.arc":
+                    osArch = value
+                //Log.debug("os.arc: \(value)")
+                default:
+                    continue
+                }
+            }
+        }
+        
+        version = osName + osArch + osVersion
         
         let swiftOSResource : Dictionary<String,Any> = [
-            "uniqueId": self.osResourceID,
-            "displayLabel": self.hostName,
-            "name": self.hostName,
-            "sourceDomain": "Bluemix",
-            "os.version": self.osVersion,
-            "version": self.version,
-            "os.name": self.osName,
-            "os.arch": self.osArch,
-            "startedTime": utcTimeZoneStr,
-            "entityTypes": ["compute"]
-        ]
+            "uniqueId": self.bamConfig.getInstanceResourceId(resName: "osID"),
+            "displayLabel": hostName, "name": hostName, "sourceDomain": "Bluemix", "os.version": osVersion,
+            "version": version, "os.name": osName, "os.arch": osArch, "startedTime": utcTimeZoneStr,
+            "entityTypes": ["compute"]]
         Log.debug("swiftOSResource: \(swiftOSResource)")
         
         self.bamConfig.makeAPMRequest(perfData: swiftOSResource, postURL: bamConfig.topoURL)
-        if (self.version != "") {
-            self.osRegistered = true
-            Log.debug("osRegistered: \(self.osRegistered)")
+        if (version != "") {
+            self.resRegistered["osRegistered"] = true
+            Log.debug("osRegistered: \(String(describing: self.resRegistered["osRegistered"]))")
         }
     }
     
     func registerInterfaces() -> Void {
         
         let currentTime = Date()
-        let utcTimeZoneStr = self.formatter.string(from: currentTime as Date)
+        let utcTimeZoneStr = getISOTimeStamp(time: currentTime as Date)
         var port = ""
         
         if let portNumber = self.vcapAppDictionary ["port"] {
@@ -361,55 +179,43 @@ public class SwiftDataCollector {
         if let applicationUris = self.vcapAppDictionary ["application_uris"] {
             
             if let applicationUrisArray = applicationUris as? Array<String>{
- 
+                
                 for uri in applicationUrisArray {
                     let interfaceID = self.bamConfig.getResourceId(resName: uri)
                     self.interfaceIDs.append(interfaceID)
                     let swiftInterfaceResource : Dictionary<String,Any> = [
-                        "uniqueId": interfaceID,
-                        "name": uri,
-                        "displayLabel": uri,
-                        "sourceDomain": "Bluemix",
-                        "uri": uri,
-                        "port": port,
-                        "entityTypes": ["interface"],
-                        "startedTime": utcTimeZoneStr,
-                        "_references": [["_fromUniqueId": self.appResourceID, "_edgeType": "has"]]
-                    ]
+                        "uniqueId": interfaceID, "name": uri, "displayLabel": uri, "sourceDomain": "Bluemix",
+                        "uri": uri, "port": port, "entityTypes": ["interface"], "startedTime": utcTimeZoneStr,
+                        "_references": [["_fromUniqueId": self.bamConfig.appId, "_edgeType": "has"]]]
                     
                     Log.debug("swiftInterfaceResource: \(swiftInterfaceResource)")
                     
                     self.bamConfig.makeAPMRequest(perfData: swiftInterfaceResource, postURL: bamConfig.topoURL)
                     
                     if (uri != "") {
-                        self.interfaceRegistered = true
-                        Log.debug("interfaceRegistered: \(self.interfaceRegistered)")
+                        self.resRegistered["interfaceRegistered"] = true
+                        Log.debug("interfaceRegistered: \(String(describing: self.resRegistered["interfaceRegistered"]))")
                     }
                 }
             }
         }
         
     }
-
     
     func registerApplication() -> Void {
         
         let currentTime = Date()
-        let utcTimeZoneStr = self.formatter.string(from: currentTime as Date)
+        let utcTimeZoneStr = getISOTimeStamp(time: currentTime as Date)
         
         var swiftAppResource : Dictionary<String,Any> = [
-            "uniqueId": self.appResourceID,
-            "name": self.applicationName,
-            "displayLabel": self.applicationName,
-            "sourceDomain": "Bluemix",
-            "entityTypes": ["swiftApplication","application"],
-            "startedTime": utcTimeZoneStr
-        ]
+            "uniqueId": self.bamConfig.appId, "name": self.bamConfig.appName,
+            "displayLabel": self.bamConfig.appName, "sourceDomain": "Bluemix",
+            "entityTypes": ["swiftApplication","application"], "startedTime": utcTimeZoneStr]
         
         if self.vcapAppDictionary != nil {
             for (key, value) in self.vcapAppDictionary {
                 if (key != "application_name" && key != "application_uris" && key != "instance_id" && key != "instance_index" && key != "uris" && key != "port") {
-                swiftAppResource["\(key)"] = value
+                    swiftAppResource["\(key)"] = value
                 }
             }
         }
@@ -418,9 +224,9 @@ public class SwiftDataCollector {
         
         self.bamConfig.makeAPMRequest(perfData: swiftAppResource, postURL: bamConfig.topoURL)
         
-        if (self.applicationName != "Unknown") {
-            self.appRegistered = true
-            Log.debug("appRegistered: \(self.appRegistered)")
+        if (self.bamConfig.appName != "") {
+            self.resRegistered["appRegistered"] = true
+            Log.debug("appRegistered: \(String(describing: self.resRegistered["appRegistered"]))")
         }
     }
     
@@ -428,8 +234,9 @@ public class SwiftDataCollector {
     func registerApplicationInstance() -> Void {
         
         let currentTime = Date()
-        let utcTimeZoneStr = self.formatter.string(from: currentTime as Date)
-        let appInstanceResID = self.bamConfig.getInstanceResourceId(resName: self.applicationName)
+        let utcTimeZoneStr = getISOTimeStamp(time: currentTime as Date)
+        let applicationName = self.bamConfig.appName
+        let appInstanceResID = self.bamConfig.getInstanceResourceId(resName: applicationName)
         
         var appInstanceIndex = ""
         var instanceID = ""
@@ -446,22 +253,17 @@ public class SwiftDataCollector {
         }
         
         var swiftAppInstanceResource : Dictionary<String,Any> = [
-            "uniqueId": appInstanceResID,
-            "name": self.applicationName+":"+appInstanceIndex,
-            "displayLabel": self.applicationName+":"+appInstanceIndex,
-            "sourceDomain": "Bluemix",
-            "instance_index": appInstanceIndex,
-             "instance_id": instanceID,
-            "entityTypes": ["swiftApplicationInstance","applicationInstance"],
-            "startedTime": utcTimeZoneStr
-        ]
+            "uniqueId": appInstanceResID, "name": applicationName+":"+appInstanceIndex,
+            "displayLabel": applicationName+":"+appInstanceIndex,
+            "sourceDomain": "Bluemix","instance_index": appInstanceIndex,
+            "instance_id": instanceID, "entityTypes": ["swiftApplicationInstance","applicationInstance"],
+            "startedTime": utcTimeZoneStr]
         
-        relationships = [["_toUniqueId": self.appResourceID, "_edgeType": "realizes"]]
+        relationships = [["_toUniqueId": self.bamConfig.appId, "_edgeType": "realizes"]]
         
         for interfaceID in interfaceIDs {
             
             let relationShip = ["_toUniqueId": interfaceID, "_edgeType": "implements"]
-
             relationships.append(relationShip)
         }
         
@@ -472,8 +274,8 @@ public class SwiftDataCollector {
         self.bamConfig.makeAPMRequest(perfData: swiftAppInstanceResource, postURL: bamConfig.topoURL)
         
         if (appInstanceIndex != "") {
-            self.appInstanceRegistered = true
-            Log.debug("appInstanceRegistered: \(self.appInstanceRegistered)")
+            self.resRegistered["appInstanceRegistered"] = true
+            Log.debug("appInstanceRegistered: \(String(describing: self.resRegistered["appInstanceRegistered"]))")
         }
     }
     
@@ -481,11 +283,170 @@ public class SwiftDataCollector {
         
         self.envInitandTopoRegister()
     }
+
+}
+
+
+public class SwiftDataCollector : SwiftDataCollectorInit {
+    
+    var sampleTime : [String: TimeInterval] = [
+        "cpuSampleTime": 0,
+        "memSampleTime": 0]
+    
+    override init(swiftMetricsInstance : SwiftMetrics) throws {
+      
+        try super.init(swiftMetricsInstance : swiftMetricsInstance)
+        
+        self.monitor.on(sendCPUMetrics)
+        self.monitor.on(sendMemMetrics)
+        self.monitor.on(sendAARData)
+
+    }
+    
+    func sendCPUMetrics(cpu: CPUData) {
+        
+        let timeAsInterval: TimeInterval = Double(cpu.timeOfSample)/1000
+        let dataDate = Date(timeIntervalSince1970: timeAsInterval)
+        let dataTimeStamp = getISOTimeStamp(time: dataDate as Date)
+        
+        if self.vcapAppDictionary != nil {
+            if ((self.sampleTime["cpuSampleTime"]! == 0)||((timeAsInterval - self.sampleTime["cpuSampleTime"]!) > 60)){
+                
+                self.sampleTime["cpuSampleTime"] = timeAsInterval
+                
+                let systemCPUMetrics : Dictionary<String,Any> = [
+                    "timestamp": dataTimeStamp,
+                    "resourceID": self.bamConfig.getInstanceResourceId(resName: "osID"),
+                    "dimensions": ["name": "system"],
+                    "metrics": ["system_cpuPercentUsed" : cpu.percentUsedBySystem]]
+                
+                Log.debug("systemCPUMetrics: \(systemCPUMetrics)")
+                
+                self.bamConfig.makeAPMRequest(perfData: systemCPUMetrics, postURL: bamConfig.metricURL)
+                
+                let appCPUMetrics : Dictionary<String,Any> = [
+                    "timestamp": dataTimeStamp,
+                    "resourceID": self.bamConfig.appId,
+                    "dimensions": ["name": self.bamConfig.appName],
+                    "metrics": ["app_cpuPercentUsed" : cpu.percentUsedByApplication]]
+                
+                Log.debug("appCPUMetrics: \(appCPUMetrics)")
+                
+                self.bamConfig.makeAPMRequest(perfData: appCPUMetrics, postURL: bamConfig.metricURL)
+            }
+        }
+    }
+    
+    func sendMemMetrics(mem: MemData) {
+        
+        let timeAsInterval: TimeInterval = Double(mem.timeOfSample)/1000
+        let dataDate = Date(timeIntervalSince1970: timeAsInterval)
+        let dataTimeStamp = getISOTimeStamp(time: dataDate as Date)
+        
+        if self.vcapAppDictionary != nil {
+            if ((self.sampleTime["memSampleTime"]! == 0)||((timeAsInterval - self.sampleTime["memSampleTime"]!) > 60)){
+                
+                self.sampleTime["memSampleTime"] = timeAsInterval
+                
+                let systemMemMetrics : Dictionary<String,Any> = [
+                    "timestamp": dataTimeStamp,
+                    "resourceID": self.bamConfig.getInstanceResourceId(resName: "osID"),
+                    "dimensions": ["name": "system"],
+                    "metrics": ["system_totalMemory" : mem.totalRAMOnSystem,
+                                "system_totalMemoryUsed" : mem.totalRAMUsed,
+                                "system_totalMemoryFree" : mem.totalRAMFree]
+                ]
+                
+                Log.debug("systemMemMetrics: \(systemMemMetrics)")
+                
+                self.bamConfig.makeAPMRequest(perfData: systemMemMetrics, postURL: bamConfig.metricURL)
+                
+                let appMemMetrics : Dictionary<String,Any> = [
+                    "timestamp": dataTimeStamp,
+                    "resourceID": self.bamConfig.appId,
+                    "dimensions": ["name": self.bamConfig.appName],
+                    "metrics": ["app_memAddressSpaceSize" : mem.applicationAddressSpaceSize,
+                                "app_memPrivateSize" : mem.applicationPrivateSize,
+                                "app_memUsed" : mem.applicationRAMUsed]]
+                
+                Log.debug("appMemMetrics: \(appMemMetrics)")
+                
+                self.bamConfig.makeAPMRequest(perfData: appMemMetrics, postURL: bamConfig.metricURL)
+            }
+        }
+    }
+    
+    func sendAARData(httpData: HTTPData) {
+        
+        let startTimeInterval: TimeInterval = Double(httpData.timeOfRequest)/1000
+        let finishTimeInterval: TimeInterval = (Double(httpData.timeOfRequest) + Double (httpData.duration))/1000
+        let startTime = Date(timeIntervalSince1970: startTimeInterval)
+        let startTimeStamp = getISOTimeStamp(time: startTime as Date)
+        let finishTime = Date(timeIntervalSince1970: finishTimeInterval)
+        let finishTimeStamp = getISOTimeStamp(time: finishTime as Date)
+        
+        var hostName : String = "Unknown"
+        var processID: String = "Unknown"
+        var serverAddress: String = "Unknown"
+        
+        if self.envData != nil {
+            for (param, value) in self.envData {
+                switch param {
+                case "environment.HOSTNAME":
+                    hostName = value
+                    Log.debug("hostName: \(value)")
+                case "pid":
+                    processID = value
+                    Log.debug("processID: \(value)")
+                case "environment.CF_INSTANCE_ADDR":
+                    serverAddress = value
+                    Log.debug("serverAddress: \(value)")
+                default:
+                    continue
+                }
+            }
+        }
+        
+        if self.vcapAppDictionary != nil {
+            
+            let aarMetrics : Dictionary<String,Any> = [
+                "status": "\(String(describing: httpData.statusCode))",
+                "responseTime": httpData.duration]
+            
+            let documentID: String = NSUUID().uuidString
+            
+            let aarProperties : Dictionary<String,Any> = [
+                "documentType": "/AAR/MIDDLEWARE/SWIFT",
+                "softwareServerType": "http://open-services.net/ns/crtv#Swift",
+                "resourceID": self.bamConfig.appId, "diagnosticsEnabled": false,
+                "documentVersion": "2.0", "startTime": startTimeStamp, "finishTime": finishTimeStamp,
+                "documentID": documentID, "requestName": httpData.url, "serverName": hostName,
+                "processID": processID, "serverAddress": serverAddress, "applicationName": self.bamConfig.appName,
+                "originID": self.bamConfig.dcId, "tenantID": self.bamConfig.tenantId]
+            
+            let aarData: Dictionary<String,Any> = ["metrics": aarMetrics,"properties": aarProperties]
+            
+            Log.debug("aarData: \(aarData)")
+            
+            self.bamConfig.makeAPMRequest(perfData: aarData, postURL: bamConfig.aarURL)
+        }
+    }
     
 }
 
+public func getISOTimeStamp(time : Date) -> String {
+    
+    let formatter = DateFormatter()
+    
+    formatter.dateFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'SSS'Z'"
+    formatter.timeZone = TimeZone(abbreviation: "UTC") as TimeZone!
+    
+    return formatter.string(from: time)
+}
+
+
 /* Sample of VCAP_APPLICATION:
-environment.VCAP_APPLICATION: 
+environment.VCAP_APPLICATION:
  {
  "application_id": "b922eb72-1d1e-4fed-bdbd-1838c6fecbe1",
  "application_name": "Swiftc-DC",
