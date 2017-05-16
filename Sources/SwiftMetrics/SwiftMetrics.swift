@@ -204,18 +204,12 @@ private func executableFolderURL() -> URL {
   private func setDefaultLibraryPath() {
     var defaultLibraryPath = "."
     let configMgr = ConfigurationManager().load(.environmentVariables)
-    loaderApi.logMessage(warning, "setDefaultLibraryPath(): isLocal: \(configMgr.isLocal)")
+    loaderApi.logMessage(fine, "setDefaultLibraryPath(): isLocal: \(configMgr.isLocal)")
     if (configMgr.isLocal) {
       let programPath = CommandLine.arguments[0]
-      print("programPath = \(programPath)")
-      print("CommandLine.arguments = \(CommandLine.arguments)")
-      print("currentDirectoryPath = \(FileManager.default.currentDirectoryPath)")
 
-     
       /// Absolute path to the executable's folder
       let executableFolder = executableFolderURL().path
-
-      print("executableFolder = \(executableFolder)")
 
       if(programPath.contains("xctest")) { // running tests on Mac
         defaultLibraryPath = executableFolder
@@ -229,7 +223,6 @@ private func executableFolderURL() -> URL {
       // We're in Bluemix, use the path the swift-buildpack saves libraries to
       defaultLibraryPath = "/home/vcap/app/.swift-lib"
     }
-    print("setDefaultLibraryPath(): to \(defaultLibraryPath)")
     loaderApi.logMessage(fine, "setDefaultLibraryPath(): to \(defaultLibraryPath)")
     self.setPluginSearch(toDirectory: URL(fileURLWithPath: defaultLibraryPath, isDirectory: true))
   }
@@ -365,7 +358,7 @@ private func executableFolderURL() -> URL {
       return nil
     }
     dlclose(handle!)
-    loaderApi.logMessage(warning, "getFunctionFromLibrary(): Function \(functionName) found")
+    loaderApi.logMessage(fine, "getFunctionFromLibrary(): Function \(functionName) found")
     return function
   }
 
