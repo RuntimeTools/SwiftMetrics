@@ -88,7 +88,6 @@ open class SwiftMetrics {
   var latencyEnabled: Bool = false
   let jobsQueue = DispatchQueue(label: "Swift Metrics Jobs Queue")
   public let localSourceDirectory: String
-    private var builtWithXcode = false
 
   public init() throws {
     self.loaderApi = loader_entrypoint().pointee
@@ -282,19 +281,18 @@ private func executableFolderURL() -> URL {
       if pluginSearchPath == "" {
         self.setDefaultLibraryPath()
       }
-      if !initMonitorApi() {
-        loaderApi.logMessage(warning, "Failed to initialize monitoring API")
-      }
       if(!initialized) {
-        if(builtWithXcode) {
-          // Add plugins one by one as plugin search path won't work
-          loaderApi.addPlugin("@rpath/envplugin.framework/Versions/A/envplugin")
-          loaderApi.addPlugin("@rpath/memplugin.framework/Versions/A/memplugin")
-          loaderApi.addPlugin("@rpath/cpuplugin.framework/Versions/A/cpuplugin")
-          loaderApi.addPlugin("@rpath/hcapiplugin.framework/Versions/A/hcapiplugin")
-        }
+        // Add plugins one by one in case built with xcode as plugin search path won't work
+        loaderApi.addPlugin("@rpath/envplugin.framework/Versions/A/envplugin")
+        loaderApi.addPlugin("@rpath/memplugin.framework/Versions/A/memplugin")
+        loaderApi.addPlugin("@rpath/cpuplugin.framework/Versions/A/cpuplugin")
+        loaderApi.addPlugin("@rpath/hcapiplugin.framework/Versions/A/hcapiplugin")
         _ = loaderApi.initialize()
         initialized = true
+      }
+
+      if !initMonitorApi() {
+        loaderApi.logMessage(warning, "Failed to initialize monitoring API")
       }
       loaderApi.start()
     } else {
@@ -358,8 +356,6 @@ private func executableFolderURL() -> URL {
             let error = String(cString: dlerror())
             loaderApi.logMessage(warning, "Failed to open library \("@rpath/agentcore.framework/Versions/A/agentcore"): \(error)")
             return nil
-        } else {
-            builtWithXcode = true
         }
     }
     guard let function = dlsym(handle, functionName) else {
@@ -369,7 +365,7 @@ private func executableFolderURL() -> URL {
       return nil
     }
     dlclose(handle!)
-    loaderApi.logMessage(warning, "getFunctionFromLibrary(): Function found")
+    loaderApi.logMessage(warning, "getFunctionFromLibrary(): Function \(functionName) found")
     return function
   }
 
