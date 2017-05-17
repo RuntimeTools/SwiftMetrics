@@ -142,8 +142,17 @@ open class SwiftMetrics {
     if fm.fileExists(atPath: propertiesPath) {
       self.localSourceDirectory = fm.currentDirectoryPath
     } else {
-      print("SwiftMetrics: Error: \(fm.currentDirectoryPath) incorrectly identified as SwiftMetrics Source dir")
-      self.localSourceDirectory = ""
+        // could be in Xcode, try source directory
+        let fileName = NSString(string: #file)
+        let installDirPrefixRange: NSRange
+        let installDir = fileName.range(of: "/Sources/SwiftMetrics/SwiftMetrics.swift", options: .backwards)
+        if  installDir.location != NSNotFound {
+          installDirPrefixRange = NSRange(location: 0, length: installDir.location)
+        } else {
+          installDirPrefixRange = NSRange(location: 0, length: fileName.length)
+        }
+        let folderName = fileName.substring(with: installDirPrefixRange)
+        self.localSourceDirectory = folderName
     }
     _ = fm.changeCurrentDirectoryPath(currentDir)
     try self.loadProperties()
