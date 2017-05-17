@@ -68,8 +68,17 @@ public class SwiftMetricsDash {
     }
 
     func startServer(router: Router) throws {
-        router.all("/swiftmetrics-dash", middleware: StaticFileServer(path: self.SM.localSourceDirectory + "/public"))
-
+      let fileName = NSString(string: #file)
+      let installDirPrefixRange: NSRange
+      let installDir = fileName.range(of: "/Sources/SwiftMetricsDash/SwiftMetricsDash.swift", options: .backwards)
+      if  installDir.location != NSNotFound {
+        installDirPrefixRange = NSRange(location: 0, length: installDir.location)
+      } else {
+        installDirPrefixRange = NSRange(location: 0, length: fileName.length)
+      }
+      let folderName = fileName.substring(with: installDirPrefixRange)
+      router.all("/swiftmetrics-dash", middleware: StaticFileServer(path: folderName + "/public"))
+      
         if self.createServer {
             let configMgr = ConfigurationManager().load(.environmentVariables)
             Kitura.addHTTPServer(onPort: configMgr.port, with: router)
