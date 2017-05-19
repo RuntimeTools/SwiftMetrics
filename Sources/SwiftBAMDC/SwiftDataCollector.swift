@@ -17,7 +17,6 @@
 import SwiftMetricsKitura
 import SwiftMetrics
 import Foundation
-import HeliumLogger
 import LoggerAPI
 
 public class SwiftDataCollectorInit {
@@ -42,8 +41,7 @@ public class SwiftDataCollectorInit {
         var logLevel : LoggerMessageType = .info
 
         logLevel = self.bamConfig.logLevel
-        HeliumLogger.use(logLevel)
-
+        
         sm = swiftMetricsInstance
         self.monitor = sm.monitor()
 
