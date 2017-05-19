@@ -89,7 +89,7 @@ public class IBAMConfigIDs {
 
         if let app = configManager?.getApp() {
 
-            Log.info("Retrieving application info from CloudFoundryEnv \(app)")
+            Log.info("[SwiftMetricsBAMConfig] Retrieving application info from CloudFoundryEnv \(app)")
 
             if self.appId.isEmpty {
                 self.appId = app.id
@@ -116,7 +116,7 @@ public class IBAMConfigIDs {
             self.dcId = TokenUtil.md5(resName: self.appId + instanceIndex)
         }
 
-        Log.info("getIDsFromCFEnv default init, tenantId: \(self.tenantId) AppName: \(self.appName) InstanceId: \(instanceId) InstanceIndex: \(instanceIndex) DCID: \(dcId)")
+        Log.info("[SwiftMetricsBAMConfig] getIDsFromCFEnv default init, tenantId: \(self.tenantId) AppName: \(self.appName) InstanceId: \(instanceId) InstanceIndex: \(instanceIndex) DCID: \(dcId)")
     }
 
     public func getIDsFromLocalEnv () {
@@ -151,7 +151,7 @@ public class IBAMConfigIDs {
             self.dcId = TokenUtil.md5(resName: self.appId + instanceIndex)
         }
 
-        Log.info("getIDsFromLocalEnv default init, tenantId: \(self.tenantId) AppName: \(self.appName) InstanceId: \(instanceId) InstanceIndex: \(instanceIndex) DCID: \(dcId)")
+        Log.info("[SwiftMetricsBAMConfig] getIDsFromLocalEnv default init, tenantId: \(self.tenantId) AppName: \(self.appName) InstanceId: \(instanceId) InstanceIndex: \(instanceIndex) DCID: \(dcId)")
     }
 
     public func stringToLoggerMessageType(logLevelString: String) -> LoggerMessageType {
@@ -208,13 +208,10 @@ public class IBAMConfig : IBAMConfigIDs {
 
     private func populateLocalEnvironment() {
 
-        //var isDebugEnabled : Bool = false
-
         let debugEnvStr = getEnvironmentVal(name: "IBAM_DEBUG_ENV")
 
         if !debugEnvStr.isEmpty {
-            Log.info("DEBUG environment is set: \(debugEnvStr)")
-            //isDebugEnabled = true
+            Log.info("[SwiftMetricsBAMConfig] DEBUG environment is set: \(debugEnvStr)")
         }
 
         if let envDic = stringToJSON(text: debugEnvStr) {
@@ -222,7 +219,7 @@ public class IBAMConfig : IBAMConfigIDs {
                 processLocalEnv[key] = val
             }
         }
-        Log.info("## Environment: \(processLocalEnv)")
+        Log.info("[SwiftMetricsBAMConfig] Environment: \(processLocalEnv)")
     }
 }
 
@@ -272,7 +269,7 @@ public class BMConfig : IBAMConfig {
         configManager = ConfigurationManager()
         configManager?.load(.environmentVariables)
 
-        Log.info("## ConfigManager: \(String(describing: configManager))")
+        Log.info("[SwiftMetricsBAMConfig] ConfigManager: \(String(describing: configManager))")
 
         // VCAP_SERVICES initialization
         // Service name can be changed by the user and hence name based query is NOT used
@@ -282,22 +279,21 @@ public class BMConfig : IBAMConfig {
 
         //if let vcapServices = self.cfAppEnv?.getServices() {
         if let vcapServices = configManager?.getServices() {
-            Log.info("Retrieving vcapservice info from CloudFoundryEnv \(vcapServices)")
+            Log.info("[SwiftMetricsBAMConfig] Retrieving vcapservice info from CloudFoundryEnv \(vcapServices)")
 
             for (serName, service) in vcapServices {
 
                 if(service.label.range(of: serviceName) != nil) {
                     if let creds = service.credentials {
-                        Log.info("Retrieving cred info from CloudFoundryEnv \(creds)")
                         servCreds = creds
-                        Log.info("cloudFoundryBasedInitialization: Service credentials successfully obtained for \(serName) Creds: \(servCreds)")
+                        Log.info("[SwiftMetricsBAMConfig] cloudFoundryBasedInitialization: Service credentials successfully obtained for \(serName) Creds: \(servCreds)")
                         break
                     }
                 }
             }
         }
 
-        Log.info("cloudFoundryBasedInitialization: \(servCreds)")
+        Log.info("[SwiftMetricsBAMConfig] cloudFoundryBasedInitialization: \(servCreds)")
 
         var tmpSBToken: String = self.sbToken
 
@@ -307,24 +303,15 @@ public class BMConfig : IBAMConfig {
 
         if tmpSBToken.characters.count > 0 {
             self.sbToken = TokenUtil.unobfuscate(key: appId, value: tmpSBToken)
-            Log.info("SB token set successfully \(self.sbToken)")
+            Log.info("[SwiftMetricsBAMConfig] SB token set successfully \(self.sbToken)")
         }
 
         if self.sbURL.isEmpty, let surl = servCreds["cred_url"] as? String {
             self.sbURL = surl + SB_PATH + self.appId
-            Log.info("SB URL set successfully \(self.sbURL)")
+            Log.info("[SwiftMetricsBAMConfig] SB URL set successfully \(self.sbURL)")
         }
 
-        //ABD: Not sure this is the right thing to do in bluemix env?
-        //     appName can change fairly frequently and instanceId always
-        //     changes unless should be new dc
-        //  maybe: dcId = TokenUtil.md5(resName: self.appId + self.instance_index)?
-
-        //dcId = TokenUtil.md5(resName: self.appId + self.instanceIndex)
-
-        //Log.info("BMConfig default init, SBURL: \(self.sbURL) SBToken: \(tmpSBToken) ServCreds: \(servCreds) tenantId: \(self.tenantId) AppName: \(self.appName) InstanceId: \(self.instanceId) InstanceIndex: \(self.instanceIndex) DCID: \(dcId)")
-
-        Log.info("BMConfig default init, SBURL: \(self.sbURL) SBToken: \(tmpSBToken) ServCreds: \(servCreds) tenantId: \(self.tenantId) AppName: \(self.appName) DCID: \(dcId)")
+        Log.info("[SwiftMetricsBAMConfig] BMConfig default init, SBURL: \(self.sbURL) SBToken: \(tmpSBToken) ServCreds: \(servCreds) tenantId: \(self.tenantId) AppName: \(self.appName) DCID: \(dcId)")
 
         self.refreshBAMConfigTask()
     }
@@ -341,11 +328,9 @@ public class BMConfig : IBAMConfig {
     public func refreshBAMConfig() {
         if(retryCount < maxRetryLimit) {
 
-            Log.info("Retrying to get BAM configuration \(retryCount)")
+            Log.info("[SwiftMetricsBAMConfig] Retrying to get BAM configuration \(retryCount)")
 
             self.queue.asyncAfter(deadline: .now() + .milliseconds(5000 * retryCount), execute: {
-
-                Log.info("BAM configuration task started")
 
                 self.refreshBAMConfigTask()
             })
@@ -356,7 +341,7 @@ public class BMConfig : IBAMConfig {
 
     func refreshBAMConfigTask() {
 
-        Log.info("## Refreshing BAM Configuration:  \(sbURL)")
+        Log.debug("[SwiftMetricsBAMConfig] Refreshing BAM Configuration:  \(sbURL)")
 
         if(self.backendReady) {
             return
@@ -369,7 +354,7 @@ public class BMConfig : IBAMConfig {
 
         //this does not appear to be threadsafe
         if !(self.sbURL.characters.count > 0) {
-            Log.error("No AvailabilityMonitoring Service connected and no IBAM_INGRESS_URL/IBAM_TOKEN set.")
+            Log.error("[SwiftMetricsBAMConfig] No AvailabilityMonitoring Service connected and no IBAM_INGRESS_URL/IBAM_TOKEN set.")
             return
         }
 
@@ -379,7 +364,7 @@ public class BMConfig : IBAMConfig {
             let auth = "bamtoken " + self.sbToken
             let hdrs = ["Accept": "application/json", "X-TenantId": self.tenantId, "Authorization": auth, "User-Agent": "SwiftDC"]
 
-            Log.info("## BAM credentials request initiated, URL: \(sbURL) BAM headers: \(hdrs) ")
+            Log.info("[SwiftMetricsBAMConfig] BAM credentials request initiated, URL: \(sbURL) BAM headers: \(hdrs) ")
 
             BMConfig.makeKituraHttpRequest(apmData: [:], urlString: self.sbURL, reqType: HTTP_GET, headers: hdrs, taskCallback: {
                 (passed, statusCode, response) in
@@ -388,10 +373,10 @@ public class BMConfig : IBAMConfig {
                     if let config = response as? [String:Any] {
                         if let bu = config["backend_url"] as? String {
 
-                            Log.info("Backend url obtained: \(bu)")
+                            Log.debug("[SwiftMetricsBAMConfig] Backend url obtained: \(bu)")
                             let newString = bu.replacingOccurrences(of: " ", with: "", options: .literal, range: nil)
 
-                            Log.info("Backend url refined: \(newString)")
+                            Log.debug("[SwiftMetricsBAMConfig] Backend url refined: \(newString)")
 
                             self.ingressURL = newString
                         }
@@ -405,14 +390,14 @@ public class BMConfig : IBAMConfig {
                         self.backendReady  = true
 
                         // TODO: comment out token
-                        Log.info("BAM initialization successful, backend ready to accept requests, URL: \(self.ingressURL) BAM token: \(self.ingressToken)")
+                        Log.debug("[SwiftMetricsBAMConfig] BAM initialization successful, backend ready to accept requests, URL: \(self.ingressURL) BAM token: \(self.ingressToken)")
 
                         // TODO: don't log token in headers
-                        Log.info("BAM backend Urls: \(self.metricURL) Header: \(self.ingressHeaders)")
+                        Log.debug("[SwiftMetricsBAMConfig] BAM backend Urls: \(self.metricURL) Header: \(self.ingressHeaders)")
                     }
                 }
                 else {
-                    Log.info("BAM credentials request failed, Response: \(String(describing:response))")
+                    Log.warning("[SwiftMetricsBAMConfig] BAM credentials request failed, Response: \(String(describing:response))")
                 }
                 //waiter.signal()
             })
@@ -423,7 +408,7 @@ public class BMConfig : IBAMConfig {
 
     public func refreshBAMConfigWithBasicAuth() {
 
-        Log.info("## Refreshing BAM Configuration with Basic Auth:  \(sbURL)")
+        Log.debug("[SwiftMetricsBAMConfig] Refreshing BAM Configuration with Basic Auth:  \(sbURL)")
 
         if(self.backendReady) {
             return
@@ -438,10 +423,10 @@ public class BMConfig : IBAMConfig {
             self.backendReady  = true
 
             // TODO: comment out token
-            Log.info("BAM initialization successful, backend ready to accept requests, URL: \(self.ingressURL) BAM token: \(self.ingressToken)")
+            Log.debug("[SwiftMetricsBAMConfig] BAM initialization successful, backend ready to accept requests, URL: \(self.ingressURL) BAM token: \(self.ingressToken)")
 
             // TODO: don't log token in headers
-            Log.info("BAM backend Urls: \(self.metricURL) Header: \(self.ingressHeaders)")
+            Log.debug("[SwiftMetricsBAMConfig] BAM backend Urls: \(self.metricURL) Header: \(self.ingressHeaders)")
 
         }
     }
@@ -493,15 +478,15 @@ public class BMConfig : IBAMConfig {
     public func makeAPMRequest(perfData: Dictionary<String,Any>, postURL: String) {
 
         if(!self.backendReady) {
-            Log.warning("Backend is not set")
+            Log.warning("[SwiftMetricsBAMConfig] Backend is not set")
 
             if(retryCount < maxRetryLimit) {
 
-                Log.info("Retrying to get BAM configuration \(retryCount)")
+                Log.debug("[SwiftMetricsBAMConfig] Retrying to get BAM configuration \(retryCount)")
 
                 self.queue.asyncAfter(deadline: .now() + .milliseconds(5000 * retryCount), execute: {
 
-                    Log.info("BAM configuration task started")
+                    Log.debug("[SwiftMetricsBAMConfig] BAM configuration task started")
 
                     self.refreshBAMConfig()
                 })
@@ -511,14 +496,14 @@ public class BMConfig : IBAMConfig {
         }
 
         //TODO: don't log token in header
-        Log.debug("Initiating request: \(postURL) Headers: \(self.ingressHeaders) APMData: \(perfData)")
+        Log.debug("[SwiftMetricsBAMConfig] Initiating request: \(postURL) Headers: \(self.ingressHeaders) APMData: \(perfData)")
 
         //BMConfig.makeHttpRequest(apmData: perfData, urlString: postURL, reqType: HTTP_POST, headers: self.ingressHeaders, taskCallback: {
         BMConfig.makeKituraHttpRequest(apmData: perfData, urlString: postURL, reqType: HTTP_POST, headers: self.ingressHeaders, taskCallback: {
 
             (passed, statusCode, response) in
 
-            Log.info(" APM data upload: \(postURL) Passed: \(passed) Response status: \(statusCode)  Response: \(String(describing:response))")
+            Log.debug("[SwiftMetricsBAMConfig] APM data upload: \(postURL) Passed: \(passed) Response status: \(statusCode)  Response: \(String(describing:response))")
 
         })
 
@@ -544,7 +529,7 @@ public class BMConfig : IBAMConfig {
     private static func makeKituraHttpRequest(apmData: Dictionary<String,Any>, urlString: String, reqType: String, headers: [String:String], taskCallback: @escaping (Bool, Int, Any?) -> () = doNothing) {
 
         if(urlString == "") {
-            Log.warning("IngressURL is not set")
+            Log.warning("[SwiftMetricsBAMConfig] IngressURL is not set")
             return
         }
 
@@ -568,30 +553,30 @@ public class BMConfig : IBAMConfig {
 
                 //TODO: don't log token in headers, temporarily changed to info
                 //Log.info("Initiating http request  Headers: \(headerCopy) APMData: \(apmData)")
-                Log.info("Initiating http request  Headers: \(headers) APMData: \(apmData)")
+                Log.debug("[SwiftMetricsBAMConfig] Initiating http request  Headers: \(headers) APMData: \(apmData)")
 
                 KituraRequest.request(kitReqType, urlString, parameters: dictFromJSON, encoding: JSONEncoding.default, headers: headers).response {
                         request, response, data, error in
                         /*if request != nil {
-                            Log.debug("sendMetrics:Request: \(request!)")
+                            Log.debug("[SwiftMetricsBAMConfig] sendMetrics:Request: \(request!)")
                         }
                         if response != nil {
-                            Log.debug(" sendMetrics:Response: \(response!)")
+                            Log.debug(" [SwiftMetricsBAMConfig] sendMetrics:Response: \(response!)")
                         }
                         if data != nil {
-                            Log.debug(" sendMetrics:Data: \(data!)")
+                            Log.debug("[SwiftMetricsBAMConfig] sendMetrics:Data: \(data!)")
                         }
 
-                        Log.debug(" sendMetrics:Error: \(String(describing:error))") */
+                        Log.debug("[SwiftMetricsBAMConfig] sendMetrics:Error: \(String(describing:error))") */
 
                         if let e = error {
                             //client side error
-                            Log.error("Failed to create connection to \(urlString): " + e.localizedDescription)
+                            Log.error("[SwiftMetricsBAMConfig] Failed to create connection to \(urlString): " + e.localizedDescription)
                         }
                         else if let httpResponse = response, let receivedData = data {
 
                             if let ds = String(data: receivedData, encoding: String.Encoding.utf8) {
-                                Log.debug("response as string =>" + ds + "<=")
+                                Log.debug("[SwiftMetricsBAMConfig] response as string =>" + ds + "<=")
                             }
 
                             //var result: String = NSString (data: receivedData, encoding: String.Encoding.utf8.rawValue)
@@ -602,23 +587,23 @@ public class BMConfig : IBAMConfig {
                             case 200...299:
 
                                 // Temporarily put to info as static method is disabling it, will debug later
-                                Log.info("\(String(describing:request?.method)) successful: StatusCode: \(httpResponse.statusCode) Response: \(String(describing:response)), JSON: \(String(describing:json))")
+                                Log.debug("[SwiftMetricsBAMConfig] \(String(describing:request?.method)) successful: StatusCode: \(httpResponse.statusCode) Response: \(String(describing:response)), JSON: \(String(describing:json))")
 
                                 taskCallback(true, httpResponse.httpStatusCode.rawValue, json as Any?)
 
                             default:
-                                Log.error("\(String(describing:request?.method)) request got response \(httpResponse.httpStatusCode.rawValue) and response \(httpResponse)")
+                                Log.error("[SwiftMetricsBAMConfig] \(String(describing:request?.method)) request got response \(httpResponse.httpStatusCode.rawValue) and response \(httpResponse)")
                                 taskCallback(false, httpResponse.httpStatusCode.rawValue, receivedData as Any?)
                             }
                         }
                         else {
-                            Log.error("Error sending data: URL: \(urlString) : Response: \(String(describing:data)), Error: \(String(describing:error))")
+                            Log.error("[SwiftMetricsBAMConfig] Error sending data: URL: \(urlString) : Response: \(String(describing:data)), Error: \(String(describing:error))")
                             taskCallback(false, -1, nil)
                         }
                 }
             }
         } catch {
-            Log.warning(" Kitura request failed: \(error.localizedDescription)")
+            Log.warning("[SwiftMetricsBAMConfig] Kitura request failed: \(error.localizedDescription)")
         }
 
     } // end of makeKituraHttpRequest
@@ -656,13 +641,13 @@ public class TokenUtil {
                 let s = String(data: d, encoding: String.Encoding.utf8)
 
                 if let sv = s {
-                    Log.debug("Encrypt successful: \(key) val: \(sv)")
+                    Log.debug("[SwiftMetricsBAMConfig] Encrypt successful: \(key) val: \(sv)")
                     return sv
                 }
             }
         }
 
-        Log.debug("Encrypt failed: \(key)")
+        Log.debug("[SwiftMetricsBAMConfig] Encrypt failed: \(key)")
         return ""
     }
 
@@ -684,14 +669,14 @@ public class TokenUtil {
                     let s = String(data: d, encoding: String.Encoding.utf8)
 
                     if let sv = s {
-                        Log.debug("Decrypt successful: \(key) val: \(value)")
+                        Log.debug("[SwiftMetricsBAMConfig] Decrypt successful: \(key) val: \(value)")
                         return sv
                     }
                 }
             }
         }
 
-        Log.debug("Decrypt failed: \(key) val: \(value)")
+        Log.debug("[SwiftMetricsBAMConfig] Decrypt failed: \(key) val: \(value)")
 
         return ""
     }
@@ -707,7 +692,7 @@ public class TokenUtil {
 
         let digestStr = CryptoUtils.hexString(from: digFin) // String(data: digest, encoding: String.Encoding.utf8)
 
-        Log.debug("MD5 update, \(resName) \(String(describing:upd)) \(digestStr)")
+        Log.debug("[SwiftMetricsBAMConfig] MD5 update, \(resName) \(String(describing:upd)) \(digestStr)")
 
         return digestStr
     }
@@ -724,14 +709,14 @@ extension Dictionary {
 ////////////// Global Functions
 
 func doNothing(passed: Bool, statusCode: Int, response: Any?) -> () {
-    Log.debug("Status Passed: \(passed), statusCode: \(statusCode) Response: \(String(describing:response))")
+    Log.debug("[SwiftMetricsBAMConfig] Status Passed: \(passed), statusCode: \(statusCode) Response: \(String(describing:response))")
     return
 }
 
 func stringToJSON(text: String?) -> [String:Any]? {
 
     guard let actData = text else {
-        Log.error("Could not generate JSON object for null input)")
+        Log.error("[SwiftMetricsBAMConfig] Could not generate JSON object for null input)")
         return nil
     }
 
@@ -740,7 +725,7 @@ func stringToJSON(text: String?) -> [String:Any]? {
     }
 
     guard let data = actData.data(using: String.Encoding.utf8) else {
-        Log.error("Could not generate JSON object as conversion to utf8 failed \(actData)")
+        Log.error("[SwiftMetricsBAMConfig] Could not generate JSON object as conversion to utf8 failed \(actData)")
         return nil
     }
 
@@ -748,12 +733,12 @@ func stringToJSON(text: String?) -> [String:Any]? {
         let jsonOpt = try JSONSerialization.jsonObject(with: data) as? [String: Any]
 
         if let json = jsonOpt {
-            Log.debug("JSON object: \(json)")
+            Log.debug("[SwiftMetricsBAMConfig] JSON object: \(json)")
             return json
         }
     }
     catch {
-        Log.debug("Error: " + error.localizedDescription + " Input: \(actData)")
+        Log.warning("[SwiftMetricsBAMConfig] Error: " + error.localizedDescription + " Input: \(actData)")
     }
     return nil
 }
@@ -761,7 +746,7 @@ func stringToJSON(text: String?) -> [String:Any]? {
 public func getEnvironmentVal(name: String, defVal : String = "") -> String {
 
     if let val = processLocalEnv[name] as? String {
-        Log.debug("Env name: \(name), Val: \(val)\n")
+        Log.debug("[SwiftMetricsBAMConfig] Env name: \(name), Val: \(val)\n")
         return val
     }
     return defVal
