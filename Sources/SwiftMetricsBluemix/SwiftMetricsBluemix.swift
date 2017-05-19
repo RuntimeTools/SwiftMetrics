@@ -151,7 +151,7 @@ public class SwiftMetricsBluemix {
         Log.info("[SwiftMetricsBluemix] Detected BAM Service \(bamS), enabling SwiftBAMDC ")
         var _ = try SwiftDataCollector(swiftMetricsInstance: swiftMetricsInstance)
     }
-    else if let value = ProcessInfo.processInfo.environment["IBAM_INGRESS_URL"] {
+    else if let _ = ProcessInfo.processInfo.environment["IBAM_INGRESS_URL"] {
         Log.info("[SwiftMetricsBluemix] Detected IBAM_INGRESS_URL environment variable, enabling SwiftBAMDC ")
         var _ = try SwiftDataCollector(swiftMetricsInstance: swiftMetricsInstance)
     }
