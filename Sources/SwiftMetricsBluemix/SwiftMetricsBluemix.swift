@@ -145,11 +145,15 @@ public class SwiftMetricsBluemix {
     if let dcEn = ProcessInfo.processInfo.environment[bamDebugLabel],  dcEn == "true" {
         Log.info("[SwiftMetricsBluemix] Detected BAM debug environment setting, enabling SwiftBAMDC")
 
-        var _ = try SwiftDataCollectorInit(swiftMetricsInstance: swiftMetricsInstance)
+        var _ = try SwiftDataCollector(swiftMetricsInstance: swiftMetricsInstance)
     }
     else if let bamS = bamServ {
         Log.info("[SwiftMetricsBluemix] Detected BAM Service \(bamS), enabling SwiftBAMDC ")
-        var _ = try SwiftDataCollectorInit(swiftMetricsInstance: swiftMetricsInstance)
+        var _ = try SwiftDataCollector(swiftMetricsInstance: swiftMetricsInstance)
+    }
+    else if let value = ProcessInfo.processInfo.environment["IBAM_INGRESS_URL"] {
+        Log.info("[SwiftMetricsBluemix] Detected IBAM_INGRESS_URL environment variable, enabling SwiftBAMDC ")
+        var _ = try SwiftDataCollector(swiftMetricsInstance: swiftMetricsInstance)
     }
     else {
         Log.info("[SwiftMetricsBluemix] Could not find BAM service.")

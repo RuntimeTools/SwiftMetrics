@@ -38,7 +38,7 @@ import Configuration
 
 ////////////// Global Variables
 
-public var bamLocalEnv : [String:Any] = ProcessInfo.processInfo.environment
+public var processLocalEnv : [String:Any] = ProcessInfo.processInfo.environment
 
 let HTTP_POST: String = "POST"
 let HTTP_GET: String = "GET"
@@ -61,11 +61,7 @@ public class IBAMConfigIDs {
     public var logLevel : LoggerMessageType = .info
 
     init() {
-        var spaceId : String = ""
-        var instanceId : String = ""
-        var instanceIndex : String = ""
-        
-        var configManager: ConfigurationManager?
+
         let logLevelString = getEnvironmentVal(name: "IBAM_LOG_LEVEL", defVal: ".info")
         
         self.appId        = getEnvironmentVal(name: "IBAM_APPLICATION_ID")
@@ -75,6 +71,18 @@ public class IBAMConfigIDs {
         
         logLevel = stringToLoggerMessageType(logLevelString: logLevelString)
         HeliumLogger.use(logLevel)
+        
+        self.getIDsFromCFEnv()
+        self.getIDsFromLocalEnv()
+    }
+    
+    public func getIDsFromCFEnv () {
+        
+        var spaceId : String = ""
+        var instanceId : String = ""
+        var instanceIndex : String = ""
+        
+        var configManager: ConfigurationManager?
         
         configManager = ConfigurationManager()
         configManager?.load(.environmentVariables)
@@ -104,10 +112,46 @@ public class IBAMConfigIDs {
             self.tenantId = spaceId
         }
         
-        self.dcId = TokenUtil.md5(resName: self.appId + instanceIndex)
+        if !self.appId.isEmpty {
+            self.dcId = TokenUtil.md5(resName: self.appId + instanceIndex)
+        }
         
-        Log.info("IBAMConfigIDs default init, tenantId: \(self.tenantId) AppName: \(self.appName) InstanceId: \(instanceId) InstanceIndex: \(instanceIndex) DCID: \(dcId)")
+        Log.info("getIDsFromCFEnv default init, tenantId: \(self.tenantId) AppName: \(self.appName) InstanceId: \(instanceId) InstanceIndex: \(instanceIndex) DCID: \(dcId)")
+    }
+    
+    public func getIDsFromLocalEnv () {
+        
+        var spaceId : String = ""
+        var instanceId : String = ""
+        var instanceIndex : String = ""
+        
+        let processName = ProcessInfo.processInfo.processName
 
+        if self.appId.isEmpty {
+            self.appId = TokenUtil.md5(resName: processName)
+        }
+        if spaceId.isEmpty {
+            spaceId = self.appId
+        }
+        if self.appName.isEmpty {
+            self.appName = processName
+        }
+        if instanceId.isEmpty {
+            instanceId = self.appId
+        }
+        if instanceIndex.isEmpty {
+            instanceIndex = "0"
+        }
+        
+        if self.tenantId.isEmpty {
+            self.tenantId = spaceId
+        }
+        
+        if !self.appId.isEmpty {
+            self.dcId = TokenUtil.md5(resName: self.appId + instanceIndex)
+        }
+            
+        Log.info("getIDsFromLocalEnv default init, tenantId: \(self.tenantId) AppName: \(self.appName) InstanceId: \(instanceId) InstanceIndex: \(instanceIndex) DCID: \(dcId)")
     }
     
     public func stringToLoggerMessageType(logLevelString: String) -> LoggerMessageType {
@@ -164,21 +208,21 @@ public class IBAMConfig : IBAMConfigIDs {
     
     private func populateLocalEnvironment() {
         
-        var isDebugEnabled : Bool = false
+        //var isDebugEnabled : Bool = false
         
         let debugEnvStr = getEnvironmentVal(name: "IBAM_DEBUG_ENV")
         
         if !debugEnvStr.isEmpty {
             Log.info("DEBUG environment is set: \(debugEnvStr)")
-            isDebugEnabled = true
+            //isDebugEnabled = true
         }
         
         if let envDic = stringToJSON(text: debugEnvStr) {
             for (key, val) in envDic {
-                bamLocalEnv[key] = val
+                processLocalEnv[key] = val
             }
         }
-        Log.info("## Environment: \(bamLocalEnv)")
+        Log.info("## Environment: \(processLocalEnv)")
     }
 }
 
@@ -716,7 +760,7 @@ func stringToJSON(text: String?) -> [String:Any]? {
 
 public func getEnvironmentVal(name: String, defVal : String = "") -> String {
     
-    if let val = bamLocalEnv[name] as? String {
+    if let val = processLocalEnv[name] as? String {
         Log.debug("Env name: \(name), Val: \(val)\n")
         return val
     }
