@@ -20,7 +20,6 @@
 
 //import Configuration
 import CloudFoundryEnv
-import HeliumLogger
 import LoggerAPI
 import Cryptor
 import Foundation
@@ -70,8 +69,7 @@ public class IBAMConfigIDs {
         self.dcId         = UUID().uuidString.lowercased()
 
         logLevel = stringToLoggerMessageType(logLevelString: logLevelString)
-        HeliumLogger.use(logLevel)
-
+        
         self.getIDsFromCFEnv()
         self.getIDsFromLocalEnv()
     }
