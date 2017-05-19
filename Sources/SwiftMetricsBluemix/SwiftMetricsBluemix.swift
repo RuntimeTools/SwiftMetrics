@@ -114,10 +114,14 @@ public class SwiftMetricsBluemix {
   var instanceIndex = 0
   var instanceId = ""
 
-  public init(metricsToEnable: [String], swiftMetricsInstance: SwiftMetrics) throws  {
+  public init(metricsToEnable: [String], swiftMetricsInstance: SwiftMetrics) {
 
     self.SM = swiftMetricsInstance
-    try self.detectBAMBinding(swiftMetricsInstance: self.SM)
+    do {
+       try self.detectBAMBinding(swiftMetricsInstance: self.SM)
+    } catch {
+        Log.error("[SwiftMetricsBluemix] exception thrown in detectBAMBinding")
+    }
 
     Log.entry("[SwiftMetricsBluemix] initialization(\(metricsToEnable))")
     enabledMetrics = metricsToEnable
@@ -215,8 +219,8 @@ public class SwiftMetricsBluemix {
     }
   }
 
-  public convenience init(swiftMetricsInstance: SwiftMetrics) throws {
-    try self.init(metricsToEnable: ["CPU", "Memory", "Throughput", "ResponseTime", "DispatchQueueLatency"], swiftMetricsInstance: swiftMetricsInstance)
+  public convenience init(swiftMetricsInstance: SwiftMetrics) {
+    self.init(metricsToEnable: ["CPU", "Memory", "Throughput", "ResponseTime", "DispatchQueueLatency"], swiftMetricsInstance: swiftMetricsInstance)
   }
 
   private func setMonitors(monitor: SwiftMonitor) {
