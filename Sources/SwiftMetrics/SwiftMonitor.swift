@@ -168,7 +168,7 @@ public class SwiftMonitor {
     }
   }
 
-  private func formatOSEnv(incMessage: String) {
+  private func formatOSEnv(message: String) {
     if(running) {
       swiftMetrics.loaderApi.logMessage(debug, "formatOSEnv(): Raising OS Environment event")
           /* environment_os: #EnvironmentSource
@@ -183,7 +183,7 @@ public class SwiftMonitor {
           number.of.processors=2
           command.line=/home/exampleuser/SwiftMetrics/sample/.build/debug/test
           */
-      let message = incMessage
+      print("Incoming message: \(incMessage)")
       let values = message.components(separatedBy: "\n")
       var env: [ String : String ] = [:]
       for value in values {
@@ -295,7 +295,7 @@ public class SwiftMonitor {
         case "common_memory", "memory":
           formatMemory(messages: message)
         case "common_env":
-          formatOSEnv(incMessage: message)
+          formatOSEnv(message: message)
         default:
           ///ignore other messages
           swiftMetrics.loaderApi.logMessage(debug, "raiseCoreEvent(): Topic not recognised - ignoring event")
