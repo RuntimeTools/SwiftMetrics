@@ -183,6 +183,7 @@ public class SwiftMonitor {
           number.of.processors=2
           command.line=/home/exampleuser/SwiftMetrics/sample/.build/debug/test
           */
+      print("formatOSEnv message = \(message)")
       let values = message.components(separatedBy: "\n")
       var env: [ String : String ] = [:]
       for value in values {
