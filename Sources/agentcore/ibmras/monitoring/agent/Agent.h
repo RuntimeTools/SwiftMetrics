@@ -115,6 +115,7 @@ public:
 	bool readOnly();
 	void registerZipFunction(void(*zipFn)(const char*));
 	void zipHeadlessFiles(const char* dir);
+  ibmras::common::port::Lock startupLock;
 
 	Agent();					/* public constructor */
 

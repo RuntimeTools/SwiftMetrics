@@ -121,6 +121,8 @@ int ConnectorManager::sendMessage(const std::string &sourceId, uint32 size,
 			}
 
 		} catch (...) {
+		  sendLock.release();
+      throw;
 		}
 		sendLock.release();
 	}
@@ -156,12 +158,12 @@ int ConnectorManager::start() {
 }
 
 int ConnectorManager::stop() {
+	running = false;
 	int rc = 0;
 	for (std::set<Connector*>::iterator it = connectors.begin();
 			it != connectors.end(); ++it) {
 		rc += (*it)->stop();
 	}
-	running = false;
 	return rc;
 }
 

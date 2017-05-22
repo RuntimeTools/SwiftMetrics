@@ -1,0 +1,2 @@
+ignore:
+  - "Sources/paho"  # ignore paho as it's 3rd party code

@@ -141,15 +141,21 @@ void stopAllThreads() {
 	stopping = true;
 	// wake currently sleeping threads
 	condBroadcast();
-    /* 
 	while (!threadMap.empty()) {
-		pthread_cancel(threadMap.top());
-		//wait for the thread to stop
-		pthread_join(threadMap.top(), NULL);
+    if (pthread_cancel(threadMap.top()) == -1 ) {
+    	pthread_mutex_unlock(&threadMapMux);                                            
+      perror("pthread_cancel failed");                                            
+     } else {
+		  //wait for the thread to stop
+		  if (pthread_join(threadMap.top(), NULL) == -1 ) {
+	      pthread_mutex_unlock(&threadMapMux);                                           
+        perror("pthread_join failed"); 
+      }
+    }
 		threadMap.pop();
 	}
-    */ 
 	pthread_mutex_unlock(&threadMapMux);
+  stopping = false;
 }
 
 Semaphore::Semaphore(uint32 initial, uint32 max) {

@@ -22,7 +22,6 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <cstdio>
 
 #include "Agent.h"
 #include "../../common/logging.h"
@@ -49,7 +48,6 @@ const char* LIBSUFFIX = ".a";
 const char* LIBSUFFIX = ".so";
 #endif
 #endif
-
 
 namespace ibmras {
 namespace monitoring {
@@ -336,39 +334,45 @@ void* endPullSourceLoop(ibmras::common::port::ThreadData* data) {
 }
 
 void* processPullSourceLoop(ibmras::common::port::ThreadData* data) {
-	Agent* agent = Agent::getInstance();
-	uint32 pullcount = agent->getPullSources().getSize();
+  if(running) {
+    Agent* agent = Agent::getInstance();
 
-	ibmras::monitoring::agent::threads::ThreadPool pool;
+    if(!agent->startupLock.acquire()) {
+	    uint32 pullcount = agent->getPullSources().getSize();
 
-	for (uint32 i = 0; i < pullcount; i++) {
-		DataSource<pullsource> *dsrc = agent->getPullSources().getItem(i);
-		if (!(dsrc->getSource()->callback && dsrc->getSource()->complete)) {
-			IBMRAS_DEBUG_1(warning, "Pull source %s disabled due to missing callback or complete function",
-					dsrc->getUniqueID().c_str())
-		} else {
-			pool.addPullSource(dsrc->getSource());
-		}
-	}
+	    ibmras::monitoring::agent::threads::ThreadPool pool;
 
-	IBMRAS_DEBUG(info, "Starting agent process pull source loop");
+	    for (uint32 i = 0; i < pullcount; i++) {
+		    DataSource<pullsource> *dsrc = agent->getPullSources().getItem(i);
+		    if (!(dsrc->getSource()->callback && dsrc->getSource()->complete)) {
+			    IBMRAS_DEBUG_1(warning, "Pull source %s disabled due to missing callback or complete function",
+					    dsrc->getUniqueID().c_str());
+		    } else {
+			    pool.addPullSource(dsrc->getSource());
+		    }
+	    }
 
-	pool.startAll();
-	while (running) {
-		ibmras::common::port::sleep(1); /* polling interval for thread */
-		if (running) {
-			pool.process(updateNow); /* process the pull sources */
-			updateNow = false;
-		}
-	}
+	    IBMRAS_DEBUG(info, "Starting agent process pull source loop");
 
-#if defined(_WINDOWS) || defined(_ZOS)
-	pool.stopAll();
-	agent->threadStop();
-#endif
+	    pool.startAll();
+      agent->startupLock.release();
+	    while (running) {
+		    ibmras::common::port::sleep(1); /* polling interval for thread */
+		    if (running) {
+			    pool.process(updateNow); /* process the pull sources */
+			    updateNow = false;
+		    }
+	    }
 
-	IBMRAS_DEBUG(info, "Exiting agent process pull source loop");
-	ibmras::common::port::exitThread(NULL);
+    #if defined(_WINDOWS) || defined(_ZOS)
+	    pool.stopAll();
+	    agent->threadStop();
+    #endif
+
+	    IBMRAS_DEBUG(info, "Exiting agent process pull source loop");
+	    ibmras::common::port::exitThread(NULL);
+    }
+  }
 	return NULL;
 }
 
@@ -428,7 +432,8 @@ void Agent::createBuckets() {
 
 void Agent::addPlugin(ibmras::monitoring::Plugin* plugin) {
 	if (plugin) {
-		IBMRAS_DEBUG_1(info, "Adding plugin %s", plugin->name.c_str());IBMRAS_DEBUG_4(info, "Push source %p, Pull source %p, start %p, stop %p",
+		IBMRAS_DEBUG_1(info, "Adding plugin %s", plugin->name.c_str());
+    IBMRAS_DEBUG_4(info, "Push source %p, Pull source %p, start %p, stop %p",
 				plugin->push, plugin->pull, plugin->start, plugin->stop);
 		IBMRAS_LOG_2(fine, "%s, version %s", (plugin->name).c_str(), (plugin->getVersion()));
 		plugins.push_back(plugin);
@@ -652,9 +657,12 @@ void Agent::startConnectors() {
 }
 
 void Agent::stop() {
-	if(running) {
+  // must wait for all threads to be started before we stop them (start is asynchronous)
+	if(running && !startupLock.acquire()) {
 		IBMRAS_DEBUG(info, "Agent stop : begin");
 		running = false;
+		connectionManager.stop();
+
 		IBMRAS_DEBUG(fine, "Waiting for active threads to stop");
 #if defined(_WINDOWS) || defined(_ZOS)
 		while (activeThreadCount) {
@@ -666,14 +674,15 @@ void Agent::stop() {
 		ibmras::common::port::stopAllThreads();
 #endif
 
+
 		IBMRAS_DEBUG(fine, "All active threads now quit");
 
-
 		stopPlugins();
-		connectionManager.stop();
 		connectionManager.removeAllReceivers();
+		connectionManager.removeAllConnectors();
 
 		IBMRAS_DEBUG(info, "Agent stop : finish");
+    startupLock.release();
 	}
 }
 

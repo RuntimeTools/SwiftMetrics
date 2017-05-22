@@ -58,7 +58,7 @@ public struct LatencyData: SMData {
 
 public var swiftMon: SwiftMonitor?
 
-
+private var initialized = false;
 private func receiveAgentCoreData(cSourceId: UnsafePointer<CChar>, cSize: CUnsignedInt, data: UnsafeMutableRawPointer) -> Void {
   let size = Int(cSize)
   if size <= 0 {
@@ -85,7 +85,7 @@ open class SwiftMetrics {
   var sendControl: monitorSendControl?
   var registerListener: monitorRegisterListener?
   var sleepInterval: UInt32 = 2
-  var latencyEnabled: Bool = true
+  var latencyEnabled: Bool = false
   let jobsQueue = DispatchQueue(label: "Swift Metrics Jobs Queue")
   public let localSourceDirectory: String
 
@@ -142,8 +142,17 @@ open class SwiftMetrics {
     if fm.fileExists(atPath: propertiesPath) {
       self.localSourceDirectory = fm.currentDirectoryPath
     } else {
-      print("SwiftMetrics: Error: \(fm.currentDirectoryPath) incorrectly identified as SwiftMetrics Source dir")
-      self.localSourceDirectory = ""
+        // could be in Xcode, try source directory
+        let fileName = NSString(string: #file)
+        let installDirPrefixRange: NSRange
+        let installDir = fileName.range(of: "/Sources/SwiftMetrics/SwiftMetrics.swift", options: .backwards)
+        if  installDir.location != NSNotFound {
+          installDirPrefixRange = NSRange(location: 0, length: installDir.location)
+        } else {
+          installDirPrefixRange = NSRange(location: 0, length: fileName.length)
+        }
+        let folderName = fileName.substring(with: installDirPrefixRange)
+        self.localSourceDirectory = folderName
     }
     _ = fm.changeCurrentDirectoryPath(currentDir)
     try self.loadProperties()
@@ -151,11 +160,9 @@ open class SwiftMetrics {
     loaderApi.setProperty("agentcore.version", loaderApi.getAgentVersion())
     loaderApi.setProperty("swiftmetrics.version", SWIFTMETRICS_VERSION)
     loaderApi.logMessage(info, "Swift Application Metrics")
-    testLatency()
   }
 
   deinit {
-    self.latencyEnabled = false
     self.stop()
   }
 
@@ -175,16 +182,51 @@ open class SwiftMetrics {
     }
   }
 
+private func executableFolderURL() -> URL {
+#if os(Linux)
+    let actualExecutableURL = Bundle.main.executableURL
+                              ?? URL(fileURLWithPath: "/proc/self/exe").resolvingSymlinksInPath()
+    return actualExecutableURL.appendingPathComponent("..").standardized
+#else
+    let actualExecutableURL = Bundle.main.executableURL
+                              ?? URL(fileURLWithPath: CommandLine.arguments[0]).standardized
+    let actualExecutableFolderURL = actualExecutableURL.appendingPathComponent("..").standardized
+
+    if (Bundle.main.executableURL?.lastPathComponent != "xctest") {
+        return actualExecutableFolderURL
+    } else {
+        // We are running under the test runner, we may be able to work out the build directory that
+        // contains the test program which is testing libraries in the project. That build directory
+        // should also contain any executables associated with the project until this build type
+        // (eg: release or debug)
+        let loadedTestBundles = Bundle.allBundles.filter({ $0.isLoaded }).filter({ $0.bundlePath.hasSuffix(".xctest") })
+        if loadedTestBundles.count > 0 {
+            return loadedTestBundles[0].bundleURL.appendingPathComponent("..").standardized
+        } else {
+            return actualExecutableFolderURL
+        }
+    }
+#endif
+}
+
+
   private func setDefaultLibraryPath() {
     var defaultLibraryPath = "."
     let configMgr = ConfigurationManager().load(.environmentVariables)
-    loaderApi.logMessage(debug, "setDefaultLibraryPath(): isLocal: \(configMgr.isLocal)")
+    loaderApi.logMessage(fine, "setDefaultLibraryPath(): isLocal: \(configMgr.isLocal)")
     if (configMgr.isLocal) {
-      // if local, use the directory that the swift program lives in
       let programPath = CommandLine.arguments[0]
-      let i = programPath.range(of: "/", options: .backwards)
-      if i != nil {
-        defaultLibraryPath = programPath.substring(to: i!.lowerBound)
+
+      /// Absolute path to the executable's folder
+      let executableFolder = executableFolderURL().path
+
+      if(programPath.contains("xctest")) { // running tests on Mac
+        defaultLibraryPath = executableFolder
+      } else {
+        let i = programPath.range(of: "/", options: .backwards)
+        if i != nil {
+          defaultLibraryPath = programPath.substring(to: i!.lowerBound)
+        }
       }
     } else {
       // We're in Bluemix, use the path the swift-buildpack saves libraries to
@@ -218,11 +260,16 @@ open class SwiftMetrics {
   }
 
   public func stop() {
+    self.latencyEnabled = false
     if (running) {
+      if swiftMon != nil {
+        swiftMon!.stop()
+      }
       loaderApi.logMessage(fine, "stop(): Shutting down Swift Application Metrics")
       running = false
       loaderApi.stop()
       loaderApi.shutdown()
+      swiftMon = nil
     } else {
       loaderApi.logMessage(fine, "stop(): Swift Application Metrics has already stopped")
     }
@@ -236,14 +283,26 @@ open class SwiftMetrics {
       if pluginSearchPath == "" {
         self.setDefaultLibraryPath()
       }
-      _ = loaderApi.initialize()
+      if(!initialized) {
+        // Add plugins one by one in case built with xcode as plugin search path won't work
+        loaderApi.addPlugin("@rpath/envplugin.framework/Versions/A/envplugin")
+        loaderApi.addPlugin("@rpath/memplugin.framework/Versions/A/memplugin")
+        loaderApi.addPlugin("@rpath/cpuplugin.framework/Versions/A/cpuplugin")
+        loaderApi.addPlugin("@rpath/hcapiplugin.framework/Versions/A/hcapiplugin")
+        _ = loaderApi.initialize()
+        initialized = true
+      }
+
+      if !initMonitorApi() {
+        loaderApi.logMessage(warning, "Failed to initialize monitoring API")
+      }
       loaderApi.start()
     } else {
-      loaderApi.logMessage(fine, "start(): Swift Application Metrics has already started")
+      loaderApi.logMessage(
+        fine, "start(): Swift Application Metrics has already started")
     }
-    if !initMonitorApi() {
-      loaderApi.logMessage(warning, "Failed to initialize monitoring API")
-    }
+    self.latencyEnabled = true
+    testLatency()
   }
 
   public func enable(type: String, config: Any? = nil) {
@@ -289,19 +348,26 @@ open class SwiftMetrics {
 
   private func getFunctionFromLibrary(libraryPath: String, functionName: String) -> UnsafeMutableRawPointer? {
     loaderApi.logMessage(debug, "getFunctionFromLibrary(): Looking for function \(functionName) in library \(libraryPath)")
-    guard let handle = dlopen(libraryPath, RTLD_LAZY) else {
-      let error = String(cString: dlerror())
-      loaderApi.logMessage(warning, "Failed to open library \(libraryPath): \(error)")
-      return nil
+    var handle = dlopen(libraryPath, RTLD_LAZY)
+    if(handle == nil) {
+        let error = String(cString: dlerror())
+        loaderApi.logMessage(warning, "Failed to open library \(libraryPath): \(error)")
+        // try xcode location
+        handle = dlopen("@rpath/hcapiplugin.framework/Versions/A/hcapiplugin", RTLD_LAZY)
+        if(handle == nil) {
+            let error = String(cString: dlerror())
+            loaderApi.logMessage(warning, "Failed to open library \("@rpath/agentcore.framework/Versions/A/agentcore"): \(error)")
+            return nil
+        }
     }
     guard let function = dlsym(handle, functionName) else {
       let error = String(cString: dlerror())
       loaderApi.logMessage(warning, "Failed to find symbol \(functionName) in library \(libraryPath): \(error)")
-      dlclose(handle)
+      dlclose(handle!)
       return nil
     }
-    dlclose(handle)
-    loaderApi.logMessage(debug, "getFunctionFromLibrary(): Function found")
+    dlclose(handle!)
+    loaderApi.logMessage(fine, "getFunctionFromLibrary(): Function \(functionName) found")
     return function
   }
 
