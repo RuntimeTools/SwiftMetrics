@@ -69,7 +69,7 @@ private func receiveAgentCoreData(cSourceId: UnsafePointer<CChar>, cSize: CUnsig
     let opaquePointer = OpaquePointer(data)
     let cstrPointer = UnsafePointer<CChar>(opaquePointer)
 
-    let message = String(cString:cstrPointer) ?? ""
+    let message = String(cString:cstrPointer)
     if swiftMon != nil {
       swiftMon!.raiseCoreEvent(topic: source, message: message)
     }

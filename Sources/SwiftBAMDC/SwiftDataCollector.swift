@@ -38,10 +38,6 @@ public class SwiftDataCollectorInit {
 
         var sm:SwiftMetrics
 
-        var logLevel : LoggerMessageType = .info
-
-        logLevel = self.bamConfig.logLevel
-        
         sm = swiftMetricsInstance
         self.monitor = sm.monitor()
 
