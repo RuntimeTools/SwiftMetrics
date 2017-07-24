@@ -38,10 +38,6 @@ public class SwiftDataCollectorInit {
 
         var sm:SwiftMetrics
 
-        var logLevel : LoggerMessageType = .info
-
-        logLevel = self.bamConfig.logLevel
-        
         sm = swiftMetricsInstance
         self.monitor = sm.monitor()
 
@@ -436,7 +432,7 @@ public class SwiftDataCollector : SwiftDataCollectorInit {
             let documentID: String = NSUUID().uuidString
 
             let aarProperties : Dictionary<String,Any> = [
-                "documentType": "/AAR/MIDDLEWARE/SWIFT",
+                "documentType": "/AAR/Middleware/Swift",
                 "softwareServerType": "http://open-services.net/ns/crtv#Swift",
                 "resourceID": self.bamConfig.appId, "diagnosticsEnabled": false,
                 "documentVersion": "2.0", "startTime": startTimeStamp, "finishTime": finishTimeStamp,
