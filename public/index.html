@@ -18,9 +18,9 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 
-<link rel="stylesheet" href="bootstrap-3.3.7-dist/css/bootstrap.min.css">
-<link rel="stylesheet" type="text/css" href="css/style2.css" title="Light background">
-<link rel="alternate stylesheet" type="text/css" href="css/style.css" title="Dark background">
+<link rel="stylesheet" href="graphmetrics/bootstrap-3.3.7-dist/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="graphmetrics/css/style2.css" title="Light background">
+<link rel="alternate stylesheet" type="text/css" href="graphmetrics/css/style.css" title="Dark background">
 
 <head>
     <title>Application Metrics for Swift (Tech Preview)</title>
@@ -28,9 +28,9 @@
 
 <body>
     <!-- load the d3.js library -->
-    <script src="d3/d3.v3.min.js"></script>
-    <script src="jquery/jquery-3.1.1.min.js"></script>
-    <script src="bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
+    <script src="graphmetrics/d3/d3.v3.min.js"></script>
+    <script src="graphmetrics/jquery/jquery-3.1.1.min.js"></script>
+    <script src="graphmetrics/bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
 
     <div class="headerDiv"><span class="rightHeader"></span><span class="leftHeader"></span></div>
 
@@ -44,7 +44,7 @@
         <div class="row">
             <div class="col-md-4" id="cpuDiv1"></div>
             <div class="col-md-4" id="memDiv1"></div>
-            <div class="col-md-4" id="envDiv"></div>        
+            <div class="col-md-4" id="envDiv"></div>
         </div>
     </div>
 
@@ -86,13 +86,13 @@
     }
 </script>
 
-<script type="text/javascript" src="js/header.js"></script>
-<script type="text/javascript" src="js/envTable.js"></script>
-<script type="text/javascript" src="js/cpuChart.js"></script>
-<script type="text/javascript" src="js/httpThroughPutChart.js"></script>
-<script type="text/javascript" src="js/httpRequestsChart.js"></script>
-<script type="text/javascript" src="js/httpTop5.js"></script>
-<script type="text/javascript" src="js/memChart.js"></script>
+<script type="text/javascript" src="graphmetrics/js/header.js"></script>
+<script type="text/javascript" src="graphmetrics/js/envTable.js"></script>
+<script type="text/javascript" src="graphmetrics/js/cpuChart.js"></script>
+<script type="text/javascript" src="graphmetrics/js/httpThroughPutChart.js"></script>
+<script type="text/javascript" src="graphmetrics/js/httpRequestsChart.js"></script>
+<script type="text/javascript" src="graphmetrics/js/httpTop5.js"></script>
+<script type="text/javascript" src="graphmetrics/js/memChart.js"></script>
 <script>
     var myurl = location.host;
     var webSocketProtocol = "ws://"
