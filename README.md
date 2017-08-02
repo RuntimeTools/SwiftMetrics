@@ -83,7 +83,7 @@ SwiftMetricsKitura(swiftMetricsInstance: sm)
 let monitoring = sm.monitor()
 ```
 
-### Swift Metrics Dashboard
+### Application Metrics for Swift Dashboard
 
 To use the built in dashboard, you add the following code to your application
 ```swift
