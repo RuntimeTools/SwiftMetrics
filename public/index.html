@@ -48,8 +48,11 @@
         </div>
     </div>
 
+
+<script type="text/javascript" src="graphmetrics/js/i18n.js"></script>
 <script>
     // Global variables
+    var localizedStrings = {};
     var monitoringStartTime = new Date();
     var maxTimeWindow = 900000; // 15 minutes
 
@@ -69,8 +72,6 @@
     tallerGraphHeight = canvasHeight - margin.top - margin.shortBottom,
     graphHeight = canvasHeight - margin.top - margin.bottom;
 
-    var myurl = location.host;
-
     // set up http variables to hold data for top 5 and averages.
     var httpRate = [];
     var httpAverages = new Object;
@@ -84,51 +85,64 @@
             return d3.time.format("%H:%M:%S");
         }
     }
+
+    function loadScript(url) {
+     jQuery.ajax({
+       url: url,
+       dataType: 'script',
+       async: false
+     });
+   }
+
+   populateLocalizedStrings(function callback() {
+     // Graphs are now loaded here in the callback to ensure localized Strings
+     // have been loaded
+     jQuery.loadScript('graphmetrics/js/envTable.js');
+     jQuery.loadScript('graphmetrics/js/cpuChart.js');
+     jQuery.loadScript('graphmetrics/js/httpRequestsChart.js');
+     jQuery.loadScript('graphmetrics/js/httpThroughPutChart.js');
+     jQuery.loadScript('graphmetrics/js/httpTop5.js');
+     jQuery.loadScript('graphmetrics/js/memChart.js');
+     jQuery.loadScript('graphmetrics/js/header.js');
+
+     var myurl = location.host;
+     var webSocketProtocol = "ws://"
+     if(location.protocol === "https:") {
+       webSocketProtocol = "wss://"
+     }
+     var client = new WebSocket(webSocketProtocol + myurl + "/swiftmetrics-dash","swiftmetrics-dash")
+
+     client.onmessage = function(message) {
+         received = JSON.parse(message.data);
+         topic = received.topic;
+         payload = JSON.stringify(received.payload);
+
+         switch (topic) {
+             case 'cpu':
+                 updateCPUData(payload);
+                 break;
+             case 'memory':
+                 updateMemData(payload);
+                 break;
+             case 'env':
+                 populateEnvTable(payload);
+                 break;
+             case 'http':
+                 updateHttpData(payload);
+                 break;
+             case 'httpURLs':
+                 updateURLData(payload);
+                 break;
+             case 'title' :
+                 updateHeader(payload);
+                 break;
+
+         }
+     }
+   });
+
 </script>
 
-<script type="text/javascript" src="graphmetrics/js/header.js"></script>
-<script type="text/javascript" src="graphmetrics/js/envTable.js"></script>
-<script type="text/javascript" src="graphmetrics/js/cpuChart.js"></script>
-<script type="text/javascript" src="graphmetrics/js/httpThroughPutChart.js"></script>
-<script type="text/javascript" src="graphmetrics/js/httpRequestsChart.js"></script>
-<script type="text/javascript" src="graphmetrics/js/httpTop5.js"></script>
-<script type="text/javascript" src="graphmetrics/js/memChart.js"></script>
-<script>
-    var myurl = location.host;
-    var webSocketProtocol = "ws://"
-    if(location.protocol === "https:") {
-      webSocketProtocol = "wss://"
-    }
-    var client = new WebSocket(webSocketProtocol + myurl + "/swiftmetrics-dash","swiftmetrics-dash")
-
-    client.onmessage = function(message) {
-        received = JSON.parse(message.data);
-        topic = received.topic;
-        payload = JSON.stringify(received.payload);
-
-        switch (topic) {
-            case 'cpu':
-                updateCPUData(payload);
-                break;
-            case 'memory':
-                updateMemData(payload);
-                break;
-            case 'env':
-                populateEnvTable(payload);
-                break;
-            case 'http':
-                updateHttpData(payload);
-                break;
-            case 'httpURLs':
-                updateURLData(payload);
-                break;
-            case 'title' :
-                updateHeader(payload);
-                break;
-
-        }
-    }
-</script>
 <script>
     window.addEventListener('resize', resize);
 
