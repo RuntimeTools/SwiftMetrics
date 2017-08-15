@@ -88,7 +88,7 @@
 
    populateLocalizedStrings();
 
-</script>
+ </script>
 <script type="text/javascript" src="graphmetrics/js/header.js"></script>
 <script type="text/javascript" src="graphmetrics/js/envTable.js"></script>
 <script type="text/javascript" src="graphmetrics/js/cpuChart.js"></script>
@@ -97,6 +97,7 @@
 <script type="text/javascript" src="graphmetrics/js/httpTop5.js"></script>
 <script type="text/javascript" src="graphmetrics/js/memChart.js"></script>
 <script>
+    var myurl = location.host;
     var webSocketProtocol = "ws://"
     if(location.protocol === "https:") {
       webSocketProtocol = "wss://"
