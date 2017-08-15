@@ -36,20 +36,23 @@
 
     <div class="container-fluid">
         <div class="row">
-            <div class="col-md-6" id="httpDiv1"></div>
-            <div class="col-md-3" id="httpDiv2"></div>
-            <div class="col-md-3" id="httpDiv3"></div>
+            <div class="col-md-6 hideable" id="httpDiv1"></div>
+            <div class="col-md-3 hideable" id="httpDiv2"></div>
+            <div class="col-md-3 hideable" id="httpDiv3"></div>
         </div>
 
         <div class="row">
-            <div class="col-md-4" id="cpuDiv1"></div>
-            <div class="col-md-4" id="memDiv1"></div>
-            <div class="col-md-4" id="envDiv"></div>
+            <div class="col-md-4 hideable" id="cpuDiv1"></div>
+            <div class="col-md-4 hideable" id="memDiv1"></div>
+            <div class="col-md-4 hideable" id="envDiv"></div>
         </div>
     </div>
 
+
+<script type="text/javascript" src="graphmetrics/js/i18n.js"></script>
 <script>
     // Global variables
+    var localizedStrings = {};
     var monitoringStartTime = new Date();
     var maxTimeWindow = 900000; // 15 minutes
 
@@ -69,8 +72,6 @@
     tallerGraphHeight = canvasHeight - margin.top - margin.shortBottom,
     graphHeight = canvasHeight - margin.top - margin.bottom;
 
-    var myurl = location.host;
-
     // set up http variables to hold data for top 5 and averages.
     var httpRate = [];
     var httpAverages = new Object;
@@ -84,8 +85,10 @@
             return d3.time.format("%H:%M:%S");
         }
     }
-</script>
 
+   populateLocalizedStrings();
+
+ </script>
 <script type="text/javascript" src="graphmetrics/js/header.js"></script>
 <script type="text/javascript" src="graphmetrics/js/envTable.js"></script>
 <script type="text/javascript" src="graphmetrics/js/cpuChart.js"></script>
@@ -128,8 +131,7 @@
 
         }
     }
-</script>
-<script>
+
     window.addEventListener('resize', resize);
 
     function resize() {
