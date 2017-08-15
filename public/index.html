@@ -55,7 +55,6 @@
     var localizedStrings = {};
     var monitoringStartTime = new Date();
     var maxTimeWindow = 900000; // 15 minutes
-    var myurl = location.host;
 
     // Initialise graph and canvas dimensions
     var margin = {
@@ -87,14 +86,6 @@
         }
     }
 
-    function loadScript(url) {
-     jQuery.ajax({
-       url: url,
-       dataType: 'script',
-       async: false
-     });
-   }
-
    populateLocalizedStrings();
 
  </script>
@@ -105,41 +96,41 @@
 <script type="text/javascript" src="graphmetrics/js/httpRequestsChart.js"></script>
 <script type="text/javascript" src="graphmetrics/js/httpTop5.js"></script>
 <script type="text/javascript" src="graphmetrics/js/memChart.js"></script>
-
 <script>
-     var webSocketProtocol = "ws://"
-     if(location.protocol === "https:") {
-       webSocketProtocol = "wss://"
-     }
-     var client = new WebSocket(webSocketProtocol + myurl + "/swiftmetrics-dash","swiftmetrics-dash")
+    var myurl = location.host;
+    var webSocketProtocol = "ws://"
+    if(location.protocol === "https:") {
+      webSocketProtocol = "wss://"
+    }
+    var client = new WebSocket(webSocketProtocol + myurl + "/swiftmetrics-dash","swiftmetrics-dash")
 
-     client.onmessage = function(message) {
-         received = JSON.parse(message.data);
-         topic = received.topic;
-         payload = JSON.stringify(received.payload);
+    client.onmessage = function(message) {
+        received = JSON.parse(message.data);
+        topic = received.topic;
+        payload = JSON.stringify(received.payload);
 
-         switch (topic) {
-             case 'cpu':
-                 updateCPUData(payload);
-                 break;
-             case 'memory':
-                 updateMemData(payload);
-                 break;
-             case 'env':
-                 populateEnvTable(payload);
-                 break;
-             case 'http':
-                 updateHttpData(payload);
-                 break;
-             case 'httpURLs':
-                 updateURLData(payload);
-                 break;
-             case 'title' :
-                 updateHeader(payload);
-                 break;
+        switch (topic) {
+            case 'cpu':
+                updateCPUData(payload);
+                break;
+            case 'memory':
+                updateMemData(payload);
+                break;
+            case 'env':
+                populateEnvTable(payload);
+                break;
+            case 'http':
+                updateHttpData(payload);
+                break;
+            case 'httpURLs':
+                updateURLData(payload);
+                break;
+            case 'title' :
+                updateHeader(payload);
+                break;
 
-         }
-     }
+        }
+    }
 
     window.addEventListener('resize', resize);
 
