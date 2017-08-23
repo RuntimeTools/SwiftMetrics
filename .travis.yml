@@ -9,6 +9,7 @@
 branches:
   only:
     - master
+    - swift4
 
 matrix:
   include:
