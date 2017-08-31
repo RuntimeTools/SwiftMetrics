@@ -9,7 +9,7 @@
 
 # Application Metrics for Swift
 
-[Application Metrics for Swift](https://developer.ibm.com/swift/monitoring-diagnostics/application-metrics-for-swift) instruments the Swift runtime for performance monitoring, providing the monitoring data programatically via an API or visually with its built in dashboard
+[Application Metrics for Swift](https://developer.ibm.com/swift/monitoring-diagnostics/application-metrics-for-swift) instruments the Swift runtime for performance monitoring, providing the monitoring data programatically via an API or visually with its built-in dashboard.
 
 Application Metrics for Swift provides the following built-in data collection sources:
 
@@ -48,16 +48,16 @@ dependencies: [
 
 Swift Package manager will automatically clone the code required and build it during compilation of your program:
   * Linux: `swift build`
-  * macOS: `swift build -Xlinker -lc++`
+  * macOS: `swift build`
 
 <a name="config"></a>
 ### Configuring Application Metrics for Swift
-Application Metrics for Swift comes with a configuration file inside the [Packages directory](#install) (`.../Packages/SwiftMetrics-<version>/swiftmetrics.properties`). This is used to configure connection options, logging and data source options.
+Once Application Metrics for Swift is added as a dependency to your Swift application, you should find a configuration file inside the `.build` folder, `.build/checkouts/SwiftMetrics.git--<id>/swiftmetrics.properties` (or the `Packages` directory for older versions of Swift, `Packages/SwiftMetrics-<version>/swiftmetrics.properties`). This is used to configure connection options, logging and data source options.
 
 Application Metrics for Swift will attempt to load `swiftmetrics.properties` from one of the following locations (in order):
 
-1. the current working directory
-2. the Packages/SwiftMetrics-\<version\> directory
+1. The current working directory.
+2. The `.build/checkouts/SwiftMetrics.git--<id>` directory (or `Packages/SwiftMetrics-<version>` for older versions of Swift).
 
 The default configuration has minimal logging enabled.
 
