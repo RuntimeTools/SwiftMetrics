@@ -19,7 +19,6 @@ import Dispatch
 import LoggerAPI
 import Configuration
 import CloudFoundryEnv
-import CloudFoundryConfig
 import KituraRequest
 import SwiftMetrics
 import SwiftMetricsKitura
@@ -169,20 +168,29 @@ public class SwiftMetricsBluemix {
   private func initCredentials() -> Bool {
     let configMgr = ConfigurationManager().load(.environmentVariables)
     // Find auto-scaling service using convenience method
-    let scalingServ: Service? = configMgr.getServices(type: autoScalingServiceLabel).first
-    guard let serv = scalingServ, let autoScalingService = AutoScalingService(withService: serv) else {
+    guard let scalingServ: Service = configMgr.getServices(type: autoScalingServiceLabel).first else {
       Log.error("[Auto-Scaling Agent] Could not find Auto-Scaling service.")
       return false
     }
 
-    Log.debug("[Auto-Scaling Agent] Found Auto-Scaling service: \(autoScalingService.name)")
-
     // Assign unwrapped values
-    self.host = autoScalingService.url
-    self.serviceID = autoScalingService.serviceID
-    self.appID = autoScalingService.appID
-    self.agentPassword = autoScalingService.password
-    self.agentUsername = autoScalingService.username
+    guard let credentials = scalingServ.credentials,
+      let host = credentials["url"] as? String,
+      let serviceID = credentials["service_id"] as? String,
+      let appID = credentials["app_id"] as? String,
+      let agentPassword = credentials["agentPassword"] as? String,
+      let agentUsername = credentials["agentUsername"] as? String else {        
+        Log.error("[Auto-Scaling Agent] Could not obtain credentials for Auto-Scaling service.")
+        return false
+    }
+
+    self.host = host
+    self.serviceID = serviceID
+    self.appID = appID
+    self.agentPassword = agentPassword
+    self.agentUsername = agentUsername
+
+    Log.debug("[Auto-Scaling Agent] Found Auto-Scaling service: \(scalingServ.name)")
 
     guard let app = configMgr.getApp() else {
       Log.error("[Auto-Scaling Agent] Could not get Cloud Foundry app metadata.")
