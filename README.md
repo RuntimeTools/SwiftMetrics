@@ -59,7 +59,7 @@ Application Metrics for Swift will attempt to load `swiftmetrics.properties` fro
 1. The current working directory.
 2. The `.build/checkouts/SwiftMetrics.git--<id>` directory (or `Packages/SwiftMetrics-<version>` for older versions of Swift).
 
-The default configuration has minimal logging enabled.
+Please note that the default configuration has minimal logging enabled.
 
 ## Running Application Metrics for Swift
 <a name="run-local"></a>
