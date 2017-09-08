@@ -42,7 +42,7 @@ Application Metrics for Swift can be installed by adding a dependency into your 
 
 ```swift
 dependencies: [
-   .Package(url: "https://github.com/RuntimeTools/SwiftMetrics.git", majorVersion: #, minorVersion: #),
+   .Package(url: "https://github.com/RuntimeTools/SwiftMetrics.git", majorVersion: #, minor: #),
 ]
 ```
 
