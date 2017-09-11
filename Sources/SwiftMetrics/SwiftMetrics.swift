@@ -17,7 +17,7 @@ import agentcore
 import Foundation
 import Dispatch
 import Configuration
-import CloudFoundryConfig
+import CloudFoundryEnv
 #if os(Linux)
 import Glibc
 #else
