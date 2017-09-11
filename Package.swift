@@ -1,3 +1,4 @@
+// swift-tools-version:4.0
 /**
 * Copyright IBM Corporation 2017
 *
@@ -16,60 +17,37 @@
 
 import PackageDescription
 
-#if os(Linux)
-   let excludePortDir = "Sources/agentcore/ibmras/common/port/osx"
-#else
-   let excludePortDir = "Sources/agentcore/ibmras/common/port/linux"
-#endif
-
 let package = Package(
   name: "SwiftMetrics",
-  targets: [
-      Target(name: "SwiftMetrics",
-        dependencies: [
-          .Target(name: "agentcore"),
-          .Target(name: "cpuplugin"),
-          .Target(name: "envplugin"),
-          .Target(name: "memplugin"),
-          .Target(name: "hcapiplugin")
-        ]
-      ),
-      Target(name: "SwiftMetricsKitura", dependencies: ["SwiftMetrics"]),
-      Target(name: "SwiftBAMDC", dependencies: ["SwiftMetricsKitura"]),
-      Target(name: "SwiftMetricsBluemix", dependencies: ["SwiftMetricsKitura", "SwiftBAMDC"]),
-      Target(name: "SwiftMetricsDash", dependencies: ["SwiftMetricsBluemix"]),
-      Target(name: "mqttplugin", 
-        dependencies: [
-            .Target(name: "paho"),
-            .Target(name: "agentcore")
-        ]
-      ),
-      Target(name: "cpuplugin", dependencies: [ .Target(name: "agentcore") ]),
-      Target(name: "envplugin", dependencies: [ .Target(name: "agentcore") ]),
-      Target(name: "memplugin", dependencies: [ .Target(name: "agentcore") ]),
-      Target(name: "hcapiplugin", dependencies: [.Target(name: "agentcore")])
-   ],
-  dependencies: [
-    .Package(url: "https://github.com/IBM-Swift/Kitura.git", majorVersion: 1, minor: 7),
-    .Package(url: "https://github.com/IBM-Swift/Kitura-WebSocket.git", majorVersion: 0, minor: 9),
-    .Package(url: "https://github.com/IBM-Swift/Kitura-Request.git", majorVersion: 0, minor: 8),
-    .Package(url: "https://github.com/IBM-Swift/Swift-cfenv.git", majorVersion: 4)
-  ],
-   exclude: [
-    "Sources/agentcore/ibmras/common/port/aix",
-    "Sources/agentcore/ibmras/common/port/windows",
-    "Sources/agentcore/ibmras/common/data",
-    "Sources/agentcore/ibmras/common/util/memUtils.cpp",
-    "Sources/ostreamplugin",
-    "Sources/paho/Windows Build",
-    "Sources/paho/build",
-    "Sources/paho/doc",
-    "Sources/paho/test",
-    "Sources/paho/src/MQTTClient.c",
-    "Sources/paho/src/MQTTVersion.c",
-    "Sources/paho/src/SSLSocket.c",
-    "Sources/paho/src/samples",
-    excludePortDir
-  ]
-)
+  products: [
+        .library(
+            name: "SwiftMetrics",
+            targets: ["SwiftMetrics",
+                "SwiftMetricsKitura",
+                "SwiftBAMDC",
+                "SwiftMetricsBluemix",
+                "SwiftMetricsDash"]),
 
+        .executable(name: "SwiftMetricsEmitSample", targets: ["SwiftMetricsEmitSample"]),
+        .executable(name: "SwiftMetricsCommonSample", targets: ["SwiftMetricsCommonSample"]),
+    ],
+  dependencies: [
+    .package(url: "https://github.com/RuntimeTools/omr-agentcore", .exact("3.2.3-swift4")),
+    .package(url: "https://github.com/IBM-Swift/Kitura.git", from: "1.7.0"),
+    .package(url: "https://github.com/IBM-Swift/Kitura-WebSocket.git", from: "0.9.0"),
+    .package(url: "https://github.com/IBM-Swift/Kitura-Request.git", from: "0.8.0"),
+    .package(url: "https://github.com/IBM-Swift/Swift-cfenv.git", from: "4.0.0")
+  ],
+  targets: [
+      .target(name: "SwiftMetrics", dependencies: ["agentcore", "hcapiplugin", "envplugin", "cpuplugin", "memplugin", "CloudFoundryEnv"]),
+      .target(name: "SwiftMetricsKitura", dependencies: ["SwiftMetrics", "Kitura"]),
+      .target(name: "SwiftBAMDC", dependencies: ["SwiftMetricsKitura", "KituraRequest", "Kitura-WebSocket"]),
+      .target(name: "SwiftMetricsBluemix", dependencies: ["SwiftMetricsKitura","SwiftBAMDC"]),
+      .target(name: "SwiftMetricsDash", dependencies: ["SwiftMetricsBluemix"]),
+      .target(name: "SwiftMetricsCommonSample", dependencies: ["SwiftMetrics"],
+            path: "commonSample/Sources"),
+      .target(name: "SwiftMetricsEmitSample", dependencies: ["SwiftMetrics"],
+            path: "emitSample/Sources"),
+      .testTarget(name: "SwiftMetricsTests", dependencies: ["SwiftMetrics"])
+   ]
+)
