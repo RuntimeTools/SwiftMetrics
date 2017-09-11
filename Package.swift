@@ -39,7 +39,7 @@ let package = Package(
     .package(url: "https://github.com/IBM-Swift/Swift-cfenv.git", from: "4.0.0")
   ],
   targets: [
-      .target(name: "SwiftMetrics", dependencies: ["agentcore", "hcapiplugin", "envplugin", "cpuplugin", "memplugin", "CloudConfiguration"]),
+      .target(name: "SwiftMetrics", dependencies: ["agentcore", "hcapiplugin", "envplugin", "cpuplugin", "memplugin", "CloudFoundryEnv"]),
       .target(name: "SwiftMetricsKitura", dependencies: ["SwiftMetrics", "Kitura"]),
       .target(name: "SwiftBAMDC", dependencies: ["SwiftMetricsKitura", "KituraRequest", "Kitura-WebSocket"]),
       .target(name: "SwiftMetricsBluemix", dependencies: ["SwiftMetricsKitura","SwiftBAMDC"]),
