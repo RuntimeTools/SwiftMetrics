@@ -23,7 +23,7 @@ import KituraNet
 import KituraWebSocket
 import Foundation
 import Configuration
-import CloudFoundryConfig
+import CloudFoundryEnv
 import Dispatch
 
 struct HTTPAggregateData: SMData {
