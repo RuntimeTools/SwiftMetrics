@@ -249,8 +249,8 @@ public class SwiftMetricsPrometheus {
                 .send("# HELP http_request_duration_microseconds The HTTP request latencies in microseconds.\n")
                 .send("# TYPE http_request_duration_microseconds summary\n")
             httpDurations.writeCounts( writer: {(handler: HTTPDurationSummaryHandler)->() in
-                response.send("http_request_duration_microseconds_sum{handler=\"\(handler.handler)\"}, \(handler.totalDuration)\n")
-                response.send("http_request_duration_microseconds_count{handler=\"\(handler.handler)\"}, \(handler.durations.count)\n")
+                response.send("http_request_duration_microseconds_sum{handler=\"\(handler.handler)\"} \(handler.totalDuration)\n")
+                response.send("http_request_duration_microseconds_count{handler=\"\(handler.handler)\"} \(handler.durations.count)\n")
                 let quantiles = handler.calculateQuantiles(quantiles:self.p_quantiles)
                 quantiles.forEach { p, v in
                     response.send("http_request_duration_microseconds{handler=\"\(handler.handler)\",quantile=\"\(p)\"} \(v)\n")
