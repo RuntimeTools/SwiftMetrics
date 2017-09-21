@@ -26,7 +26,8 @@ let package = Package(
                 "SwiftMetricsKitura",
                 "SwiftBAMDC",
                 "SwiftMetricsBluemix",
-                "SwiftMetricsDash"]),
+                "SwiftMetricsDash",
+                "SwiftMetricsPrometheus"]),
 
         .executable(name: "SwiftMetricsEmitSample", targets: ["SwiftMetricsEmitSample"]),
         .executable(name: "SwiftMetricsCommonSample", targets: ["SwiftMetricsCommonSample"]),
@@ -44,6 +45,7 @@ let package = Package(
       .target(name: "SwiftBAMDC", dependencies: ["SwiftMetricsKitura", "KituraRequest", "Kitura-WebSocket"]),
       .target(name: "SwiftMetricsBluemix", dependencies: ["SwiftMetricsKitura","SwiftBAMDC"]),
       .target(name: "SwiftMetricsDash", dependencies: ["SwiftMetricsBluemix"]),
+      .target(name: "SwiftMetricsPrometheus", dependencies:["SwiftMetricsKitura"]),
       .target(name: "SwiftMetricsCommonSample", dependencies: ["SwiftMetrics"],
             path: "commonSample/Sources"),
       .target(name: "SwiftMetricsEmitSample", dependencies: ["SwiftMetrics"],
