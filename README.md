@@ -65,6 +65,16 @@ Please note that the default configuration has minimal logging enabled.
 <a name="run-local"></a>
 ### Modifying your application
 
+Amend Package.swift to include SwiftMetrics as a dependency and update your targets to include SwiftMetrics as a dependency:
+```swift
+   dependencies: [
+      .package(url: "https://github.com/RuntimeTools/SwiftMetrics.git", from: "1.2.0")
+   ]
+   ...
+   targets: [
+      .target(name: "MyApp", dependencies: ["SwiftMetrics"], path: "Sources")]
+```
+
 To load `SwiftMetrics` and get the base monitoring API, add the following to the start-up code for your application:
 ```swift
 import SwiftMetrics
@@ -96,18 +106,32 @@ let sm = try SwiftMetrics()
 // Pass SwiftMetrics to the dashboard for visualising
 let smd = try SwiftMetricsDash(swiftMetricsInstance : sm)  
 ```
-Amend Package.swift to be 
-```swift
-   dependencies: [
-      .Package(url: "https://github.com/RuntimeTools/SwiftMetrics.git", majorVersion: #, minorVersion: #)
-   ]
-```
 
-By default, SwiftMetricsDash will starts its own Kitura server and serve the page up under <hostname>:<port>/swiftmetrics-dash
+By default, SwiftMetricsDash will start its own Kitura server and serve the page up under <hostname>:<port>/swiftmetrics-dash
 
 The port being used is logged to the console when your application starts:
 
  * SwiftMetricsDash : Starting on port 8080
+
+### Prometheus Support
+
+To use SwfitMetrics to provide a [prometheus](https://prometheus.io/) endpoint, you add the following code to your application
+```swift
+import SwiftMetrics
+import SwiftMetricsPrometheus
+
+// Enable SwiftMetrics Monitoring
+let sm = try SwiftMetrics()   
+
+// Pass SwiftMetrics to SwiftMetricsPrometheus
+let smp = try SwiftMetricsPrometheus(swiftMetricsInstance : sm)
+```
+
+By default, SwiftMetricsPrometheus will provide the prometheus endpoint under <hostname>:<port>/metrics
+
+The port being used is logged to the console when your application starts:
+
+ * SwiftMetricsPrometheus : Starting on port 8080
 
 ### Application Metrics for Swift Agent
 
