@@ -38,12 +38,15 @@ The Application Metrics for Swift agent supports the following runtime environme
 
 <a name="install"></a>
 ### Installation
-Application Metrics for Swift can be installed by adding a dependency into your Package.swift file:
+Application Metrics for Swift can be installed by adding a dependency into your Package.swift file and updating your targets to include SwiftMetrics as a dependency:
 
 ```swift
-dependencies: [
-   .Package(url: "https://github.com/RuntimeTools/SwiftMetrics.git", majorVersion: #, minor: #),
-]
+   dependencies: [
+      .package(url: "https://github.com/RuntimeTools/SwiftMetrics.git", from: "1.2.0")
+   ]
+   ...
+   targets: [
+      .target(name: "MyApp", dependencies: ["SwiftMetrics"], path: "Sources")]
 ```
 
 Swift Package manager will automatically clone the code required and build it during compilation of your program:
@@ -64,16 +67,6 @@ Please note that the default configuration has minimal logging enabled.
 ## Running Application Metrics for Swift
 <a name="run-local"></a>
 ### Modifying your application
-
-Amend Package.swift to include SwiftMetrics as a dependency and update your targets to include SwiftMetrics as a dependency:
-```swift
-   dependencies: [
-      .package(url: "https://github.com/RuntimeTools/SwiftMetrics.git", from: "1.2.0")
-   ]
-   ...
-   targets: [
-      .target(name: "MyApp", dependencies: ["SwiftMetrics"], path: "Sources")]
-```
 
 To load `SwiftMetrics` and get the base monitoring API, add the following to the start-up code for your application:
 ```swift
