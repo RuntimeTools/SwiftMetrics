@@ -108,7 +108,7 @@ The port being used is logged to the console when your application starts:
 
 ### Prometheus Support
 
-To use SwfitMetrics to provide a [prometheus](https://prometheus.io/) endpoint, you add the following code to your application
+To use SwiftMetrics to provide a [Prometheus](https://prometheus.io/) endpoint, you add the following code to your application
 ```swift
 import SwiftMetrics
 import SwiftMetricsPrometheus
@@ -120,7 +120,7 @@ let sm = try SwiftMetrics()
 let smp = try SwiftMetricsPrometheus(swiftMetricsInstance : sm)
 ```
 
-By default, SwiftMetricsPrometheus will provide the prometheus endpoint under `http://<hostname>:<port>/metrics`
+By default, SwiftMetricsPrometheus will provide the Prometheus endpoint under `http://<hostname>:<port>/metrics`
 
 The port being used is logged to the console when your application starts:
 
