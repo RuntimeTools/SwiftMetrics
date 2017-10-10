@@ -16,17 +16,9 @@ matrix:
     - os: linux
       dist: trusty
       sudo: required
-    - os: linux
-      dist: trusty
-      sudo: required
-      env: SWIFT_SNAPSHOT=3.0.2
     - os: osx
       osx_image: xcode8.3
       sudo: required
-    - os: osx
-      osx_image: xcode8.2
-      sudo: required
-      env: SWIFT_SNAPSHOT=3.0.2
 
 before_install:
   - git clone https://github.com/IBM-Swift/Package-Builder.git
