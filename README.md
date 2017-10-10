@@ -100,7 +100,7 @@ let sm = try SwiftMetrics()
 let smd = try SwiftMetricsDash(swiftMetricsInstance : sm)  
 ```
 
-By default, SwiftMetricsDash will start its own Kitura server and serve the page up under <hostname>:<port>/swiftmetrics-dash
+By default, SwiftMetricsDash will start its own Kitura server and serve the page up under `http://<hostname>:<port>/swiftmetrics-dash`
 
 The port being used is logged to the console when your application starts:
 
@@ -120,7 +120,7 @@ let sm = try SwiftMetrics()
 let smp = try SwiftMetricsPrometheus(swiftMetricsInstance : sm)
 ```
 
-By default, SwiftMetricsPrometheus will provide the prometheus endpoint under <hostname>:<port>/metrics
+By default, SwiftMetricsPrometheus will provide the prometheus endpoint under `http://<hostname>:<port>/metrics`
 
 The port being used is logged to the console when your application starts:
 
