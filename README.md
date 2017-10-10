@@ -38,12 +38,15 @@ The Application Metrics for Swift agent supports the following runtime environme
 
 <a name="install"></a>
 ### Installation
-Application Metrics for Swift can be installed by adding a dependency into your Package.swift file:
+Application Metrics for Swift can be installed by adding a dependency into your Package.swift file and updating your targets to include SwiftMetrics as a dependency:
 
 ```swift
-dependencies: [
-   .Package(url: "https://github.com/RuntimeTools/SwiftMetrics.git", majorVersion: #, minor: #),
-]
+   dependencies: [
+      .package(url: "https://github.com/RuntimeTools/SwiftMetrics.git", from: "1.2.0")
+   ]
+   ...
+   targets: [
+      .target(name: "MyApp", dependencies: ["SwiftMetrics"], path: "Sources")]
 ```
 
 Swift Package manager will automatically clone the code required and build it during compilation of your program:
@@ -96,18 +99,32 @@ let sm = try SwiftMetrics()
 // Pass SwiftMetrics to the dashboard for visualising
 let smd = try SwiftMetricsDash(swiftMetricsInstance : sm)  
 ```
-Amend Package.swift to be 
-```swift
-   dependencies: [
-      .Package(url: "https://github.com/RuntimeTools/SwiftMetrics.git", majorVersion: #, minorVersion: #)
-   ]
-```
 
-By default, SwiftMetricsDash will starts its own Kitura server and serve the page up under <hostname>:<port>/swiftmetrics-dash
+By default, SwiftMetricsDash will start its own Kitura server and serve the page up under `http://<hostname>:<port>/swiftmetrics-dash`
 
 The port being used is logged to the console when your application starts:
 
  * SwiftMetricsDash : Starting on port 8080
+
+### Prometheus Support
+
+To use SwiftMetrics to provide a [Prometheus](https://prometheus.io/) endpoint, you add the following code to your application
+```swift
+import SwiftMetrics
+import SwiftMetricsPrometheus
+
+// Enable SwiftMetrics Monitoring
+let sm = try SwiftMetrics()   
+
+// Pass SwiftMetrics to SwiftMetricsPrometheus
+let smp = try SwiftMetricsPrometheus(swiftMetricsInstance : sm)
+```
+
+By default, SwiftMetricsPrometheus will provide the Prometheus endpoint under `http://<hostname>:<port>/metrics`
+
+The port being used is logged to the console when your application starts:
+
+ * SwiftMetricsPrometheus : Starting on port 8080
 
 ### Application Metrics for Swift Agent
 
