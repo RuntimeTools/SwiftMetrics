@@ -96,18 +96,32 @@ let sm = try SwiftMetrics()
 // Pass SwiftMetrics to the dashboard for visualising
 let smd = try SwiftMetricsDash(swiftMetricsInstance : sm)  
 ```
-Amend Package.swift to be 
-```swift
-   dependencies: [
-      .Package(url: "https://github.com/RuntimeTools/SwiftMetrics.git", majorVersion: #, minorVersion: #)
-   ]
-```
 
-By default, SwiftMetricsDash will starts its own Kitura server and serve the page up under <hostname>:<port>/swiftmetrics-dash
+By default, SwiftMetricsDash will start its own Kitura server and serve the page up under `http://<hostname>:<port>/swiftmetrics-dash`
 
 The port being used is logged to the console when your application starts:
 
  * SwiftMetricsDash : Starting on port 8080
+
+### Prometheus Support
+
+To use SwfitMetrics to provide a [prometheus](https://prometheus.io/) endpoint, you add the following code to your application
+```swift
+import SwiftMetrics
+import SwiftMetricsPrometheus
+
+// Enable SwiftMetrics Monitoring
+let sm = try SwiftMetrics()   
+
+// Pass SwiftMetrics to SwiftMetricsPrometheus
+let smp = try SwiftMetricsPrometheus(swiftMetricsInstance : sm)
+```
+
+By default, SwiftMetricsPrometheus will provide the prometheus endpoint under `http://<hostname>:<port>/metrics`
+
+The port being used is logged to the console when your application starts:
+
+ * SwiftMetricsPrometheus : Starting on port 8080
 
 ### Application Metrics for Swift Agent
 

@@ -38,7 +38,8 @@ let package = Package(
       Target(name: "SwiftBAMDC", dependencies: ["SwiftMetricsKitura"]),
       Target(name: "SwiftMetricsBluemix", dependencies: ["SwiftMetricsKitura", "SwiftBAMDC"]),
       Target(name: "SwiftMetricsDash", dependencies: ["SwiftMetricsBluemix"]),
-      Target(name: "mqttplugin", 
+      Target(name: "SwiftMetricsPrometheus", dependencies: ["SwiftMetricsBluemix"]),
+      Target(name: "mqttplugin",
         dependencies: [
             .Target(name: "paho"),
             .Target(name: "agentcore")
@@ -72,4 +73,3 @@ let package = Package(
     excludePortDir
   ]
 )
-
