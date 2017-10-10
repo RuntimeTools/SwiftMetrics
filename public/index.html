@@ -97,12 +97,18 @@
 <script type="text/javascript" src="graphmetrics/js/httpTop5.js"></script>
 <script type="text/javascript" src="graphmetrics/js/memChart.js"></script>
 <script>
-    var myurl = location.host;
+    let hostname = location.host;
+    let pathname = location.pathname
+    // User may have requested appmetrics-dash/index.html
+    let dashboardRoot = "/" + pathname.split('/')[1];
+
     var webSocketProtocol = "ws://"
     if(location.protocol === "https:") {
       webSocketProtocol = "wss://"
     }
-    var client = new WebSocket(webSocketProtocol + myurl + "/swiftmetrics-dash","swiftmetrics-dash")
+    var client = new WebSocket(webSocketProtocol + hostname + dashboardRoot,"swiftmetrics-dash")
+
+    setHttpTop5Options({host: hostname, filteredPath: location.origin + dashboardRoot});
 
     client.onmessage = function(message) {
         received = JSON.parse(message.data);
