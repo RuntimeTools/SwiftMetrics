@@ -278,9 +278,10 @@ This project uses a semver-parsable X.0.Z version number for releases, where X i
 Non-release versions of this project (for example on github.com/RuntimeTools/SwiftMetrics) will use semver-parsable X.0.Z-dev.B version numbers, where X.0.Z is the last release with Z incremented and B is an integer. For further information on the development process go to the  [SwiftMetrics wiki][1]: [Developing](https://github.com/RuntimeTools/SwiftMetrics/wiki/Developing).
 
 ## Version
-1.2.3
+1.2.4
 
 ## Release History
+`1.2.4` - Prometheus support, memory graph checkboxes, URL filtering & drop Swift 3.0 support. 
 `1.2.3` - Dependency updates, graph resizing and Swift 4 support.  
 `1.2.2` - Minor fixes.  
 `1.2.1` - Minor fixes.  
