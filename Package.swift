@@ -37,13 +37,14 @@ let package = Package(
     .package(url: "https://github.com/IBM-Swift/Kitura.git", from: "1.7.0"),
     .package(url: "https://github.com/IBM-Swift/Kitura-WebSocket.git", from: "0.9.0"),
     .package(url: "https://github.com/IBM-Swift/Kitura-Request.git", from: "0.8.0"),
-    .package(url: "https://github.com/IBM-Swift/Swift-cfenv.git", from: "4.0.0")
+    .package(url: "https://github.com/IBM-Swift/Swift-cfenv.git", from: "4.0.0"),
+    .package(url: "https://github.com/IBM-Swift/SwiftyJSON.git", from: "17.0.0"),
   ],
   targets: [
       .target(name: "SwiftMetrics", dependencies: ["agentcore", "hcapiplugin", "envplugin", "cpuplugin", "memplugin", "CloudFoundryEnv"]),
       .target(name: "SwiftMetricsKitura", dependencies: ["SwiftMetrics", "Kitura"]),
       .target(name: "SwiftBAMDC", dependencies: ["SwiftMetricsKitura", "KituraRequest", "Kitura-WebSocket"]),
-      .target(name: "SwiftMetricsBluemix", dependencies: ["SwiftMetricsKitura","SwiftBAMDC"]),
+      .target(name: "SwiftMetricsBluemix", dependencies: ["SwiftMetricsKitura","SwiftBAMDC","SwiftyJSON"]),
       .target(name: "SwiftMetricsDash", dependencies: ["SwiftMetricsBluemix"]),
       .target(name: "SwiftMetricsPrometheus", dependencies:["SwiftMetricsKitura"]),
       .target(name: "SwiftMetricsCommonSample", dependencies: ["SwiftMetrics"],
