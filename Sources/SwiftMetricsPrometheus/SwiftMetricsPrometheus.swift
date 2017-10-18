@@ -220,10 +220,10 @@ public class SwiftMetricsPrometheus {
                 response
                     .send("# HELP os_cpu_used_ratio The ratio of the systems CPU that is currently used (values are 0-1)\n")
                     .send("# TYPE os_cpu_used_ratio gauge\n")
-                    .send("os_cpu_used_ratio: \(lastCPU.percentUsedBySystem)\n")
+                    .send("os_cpu_used_ratio \(lastCPU.percentUsedBySystem)\n")
                     .send("# HELP process_cpu_used_ratio The ratio of the process CPU that is currently used (values are 0-1)\n")
                     .send("# TYPE process_cpu_used_ratio gauge\n")
-                    .send("process_cpu_used_ratio: \(lastCPU.percentUsedByApplication)\n")
+                    .send("process_cpu_used_ratio \(lastCPU.percentUsedByApplication)\n")
             }
             if (lastMem != nil) {
                 response
