@@ -40,14 +40,14 @@ struct CPUDashData: Encodable {
 }
 
 struct MemDashData: Encodable {
-  public let topic: String = "cpu"
+  public let topic: String = "mem"
   public let payload: MemData
 
 }
 
 struct EnvDashData: Encodable {
   public let topic: String = "env"
-  public let payload: EnvData
+  public let payload: [[String:String]]
 }
 
 struct EnvData: Encodable {
@@ -207,7 +207,12 @@ class SwiftMetricsService: WebSocketService {
         let envData = EnvData(commandLine: commandLine, hostname: hostname,
           os: os, numPar: numPar)
 
-        let envDashData = EnvDashData(payload: envData)
+        let envArray = [["Parameter":"Command Line","Value":"\(commandLine)"],
+                    ["Parameter":"Hostname","Value":"\(hostname)"],
+                    ["Parameter":"Number of Processors","Value":"\(numPar)"],
+                    ["Parameter":"OS Architecture","Value":"\(os)"]]
+
+        let envDashData = EnvDashData(payload: envArray)
         let data = try! encoder.encode(envDashData)
 
     //    let envLine = JSON(["topic":"env","payload":[
@@ -294,17 +299,10 @@ class SwiftMetricsService: WebSocketService {
             }
         }
         httpURLsQueue.sync {
-            var responseData:[String] = []
+            var messageToSend:String = ""
             let localCopy = self.httpURLData
             for (key, value) in localCopy {
-                let json = "{\"url\":\(key), \"averageResponseTime\": \(value.0)}"
-                    responseData.append(json)
-            }
-            var messageToSend:String=""
-
-            // build up the messageToSend string
-            for response in responseData {
-                messageToSend += response + ","
+                  messageToSend = messageToSend + "{\"url\":\"" + key + "\", \"averageResponseTime\": " + String(value.0) + "},"
             }
 
             if !messageToSend.isEmpty {
