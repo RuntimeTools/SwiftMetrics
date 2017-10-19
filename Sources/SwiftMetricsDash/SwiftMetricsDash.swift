@@ -46,6 +46,18 @@ struct MemDashData: Encodable {
 
 }
 
+struct EnvDashData: Encodable {
+  public let topic: String = "env"
+  public let payload: EnvData
+}
+
+struct EnvData: Encodable {
+  public var commandLine: String = ""
+  public var hostname: String = ""
+  public var os: String = ""
+  public var numPar: String = ""
+}
+
 var router = Router()
 public class SwiftMetricsDash {
 
@@ -100,6 +112,7 @@ class SwiftMetricsService: WebSocketService {
     let httpQueue = DispatchQueue(label: "httpStoreQueue")
     let jobsQueue = DispatchQueue(label: "jobsQueue")
     var monitor:SwiftMonitor
+    let encoder = JSONEncoder()
 
 
     public init(monitor: SwiftMonitor) {
@@ -111,10 +124,8 @@ class SwiftMetricsService: WebSocketService {
     }
 
 
-
     func sendCPU(cpu: CPUData) {
         let cpuDashData = CPUDashData(payload: cpu)
-        let encoder = JSONEncoder()
         let data = try! encoder.encode(cpuDashData)
         print(String(data: data, encoding: .utf8)!)
 
@@ -132,17 +143,20 @@ class SwiftMetricsService: WebSocketService {
 
 
     func sendMEM(mem: MemData) {
+        let memDashData = MemDashData(payload: mem)
+        let data = try! encoder.encode(memDashData)
 
-        let memLine = JSON(["topic":"memory","payload":[
-                "time":"\(mem.timeOfSample)",
-                "physical":"\(mem.applicationRAMUsed)",
-                "physical_used":"\(mem.totalRAMUsed)"
-                ]])
+    //    let memLine = JSON(["topic":"memory","payload":[
+    //            "time":"\(mem.timeOfSample)",
+    //            "physical":"\(mem.applicationRAMUsed)",
+    //            "physical_used":"\(mem.totalRAMUsed)"
+    //            ]])
 
         for (_,connection) in connections {
-            if let messageToSend = memLine.rawString() {
-                connection.send(message: messageToSend)
-            }
+          connection.send(message: String(data: data, encoding: .utf8)!)
+          //  if let messageToSend = memLine.rawString() {
+          //      connection.send(message: messageToSend)
+          //  }
         }
     }
 
@@ -186,31 +200,36 @@ class SwiftMetricsService: WebSocketService {
              }
         }
 
+        let envData = EnvData(commandLine: commandLine, hostname: hostname,
+          os: os, numPar: numPar)
 
-        let envLine = JSON(["topic":"env","payload":[
-                ["Parameter":"Command Line","Value":"\(commandLine)"],
-                ["Parameter":"Hostname","Value":"\(hostname)"],
-                ["Parameter":"Number of Processors","Value":"\(numPar)"],
-                ["Parameter":"OS Architecture","Value":"\(os)"]
-                ]])
+        let envDashData = EnvDashData(payload: envData)
+        let data = try! encoder.encode(envDashData)
+
+    //    let envLine = JSON(["topic":"env","payload":[
+    //            ["Parameter":"Command Line","Value":"\(commandLine)"],
+    //            ["Parameter":"Hostname","Value":"\(hostname)"],
+    //            ["Parameter":"Number of Processors","Value":"\(numPar)"],
+    //            ["Parameter":"OS Architecture","Value":"\(os)"]
+    //            ]])
 
         for (_,connection) in connections {
-            if let messageToSend = envLine.rawString() {
-                connection.send(message: messageToSend)
-            }
+          connection.send(message: String(data: data, encoding: .utf8)!)
+      //      if let messageToSend = envLine.rawString() {
+      //          connection.send(message: messageToSend)
+      //      }
         }
     }
 
 
     public func sendTitle()  {
-        let titleLine = JSON(["topic":"title","payload":[
-            "title":"Application Metrics for Swift",
-            "docs": "http://github.com/RuntimeTools/SwiftMetrics"]])
+        let titleLine = "{\"topic\":\"title\",\"payload\":{\"title\":\"Application Metrics for Swift\",\"docs\": \"http://github.com/RuntimeTools/SwiftMetrics\"}}"
 
          for (_,connection) in connections {
-            if let messageToSend = titleLine.rawString() {
-                connection.send(message: messageToSend)
-            }
+             connection.send(message: titleLine)
+          //  if let messageToSend = titleLine.rawString() {
+          //      connection.send(message: messageToSend)
+        //    }
         }
     }
 
