@@ -40,6 +40,12 @@ struct CPUDashData: Encodable {
 
 }
 
+struct MemDashData: Encodable {
+  public let topic: String = "cpu"
+  public let payload: MemData
+
+}
+
 var router = Router()
 public class SwiftMetricsDash {
 
@@ -112,13 +118,14 @@ class SwiftMetricsService: WebSocketService {
         let data = try! encoder.encode(cpuDashData)
         print(String(data: data, encoding: .utf8)!)
 
-        let cpuLine = JSON(["topic":"cpu", "payload":["time":"\(cpu.timeOfSample)","process":"\(cpu.percentUsedByApplication)","system":"\(cpu.percentUsedBySystem)"]])
+      //  let cpuLine = JSON(["topic":"cpu", "payload":["time":"\(cpu.timeOfSample)","process":"\(cpu.percentUsedByApplication)","system":"\(cpu.percentUsedBySystem)"]])
 
         for (_,connection) in connections {
-            if let messageToSend = cpuLine.rawString() {
-                connection.send(message: messageToSend)
-                print(messageToSend)
-            }
+          //  if let messageToSend = cpuLine.rawString() {
+          //      connection.send(message: messageToSend)
+          //      print(messageToSend)
+          //  }
+          connection.send(message: data)
         }
 
     }
