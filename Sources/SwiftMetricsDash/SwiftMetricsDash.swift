@@ -40,7 +40,7 @@ struct CPUDashData: Encodable {
 }
 
 struct MemDashData: Encodable {
-  public let topic: String = "mem"
+  public let topic: String = "memory"
   public let payload: MemData
 
 }
