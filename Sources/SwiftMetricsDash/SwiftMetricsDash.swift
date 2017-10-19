@@ -33,6 +33,13 @@ struct HTTPAggregateData: SMData {
   public var average: Double = 0
   public var total: Int = 0
 }
+
+struct CPUDashData: Encodable {
+  public let topic: String = "cpu"
+  public let payload: CPUData
+
+}
+
 var router = Router()
 public class SwiftMetricsDash {
 
@@ -69,7 +76,7 @@ public class SwiftMetricsDash {
 
     func startServer(router: Router) throws {
       router.all("/swiftmetrics-dash", middleware: StaticFileServer(path: self.SM.localSourceDirectory + "/public"))
-      
+
         if self.createServer {
             let configMgr = ConfigurationManager().load(.environmentVariables)
             Kitura.addHTTPServer(onPort: configMgr.port, with: router)
@@ -100,11 +107,17 @@ class SwiftMetricsService: WebSocketService {
 
 
     func sendCPU(cpu: CPUData) {
+        let cpuDashData = CPUDashData(payload: cpu)
+        let encoder = JSONEncoder()
+        let data = try! encoder.encode(cpuDashData)
+        print(String(data: data, encoding: .utf8)!)
+
         let cpuLine = JSON(["topic":"cpu", "payload":["time":"\(cpu.timeOfSample)","process":"\(cpu.percentUsedByApplication)","system":"\(cpu.percentUsedBySystem)"]])
 
         for (_,connection) in connections {
             if let messageToSend = cpuLine.rawString() {
                 connection.send(message: messageToSend)
+                print(messageToSend)
             }
         }
 

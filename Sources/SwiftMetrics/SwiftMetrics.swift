@@ -24,7 +24,7 @@ import Glibc
 import Darwin
 #endif
 
-public protocol SMData {
+public protocol SMData: Encodable {
 }
 
 public struct CPUData: SMData {
@@ -419,4 +419,3 @@ private func executableFolderURL() -> URL {
     return swiftMon!
   }
 }
-

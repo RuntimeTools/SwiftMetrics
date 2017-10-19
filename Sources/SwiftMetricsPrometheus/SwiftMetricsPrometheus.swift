@@ -110,11 +110,11 @@ public class HTTPDurationSummary {
 
 public class HTTPCounterHandler {
     let handler: String
-    let statusCode: HTTPStatusCode
+    let statusCode: Int
     let requestMethod: String
     var count: Int = 0
 
-    public init(handler: String, statusCode: HTTPStatusCode, requestMethod: String) {
+    public init(handler: String, statusCode: Int, requestMethod: String) {
         self.handler = handler
         self.statusCode = statusCode
         self.requestMethod = requestMethod.lowercased()
@@ -132,7 +132,7 @@ public class HTTPCounter {
     public init() {
     }
 
-    public func addRequest(url: String, statusCode: HTTPStatusCode, requestMethod: String) {
+    public func addRequest(url: String, statusCode: Int, requestMethod: String) {
 
         if let urlparser = URL(string: url) {
             let path = urlparser.path
@@ -169,7 +169,7 @@ func memEvent(mem: MemData) {
 }
 
 func httpEvent(http: HTTPData) {
-    let statusCode = http.statusCode ?? HTTPStatusCode.unknown
+    let statusCode = http.statusCode ?? HTTPStatusCode.unknown.rawValue
     httpCounter.addRequest(url: http.url, statusCode: statusCode, requestMethod: http.requestMethod);
     httpDurations.addRequest(url: http.url, durationMicros: http.duration * 1000.0);
 
@@ -243,7 +243,7 @@ public class SwiftMetricsPrometheus {
                 .send("# TYPE http_requests_total counter\n")
 
             httpCounter.writeCounts( writer: {(handler: HTTPCounterHandler)->() in
-                response.send("http_requests_total{code=\"\(handler.statusCode.rawValue)\", handler=\"\(handler.handler)\", method=\"\(handler.requestMethod)\"} \(handler.count)\n")
+                response.send("http_requests_total{code=\"\(handler.statusCode)\", handler=\"\(handler.handler)\", method=\"\(handler.requestMethod)\"} \(handler.count)\n")
             } )
             response
                 .send("# HELP http_request_duration_microseconds The HTTP request latencies in microseconds.\n")
