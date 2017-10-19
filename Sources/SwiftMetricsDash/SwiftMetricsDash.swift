@@ -125,7 +125,7 @@ class SwiftMetricsService: WebSocketService {
           //      connection.send(message: messageToSend)
           //      print(messageToSend)
           //  }
-          connection.send(message: data)
+          connection.send(message: String(data: data, encoding: .utf8)!)
         }
 
     }
