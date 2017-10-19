@@ -107,7 +107,6 @@ class SwiftMetricsService: WebSocketService {
     func sendCPU(cpu: CPUData) {
         let cpuDashData = DashData(topic: "cpu", payload: cpu)
         let data = try! encoder.encode(cpuDashData)
-        print(String(data: data, encoding: .utf8)!)
 
         for (_,connection) in connections {
           connection.send(message: String(data: data, encoding: .utf8)!)
