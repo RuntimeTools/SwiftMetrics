@@ -33,8 +33,8 @@ public struct CPUData: SMData {
   public let percentUsedBySystem: Float
 
   enum CodingKeys: String, CodingKey {
-    case timeOfSample = "time",
-    case percentUsedByApplication = "process",
+    case timeOfSample = "time"
+    case percentUsedByApplication = "process"
     case percentUsedBySystem = "system"
   }
 
