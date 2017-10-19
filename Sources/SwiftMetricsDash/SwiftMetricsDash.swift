@@ -33,33 +33,9 @@ struct HTTPAggregateData: SMData {
   public var total: Int = 0
 }
 
-struct CPUDashData: Encodable {
-  public let topic: String = "cpu"
-  public let payload: CPUData
-
-}
-
-struct MemDashData: Encodable {
-  public let topic: String = "memory"
-  public let payload: MemData
-
-}
-
-struct EnvDashData: Encodable {
-  public let topic: String = "env"
-  public let payload: [[String:String]]
-}
-
-struct EnvData: Encodable {
-  public var commandLine: String = ""
-  public var hostname: String = ""
-  public var os: String = ""
-  public var numPar: String = ""
-}
-
-struct HTTPDashData: Encodable {
-  public let topic: String = "http"
-  public let payload: HTTPAggregateData
+struct DashData<T: Encodable>: Encodable {
+  public let topic: String
+  public let payload: T
 }
 
 var router = Router()
@@ -129,17 +105,11 @@ class SwiftMetricsService: WebSocketService {
 
 
     func sendCPU(cpu: CPUData) {
-        let cpuDashData = CPUDashData(payload: cpu)
+        let cpuDashData = DashData(topic: "cpu", payload: cpu)
         let data = try! encoder.encode(cpuDashData)
         print(String(data: data, encoding: .utf8)!)
 
-      //  let cpuLine = JSON(["topic":"cpu", "payload":["time":"\(cpu.timeOfSample)","process":"\(cpu.percentUsedByApplication)","system":"\(cpu.percentUsedBySystem)"]])
-
         for (_,connection) in connections {
-          //  if let messageToSend = cpuLine.rawString() {
-          //      connection.send(message: messageToSend)
-          //      print(messageToSend)
-          //  }
           connection.send(message: String(data: data, encoding: .utf8)!)
         }
 
@@ -147,20 +117,11 @@ class SwiftMetricsService: WebSocketService {
 
 
     func sendMEM(mem: MemData) {
-        let memDashData = MemDashData(payload: mem)
+        let memDashData = DashData(topic: "memory", payload: mem)
         let data = try! encoder.encode(memDashData)
-
-    //    let memLine = JSON(["topic":"memory","payload":[
-    //            "time":"\(mem.timeOfSample)",
-    //            "physical":"\(mem.applicationRAMUsed)",
-    //            "physical_used":"\(mem.totalRAMUsed)"
-    //            ]])
 
         for (_,connection) in connections {
           connection.send(message: String(data: data, encoding: .utf8)!)
-          //  if let messageToSend = memLine.rawString() {
-          //      connection.send(message: messageToSend)
-          //  }
         }
     }
 
@@ -204,29 +165,16 @@ class SwiftMetricsService: WebSocketService {
              }
         }
 
-        let envData = EnvData(commandLine: commandLine, hostname: hostname,
-          os: os, numPar: numPar)
-
         let envArray = [["Parameter":"Command Line","Value":"\(commandLine)"],
                     ["Parameter":"Hostname","Value":"\(hostname)"],
                     ["Parameter":"Number of Processors","Value":"\(numPar)"],
                     ["Parameter":"OS Architecture","Value":"\(os)"]]
 
-        let envDashData = EnvDashData(payload: envArray)
+        let envDashData = DashData(topic: "env", payload: envArray)
         let data = try! encoder.encode(envDashData)
 
-    //    let envLine = JSON(["topic":"env","payload":[
-    //            ["Parameter":"Command Line","Value":"\(commandLine)"],
-    //            ["Parameter":"Hostname","Value":"\(hostname)"],
-    //            ["Parameter":"Number of Processors","Value":"\(numPar)"],
-    //            ["Parameter":"OS Architecture","Value":"\(os)"]
-    //            ]])
-
         for (_,connection) in connections {
-          connection.send(message: String(data: data, encoding: .utf8)!)
-      //      if let messageToSend = envLine.rawString() {
-      //          connection.send(message: messageToSend)
-      //      }
+            connection.send(message: String(data: data, encoding: .utf8)!)
         }
     }
 
@@ -236,10 +184,7 @@ class SwiftMetricsService: WebSocketService {
 
          for (_,connection) in connections {
              connection.send(message: titleLine)
-          //  if let messageToSend = titleLine.rawString() {
-          //      connection.send(message: messageToSend)
-        //    }
-        }
+         }
     }
 
     public func storeHTTP(myhttp: HTTPData) {
@@ -279,21 +224,11 @@ class SwiftMetricsService: WebSocketService {
         httpQueue.sync {
             let localCopy = self.httpAggregateData
             if localCopy.total > 0 {
-              let httpDashData = HTTPDashData(payload: localCopy)
-              let data = try! encoder.encode(httpDashData)
-              //  let httpLine = JSON([
-              //  "topic":"http","payload":[
-              //      "time":"\(localCopy.timeOfRequest)",
-              //      "url":"\(localCopy.url)",
-              //      "longest":"\(localCopy.longest)",
-              //      "average":"\(localCopy.average)",
-              //      "total":"\(localCopy.total)"]])
+                let httpDashData = DashData(topic: "http", payload: localCopy)
+                let data = try! encoder.encode(httpDashData)
 
                 for (_,connection) in self.connections {
-                  connection.send(message: String(data: data, encoding: .utf8)!)
-              //      if let messageToSend = httpLine.rawString() {
-              //          connection.send(message: messageToSend)
-              //      }
+                    connection.send(message: String(data: data, encoding: .utf8)!)
                 }
                 self.httpAggregateData = HTTPAggregateData()
             }
