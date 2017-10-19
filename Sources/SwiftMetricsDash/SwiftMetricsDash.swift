@@ -18,7 +18,6 @@ import Kitura
 import SwiftMetricsKitura
 import SwiftMetricsBluemix
 import SwiftMetrics
-import SwiftyJSON
 import KituraNet
 import KituraWebSocket
 import Foundation
@@ -27,7 +26,7 @@ import CloudFoundryEnv
 import Dispatch
 
 struct HTTPAggregateData: SMData {
-  public var timeOfRequest: Int = 0
+  public var time: Int = 0
   public var url: String = ""
   public var longest: Double = 0
   public var average: Double = 0
@@ -56,6 +55,11 @@ struct EnvData: Encodable {
   public var hostname: String = ""
   public var os: String = ""
   public var numPar: String = ""
+}
+
+struct HTTPDashData: Encodable {
+  public let topic: String = "http"
+  public let payload: HTTPAggregateData
 }
 
 var router = Router()
@@ -238,7 +242,7 @@ class SwiftMetricsService: WebSocketService {
     	  httpQueue.sync {
             if self.httpAggregateData.total == 0 {
                 self.httpAggregateData.total = 1
-                self.httpAggregateData.timeOfRequest = localmyhttp.timeOfRequest
+                self.httpAggregateData.time = localmyhttp.timeOfRequest
                 self.httpAggregateData.url = localmyhttp.url
                 self.httpAggregateData.longest = localmyhttp.duration
                 self.httpAggregateData.average = localmyhttp.duration
@@ -270,34 +274,37 @@ class SwiftMetricsService: WebSocketService {
         httpQueue.sync {
             let localCopy = self.httpAggregateData
             if localCopy.total > 0 {
-                let httpLine = JSON([
-                "topic":"http","payload":[
-                    "time":"\(localCopy.timeOfRequest)",
-                    "url":"\(localCopy.url)",
-                    "longest":"\(localCopy.longest)",
-                    "average":"\(localCopy.average)",
-                    "total":"\(localCopy.total)"]])
+              let httpDashData = HTTPDashData(payload: localCopy)
+              let data = try! encoder.encode(httpDashData)
+              //  let httpLine = JSON([
+              //  "topic":"http","payload":[
+              //      "time":"\(localCopy.timeOfRequest)",
+              //      "url":"\(localCopy.url)",
+              //      "longest":"\(localCopy.longest)",
+              //      "average":"\(localCopy.average)",
+              //      "total":"\(localCopy.total)"]])
 
                 for (_,connection) in self.connections {
-                    if let messageToSend = httpLine.rawString() {
-                        connection.send(message: messageToSend)
-                    }
+                  connection.send(message: String(data: data, encoding: .utf8)!)
+              //      if let messageToSend = httpLine.rawString() {
+              //          connection.send(message: messageToSend)
+              //      }
                 }
                 self.httpAggregateData = HTTPAggregateData()
             }
         }
         httpURLsQueue.sync {
-            var responseData:[JSON] = []
+            var responseData:[String] = []
             let localCopy = self.httpURLData
             for (key, value) in localCopy {
-                let json = JSON(["url":key, "averageResponseTime": value.0])
+                let json = "{\"url\":\(key), \"averageResponseTime\": \(value.0)}"
                     responseData.append(json)
             }
             var messageToSend:String=""
 
             // build up the messageToSend string
             for response in responseData {
-                messageToSend += response.rawString()! + ","
+                messageToSend += response + ","
             }
 
             if !messageToSend.isEmpty {
