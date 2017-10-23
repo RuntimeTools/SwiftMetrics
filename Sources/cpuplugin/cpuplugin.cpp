@@ -172,7 +172,8 @@ agentCoreFunctions CpuPlugin::aCF;
 			AppendCPUTime(contentss);
 
 			std::string content = contentss.str();
-			data->size = static_cast<uint32>(content.length()); // should data->size be a size_t?
+			uint32 cSize = static_cast<uint32>(content.length() + 1);  // +1 to include null terminator
+			data->size = cSize; // should data->size be a size_t?
 			data->data = NewCString(content);
 		} else {
 			if (!IsValidData(instance->current)) {
