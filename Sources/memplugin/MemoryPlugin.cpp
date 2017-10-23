@@ -231,8 +231,8 @@ monitordata* MemoryPlugin::OnRequestData() {
 	if (sval) {
 		strcpy(sval, memorydata.c_str());
 
-		data->size = len;
 		data->data = sval;
+		data->size = len + 1;  // +1 to include null terminator
 
 	}
 	aCF.logMessage(debug, "<<<MemoryPlugin::OnRequestData");
