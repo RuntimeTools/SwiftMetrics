@@ -263,7 +263,7 @@ class SwiftMetricsService: WebSocketService {
 
             if !messageToSend.isEmpty {
               // remove the last ','
-              messageToSend = messageToSend.substring(to: messageToSend.index(before: messageToSend.endIndex))
+              messageToSend = String(messageToSend[..<messageToSend.index(before: messageToSend.endIndex)])
               // construct the final JSON obkect
               let messageToSend2 = "{\"topic\":\"httpURLs\",\"payload\":[" + messageToSend + "]}"
               for (_,connection) in self.connections {

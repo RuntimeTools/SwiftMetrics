@@ -187,7 +187,7 @@ public class SwiftMonitor {
       var env: [ String : String ] = [:]
       for value in values {
         if value.contains("="), let firstEquals = value.characters.index(of: "=") {
-          env[value.substring(to: firstEquals)] = value.substring(from: value.index(after: firstEquals))
+          env[String(value[..<firstEquals])] = String(value[value.index(after: firstEquals)...])
         }
       }
       setEnv(env)
