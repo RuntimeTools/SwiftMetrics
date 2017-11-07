@@ -109,7 +109,7 @@ open class SwiftMetrics {
         workingPath = CommandLine.arguments[0]
       }
       if let i = workingPath.range(of: ".build") {
-        applicationPath = workingPath.substring(to: i.lowerBound)
+        applicationPath = String(workingPath[..<i.lowerBound])
       } else {
         print("SwiftMetrics: Error finding .build directory")
       }
@@ -228,7 +228,7 @@ private func executableFolderURL() -> URL {
       } else {
         let i = programPath.range(of: "/", options: .backwards)
         if i != nil {
-          defaultLibraryPath = programPath.substring(to: i!.lowerBound)
+          defaultLibraryPath = String(programPath[..<i!.lowerBound])
         }
       }
     } else {
