@@ -54,7 +54,7 @@ let package = Package(
     .Package(url: "https://github.com/IBM-Swift/Kitura.git", majorVersion: 1, minor: 7),
     .Package(url: "https://github.com/IBM-Swift/Kitura-WebSocket.git", majorVersion: 0, minor: 9),
     .Package(url: "https://github.com/IBM-Swift/Kitura-Request.git", majorVersion: 0, minor: 8),
-    .Package(url: "https://github.com/IBM-Swift/Swift-cfenv.git", majorVersion: 4)
+    .Package(url: "https://github.com/IBM-Swift/Swift-cfenv.git", majorVersion: 5)
   ],
    exclude: [
     "Sources/agentcore/ibmras/common/port/aix",
