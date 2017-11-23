@@ -24,7 +24,7 @@ import LoggerAPI
 import Cryptor
 import Foundation
 import Dispatch
-import KituraRequest
+import SwiftyRequest
 import Configuration
 
 /*
@@ -299,7 +299,7 @@ public class BMConfig : IBAMConfig {
             tmpSBToken = sbt
         }
 
-        if tmpSBToken.characters.count > 0 {
+        if tmpSBToken.count > 0 {
             self.sbToken = TokenUtil.unobfuscate(key: appId, value: tmpSBToken)
             Log.info("[SwiftMetricsBAMConfig] SB token set successfully \(self.sbToken)")
         }
@@ -345,13 +345,13 @@ public class BMConfig : IBAMConfig {
             return
         }
 
-        if self.ingressURL.characters.count > 0 {
+        if self.ingressURL.count > 0 {
             refreshBAMConfigWithBasicAuth()
             return
         }
 
         //this does not appear to be threadsafe
-        if !(self.sbURL.characters.count > 0) {
+        if !(self.sbURL.count > 0) {
             Log.error("[SwiftMetricsBAMConfig] No AvailabilityMonitoring Service connected and no IBAM_INGRESS_URL/IBAM_TOKEN set.")
             return
         }
@@ -412,7 +412,7 @@ public class BMConfig : IBAMConfig {
             return
         }
 
-        if self.ingressURL.characters.count > 0 {
+        if self.ingressURL.count > 0 {
 
             //URLEscape tenantId since can be set via env var
 
@@ -533,8 +533,6 @@ public class BMConfig : IBAMConfig {
 
         do {
             let jsonData = try JSONSerialization.data(withJSONObject: apmData, options: .prettyPrinted)
-            let decoded = try JSONSerialization.jsonObject(with: jsonData, options: [])
-            if let dictFromJSON = decoded as? [String:Any] {
 
                 /*let key = "X-TransactionId"
                 var headerCopy = headers
@@ -543,63 +541,54 @@ public class BMConfig : IBAMConfig {
                     headerCopy["X-TransactionId"] = UUID().uuidString.lowercased()
                 }*/
 
-                var kitReqType = Request.Method.post
+                var request = RestRequest(method: .post, url: urlString)
 
                 if(reqType.uppercased() == "GET") {
-                    kitReqType = Request.Method.get
+                    request = RestRequest(method: .get, url: urlString)
                 }
 
                 //TODO: don't log token in headers, temporarily changed to info
                 //Log.info("Initiating http request  Headers: \(headerCopy) APMData: \(apmData)")
                 Log.debug("[SwiftMetricsBAMConfig] Initiating http request  Headers: \(headers) APMData: \(apmData)")
-
-                KituraRequest.request(kitReqType, urlString, parameters: dictFromJSON, encoding: JSONEncoding.default, headers: headers).response {
-                        request, response, data, error in
-                        /*if request != nil {
-                            Log.debug("[SwiftMetricsBAMConfig] sendMetrics:Request: \(request!)")
+                
+                request.messageBody = jsonData
+                request.headerParameters = headers
+                request.response(completionHandler: { (data, response, error) in
+                 
+                    if let e = error {
+                        //client side error
+                        Log.error("[SwiftMetricsBAMConfig] Failed to create connection to \(urlString): " + e.localizedDescription)
+                    }
+                    else if let httpResponse = response, let receivedData = data {
+                        
+                        if let ds = String(data: receivedData, encoding: String.Encoding.utf8) {
+                            Log.debug("[SwiftMetricsBAMConfig] response as string =>" + ds + "<=")
                         }
-                        if response != nil {
-                            Log.debug(" [SwiftMetricsBAMConfig] sendMetrics:Response: \(response!)")
+                        
+                        //var result: String = NSString (data: receivedData, encoding: String.Encoding.utf8.rawValue)
+                        let json = try? JSONSerialization.jsonObject(with: receivedData, options: [])
+                        
+                        switch (httpResponse.statusCode) {
+                            
+                        case 200...299:
+                            
+                            // Temporarily put to info as static method is disabling it, will debug later
+                            Log.debug("[SwiftMetricsBAMConfig] \(String(describing:request.method)) successful: StatusCode: \(httpResponse.statusCode) Response: \(String(describing:response)), JSON: \(String(describing:json))")
+                            
+                            taskCallback(true, httpResponse.statusCode, json as Any?)
+                            
+                        default:
+                            Log.error("[SwiftMetricsBAMConfig] \(String(describing:request.method)) request got response \(httpResponse.statusCode) and response \(httpResponse)")
+                            taskCallback(false, httpResponse.statusCode, receivedData as Any?)
                         }
-                        if data != nil {
-                            Log.debug("[SwiftMetricsBAMConfig] sendMetrics:Data: \(data!)")
-                        }
-
-                        Log.debug("[SwiftMetricsBAMConfig] sendMetrics:Error: \(String(describing:error))") */
-
-                        if let e = error {
-                            //client side error
-                            Log.error("[SwiftMetricsBAMConfig] Failed to create connection to \(urlString): " + e.localizedDescription)
-                        }
-                        else if let httpResponse = response, let receivedData = data {
-
-                            if let ds = String(data: receivedData, encoding: String.Encoding.utf8) {
-                                Log.debug("[SwiftMetricsBAMConfig] response as string =>" + ds + "<=")
-                            }
-
-                            //var result: String = NSString (data: receivedData, encoding: String.Encoding.utf8.rawValue)
-                            let json = try? JSONSerialization.jsonObject(with: receivedData, options: [])
-
-                            switch (httpResponse.httpStatusCode.rawValue) {
-
-                            case 200...299:
-
-                                // Temporarily put to info as static method is disabling it, will debug later
-                                Log.debug("[SwiftMetricsBAMConfig] \(String(describing:request?.method)) successful: StatusCode: \(httpResponse.statusCode) Response: \(String(describing:response)), JSON: \(String(describing:json))")
-
-                                taskCallback(true, httpResponse.httpStatusCode.rawValue, json as Any?)
-
-                            default:
-                                Log.error("[SwiftMetricsBAMConfig] \(String(describing:request?.method)) request got response \(httpResponse.httpStatusCode.rawValue) and response \(httpResponse)")
-                                taskCallback(false, httpResponse.httpStatusCode.rawValue, receivedData as Any?)
-                            }
-                        }
-                        else {
-                            Log.error("[SwiftMetricsBAMConfig] Error sending data: URL: \(urlString) : Response: \(String(describing:data)), Error: \(String(describing:error))")
-                            taskCallback(false, -1, nil)
-                        }
+                    }
+                    else {
+                        Log.error("[SwiftMetricsBAMConfig] Error sending data: URL: \(urlString) : Response: \(String(describing:data)), Error: \(String(describing:error))")
+                        taskCallback(false, -1, nil)
+                    }
                 }
-            }
+                )
+            
         } catch {
             Log.warning("[SwiftMetricsBAMConfig] Kitura request failed: \(error.localizedDescription)")
         }
