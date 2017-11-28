@@ -322,10 +322,10 @@ private func executableFolderURL() -> URL {
         }
 #if os(macOS)
         // Add plugins one by one in case built with xcode as plugin search path won't work
-        loaderApi.addPlugin(xcodeLibraryPath("envplugin"))
-        loaderApi.addPlugin(xcodeLibraryPath("memplugin"))
-        loaderApi.addPlugin(xcodeLibraryPath("cpuplugin"))
-        loaderApi.addPlugin(xcodeLibraryPath("hcapiplugin"))
+        loaderApi.addPlugin(xcodeLibraryPath(for: "envplugin"))
+        loaderApi.addPlugin(xcodeLibraryPath(for: "memplugin"))
+        loaderApi.addPlugin(xcodeLibraryPath(for: "cpuplugin"))
+        loaderApi.addPlugin(xcodeLibraryPath(for: "hcapiplugin"))
 #endif
         _ = loaderApi.initialize()
         initialized = true
