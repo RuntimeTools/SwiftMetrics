@@ -79,6 +79,7 @@ private func receiveAgentCoreData(cSourceId: UnsafePointer<CChar>, cSize: CUnsig
 open class SwiftMetrics {
 
   let loaderApi: loaderCoreFunctions
+  let CLOUD_LIBRARY_PATH = "/home/vcap/app/.swift-lib"
   let SWIFTMETRICS_VERSION = "99.99.99.29991231"
   var running = false
   typealias monitorPushData = @convention(c) (UnsafePointer<CChar>) -> Void
@@ -90,6 +91,7 @@ open class SwiftMetrics {
   var sleepInterval: UInt32 = 2
   var latencyEnabled: Bool = false
   let jobsQueue = DispatchQueue(label: "Swift Metrics Jobs Queue")
+  let isRunningOnCloud: Bool
   public let localSourceDirectory: String
 
   public init() throws {
@@ -98,8 +100,10 @@ open class SwiftMetrics {
     let fm = FileManager.default
     let currentDir = fm.currentDirectoryPath
     let configMgr = ConfigurationManager().load(.environmentVariables)
+    self.isRunningOnCloud = !configMgr.isLocal
+
     var applicationPath = ""
-    if (configMgr.isLocal) {
+    if configMgr.isLocal {
       var workingPath = ""
       if currentDir.contains(".build") {
         ///we're below the Packages directory
@@ -117,6 +121,7 @@ open class SwiftMetrics {
       // We're in Bluemix, use the path the swift-buildpack saves libraries to
       applicationPath = "/home/vcap/app/"
     }
+
     // Swift 3.1
     let checkoutsPath = applicationPath + ".build/checkouts/"
     if fm.fileExists(atPath: checkoutsPath) {
@@ -212,31 +217,24 @@ private func executableFolderURL() -> URL {
 #endif
 }
 
-
-  private func setDefaultLibraryPath() {
-    var defaultLibraryPath = "."
-    let configMgr = ConfigurationManager().load(.environmentVariables)
-    loaderApi.logMessage(fine, "setDefaultLibraryPath(): isLocal: \(configMgr.isLocal)")
-    if (configMgr.isLocal) {
+  private func getDefaultLibraryPath() -> String? {
+    if isRunningOnCloud {
+      // We're in Bluemix, don't set the search path, we don't want to
+      // dynamically load plugins
+      return nil
+    } else {
       let programPath = CommandLine.arguments[0]
 
-      /// Absolute path to the executable's folder
-      let executableFolder = executableFolderURL().path
-
-      if(programPath.contains("xctest")) { // running tests on Mac
-        defaultLibraryPath = executableFolder
+      if (programPath.contains("xctest")) { // running tests on Mac
+        return executableFolderURL().path
       } else {
-        let i = programPath.range(of: "/", options: .backwards)
-        if i != nil {
-          defaultLibraryPath = String(programPath[..<i!.lowerBound])
+        if let lastSlashIndex = programPath.range(of: "/", options: .backwards) {
+          return String(programPath[..<lastSlashIndex.lowerBound])
+        } else {
+          return "."
         }
       }
-    } else {
-      // We're in Bluemix, use the path the swift-buildpack saves libraries to
-      defaultLibraryPath = "/home/vcap/app/.swift-lib"
     }
-    loaderApi.logMessage(fine, "setDefaultLibraryPath(): to \(defaultLibraryPath)")
-    self.setPluginSearch(toDirectory: URL(fileURLWithPath: defaultLibraryPath, isDirectory: true))
   }
 
   private func loadProperties() throws {
@@ -264,7 +262,7 @@ private func executableFolderURL() -> URL {
 
   public func stop() {
     self.latencyEnabled = false
-    if (running) {
+    if running {
       if swiftMon != nil {
         swiftMon!.stop()
       }
@@ -278,20 +276,57 @@ private func executableFolderURL() -> URL {
     }
   }
 
+  private func macOSLibraryFileName(for name: String) -> String { return "lib\(name).dylib" }
+  private func linuxLibraryFileName(for name: String) -> String { return "lib\(name).so" }
+  private func platformLibraryFileName(for name: String) -> String {
+    #if os(Linux)
+    return linuxLibraryFileName(for: name)
+    #else
+    return macOSLibraryFileName(for: name)
+    #endif
+  }
+
+  private func cloudLibraryPath(for name: String) -> String {
+    return fileJoin(path: CLOUD_LIBRARY_PATH, fileName: linuxLibraryFileName(for: name))
+  }
+
+  private func xcodeLibraryPath(for name: String) -> String {
+    return "@rpath/\(name).framework/Versions/A/\(name)"
+  }
+
+  private func pluginSearchLibraryPath(for name: String) -> String {
+    return fileJoin(path: pluginSearchPath, fileName: platformLibraryFileName(for: name))
+  }
+
+  private var pluginSearchPath: String {
+    guard let cPath = loaderApi.getProperty("com.ibm.diagnostics.healthcenter.plugin.path") else {
+      return ""
+    }
+    return String(cString: cPath)
+  }
+
   public func start() {
-    if (!running) {
+    if !running {
       loaderApi.logMessage(fine, "start(): Starting Swift Application Metrics")
       running = true
-      let pluginSearchPath = String(cString: loaderApi.getProperty("com.ibm.diagnostics.healthcenter.plugin.path")!)
-      if pluginSearchPath == "" {
-        self.setDefaultLibraryPath()
+      if pluginSearchPath == "", let defaultLibraryPath = getDefaultLibraryPath() {
+        self.setPluginSearch(toDirectory: URL(fileURLWithPath: defaultLibraryPath, isDirectory: true))
       }
-      if(!initialized) {
+      if !initialized {
+        if isRunningOnCloud {
+          // Attempt to load plugins already resident in the process
+          loaderApi.addPlugin(cloudLibraryPath(for: "envplugin"))
+          loaderApi.addPlugin(cloudLibraryPath(for: "memplugin"))
+          loaderApi.addPlugin(cloudLibraryPath(for: "cpuplugin"))
+          loaderApi.addPlugin(cloudLibraryPath(for: "hcapiplugin"))
+        }
+#if os(macOS)
         // Add plugins one by one in case built with xcode as plugin search path won't work
-        loaderApi.addPlugin("@rpath/envplugin.framework/Versions/A/envplugin")
-        loaderApi.addPlugin("@rpath/memplugin.framework/Versions/A/memplugin")
-        loaderApi.addPlugin("@rpath/cpuplugin.framework/Versions/A/cpuplugin")
-        loaderApi.addPlugin("@rpath/hcapiplugin.framework/Versions/A/hcapiplugin")
+        loaderApi.addPlugin(xcodeLibraryPath(for: "envplugin"))
+        loaderApi.addPlugin(xcodeLibraryPath(for: "memplugin"))
+        loaderApi.addPlugin(xcodeLibraryPath(for: "cpuplugin"))
+        loaderApi.addPlugin(xcodeLibraryPath(for: "hcapiplugin"))
+#endif
         _ = loaderApi.initialize()
         initialized = true
       }
@@ -349,38 +384,42 @@ private func executableFolderURL() -> URL {
     return path + "/" + fileName
   }
 
-  private func getFunctionFromLibrary(libraryPath: String, functionName: String) -> UnsafeMutableRawPointer? {
-    loaderApi.logMessage(debug, "getFunctionFromLibrary(): Looking for function \(functionName) in library \(libraryPath)")
-    var handle = dlopen(libraryPath, RTLD_LAZY)
-    if(handle == nil) {
-        let error = String(cString: dlerror())
-        loaderApi.logMessage(warning, "Failed to open library \(libraryPath): \(error)")
-        // try xcode location
-        handle = dlopen("@rpath/hcapiplugin.framework/Versions/A/hcapiplugin", RTLD_LAZY)
-        if(handle == nil) {
-            let error = String(cString: dlerror())
-            loaderApi.logMessage(warning, "Failed to open library \("@rpath/agentcore.framework/Versions/A/agentcore"): \(error)")
-            return nil
-        }
+  private func openLibrary(at libraryPath: String) -> UnsafeMutableRawPointer? {
+    guard let handle = dlopen(libraryPath, RTLD_LAZY) else {
+      let error = String(cString: dlerror())
+      loaderApi.logMessage(fine, "Failed to open library at path \(libraryPath): \(error)")
+      return nil
+    }
+    return handle
+  }
+
+  private var monitorApiLibraryHandleCache: UnsafeMutableRawPointer? = nil
+  private var monitorApiLibraryHandle: UnsafeMutableRawPointer? {
+    if let fromCache = monitorApiLibraryHandleCache { return fromCache }
+    // Load the library (failures logged in openLibrary())
+    let handle: UnsafeMutableRawPointer?
+    if isRunningOnCloud {
+        handle = openLibrary(at: cloudLibraryPath(for: "hcapiplugin"))
+    } else {
+        handle = openLibrary(at: xcodeLibraryPath(for: "hcapiplugin")) ?? openLibrary(at: pluginSearchLibraryPath(for: "hcapiplugin"))
+    }
+    monitorApiLibraryHandleCache = handle
+    return handle
+  }
+
+  private func getMonitorApiFunction(functionName: String) -> UnsafeMutableRawPointer? {
+    loaderApi.logMessage(debug, "getMonitorApiFunction(): Looking for function \(functionName) in library libhcapiplugin")
+    guard let handle = monitorApiLibraryHandle else {
+      // Failure already logged in the computed property
+      return nil
     }
     guard let function = dlsym(handle, functionName) else {
       let error = String(cString: dlerror())
-      loaderApi.logMessage(warning, "Failed to find symbol \(functionName) in library \(libraryPath): \(error)")
-      dlclose(handle!)
+      loaderApi.logMessage(warning, "Failed to find symbol \(functionName) in library libhcapiplugin: \(error)")
       return nil
     }
-    dlclose(handle!)
-    loaderApi.logMessage(fine, "getFunctionFromLibrary(): Function \(functionName) found")
+    loaderApi.logMessage(fine, "getMonitorApiFunction(): Function \(functionName) found")
     return function
-  }
-
-  private func getMonitorApiFunction(pluginPath: String, functionName: String) -> UnsafeMutableRawPointer? {
-    #if os(Linux)
-    let libname = "libhcapiplugin.so"
-    #else
-    let libname = "libhcapiplugin.dylib"
-    #endif
-    return getFunctionFromLibrary(libraryPath: fileJoin(path: pluginPath, fileName: libname), functionName: functionName)
   }
 
   private func isMonitorApiValid() -> Bool {
@@ -389,21 +428,19 @@ private func executableFolderURL() -> URL {
   }
 
   private func initMonitorApi() -> Bool {
-    let pluginPath = String(cString: loaderApi.getProperty("com.ibm.diagnostics.healthcenter.plugin.path")!)
-
-    guard let iPushData = getMonitorApiFunction(pluginPath: pluginPath, functionName: "pushData") else {
+    guard let iPushData = getMonitorApiFunction(functionName: "pushData") else {
       loaderApi.logMessage(debug, "initMonitorApi(): Unable to locate pushData. Returning.")
       return false
     }
     pushData = unsafeBitCast(iPushData, to: monitorPushData.self)
 
-    guard let iSendControl = getMonitorApiFunction(pluginPath: pluginPath, functionName: "sendControl") else {
+    guard let iSendControl = getMonitorApiFunction(functionName: "sendControl") else {
       loaderApi.logMessage(debug, "initMonitorApi(): Unable to locate sendControl. Returning.")
       return false
     }
     sendControl = unsafeBitCast(iSendControl, to: monitorSendControl.self)
 
-    guard let iRegisterListener = getMonitorApiFunction(pluginPath: pluginPath, functionName: "registerListener") else {
+    guard let iRegisterListener = getMonitorApiFunction(functionName: "registerListener") else {
       loaderApi.logMessage(debug, "initMonitorApi(): Unable to locate registerListener. Returning.")
       return false
     }
