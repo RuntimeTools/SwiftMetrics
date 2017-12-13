@@ -541,11 +541,13 @@ public class BMConfig : IBAMConfig {
                     headerCopy["X-TransactionId"] = UUID().uuidString.lowercased()
                 }*/
 
-                var request = RestRequest(method: .post, url: urlString)
-
+                var method = HTTPMethod.put
                 if(reqType.uppercased() == "GET") {
-                    request = RestRequest(method: .get, url: urlString)
+                    method = HTTPMethod.get
                 }
+            
+                let request = RestRequest(method: method, url: urlString)
+
 
                 //TODO: don't log token in headers, temporarily changed to info
                 //Log.info("Initiating http request  Headers: \(headerCopy) APMData: \(apmData)")
