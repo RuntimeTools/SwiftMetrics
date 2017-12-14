@@ -9,3 +9,4 @@ Authors ordered by first contribution:
  - Ricardo Olivieri (https://github.com/rolivieri)
  - qibobo (https://github.com/qibobo)  
  - Sian January (https://github.com/sjanuary)
+ - Kye Maloy (https://github.com/kyemaloy97)

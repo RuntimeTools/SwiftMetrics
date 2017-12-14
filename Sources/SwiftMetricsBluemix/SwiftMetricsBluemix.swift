@@ -19,7 +19,7 @@ import Dispatch
 import LoggerAPI
 import Configuration
 import CloudFoundryEnv
-import KituraRequest
+import SwiftyRequest
 import SwiftMetrics
 import SwiftMetricsKitura
 import SwiftyJSON
@@ -386,32 +386,36 @@ public class SwiftMetricsBluemix {
     let sendMetricsPath = "\(host):443/services/agent/report"
     Log.debug("[Auto-scaling Agent] Attempting to send metrics to \(sendMetricsPath)")
 
-    KituraRequest.request(.post,
-      sendMetricsPath,
-      parameters: asOBJ,
-      encoding: JSONEncoding.default,
-      headers: ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
-    ).response {
-      request, response, data, error in
-        Log.debug("[Auto-scaling Agent] sendMetrics:Request: \(request!)")
-        Log.debug("[Auto-scaling Agent] sendMetrics:Response: \(response!)")
-        Log.debug("[Auto-scaling Agent] sendMetrics:Data: \(data!)")
-        Log.debug("[Auto-scaling Agent] sendMetrics:Error: \(String(describing: error))")}
+    
+    let request = RestRequest(method: .post, url: sendMetricsPath)
+    request.headerParameters = ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
+    do {
+        request.messageBody = try JSONSerialization.data(withJSONObject: asOBJ, options: .prettyPrinted)
+    } catch {
+            print("Error converting input to JSON object to post.")
+    }
+    request.response { (data, response, error) in
+        Log.debug("[Auto-scaling Agent] sendMetrics:Request: \(String(describing:request))")
+        Log.debug("[Auto-scaling Agent] sendMetrics:Response: \(String(describing:response))")
+        Log.debug("[Auto-scaling Agent] sendMetrics:Data: \(String(describing:data))")
+        Log.debug("[Auto-scaling Agent] sendMetrics:Error: \(String(describing: error))")
+    }
+    
   }
 
   private func notifyStatus() {
     let notifyStatusPath = "\(host):443/services/agent/status/\(appID)"
     Log.debug("[Auto-scaling Agent] Attempting notifyStatus request to \(notifyStatusPath)")
-    KituraRequest.request(.put,
-      notifyStatusPath,
-      headers: ["Authorization":"Basic \(authorization)"]
-    ).response {
-      request, response, data, error in
-        Log.debug("[Auto-scaling Agent] notifyStatus:Request: \(request!)")
-        Log.debug("[Auto-scaling Agent] notifyStatus:Response: \(response!)")
+    
+    let request = RestRequest(method: .put, url: notifyStatusPath)
+    request.headerParameters = ["Authorization":"Basic \(authorization)"]
+    request.response { (data, response, error) in
+        Log.debug("[Auto-scaling Agent] notifyStatus:Request: \(String(describing:request))")
+        Log.debug("[Auto-scaling Agent] notifyStatus:Response: \(String(describing:response))")
         Log.debug("[Auto-scaling Agent] notifyStatus:Data: \(String(describing: data))")
         Log.debug("[Auto-scaling Agent] notifyStatus:Error: \(String(describing: error))")
     }
+    
   }
 
 
@@ -419,18 +423,22 @@ public class SwiftMetricsBluemix {
   private func refreshConfig() {
     let refreshConfigPath = "\(host):443/v1/agent/config/\(serviceID)/\(appID)?appType=swift"
     Log.debug("[Auto-scaling Agent] Attempting requestConfig request to \(refreshConfigPath)")
-    KituraRequest.request(.get,
-      refreshConfigPath,
-      headers: ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
-    ).response {
-      request, response, data, error in
-        Log.debug("[Auto-scaling Agent] requestConfig:Request: \(request!)")
-        Log.debug("[Auto-scaling Agent] requestConfig:Response: \(response!)")
+
+    let request = RestRequest(method: .get, url: refreshConfigPath)
+    request.headerParameters = ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
+    request.response { (data, response, error) in
+        Log.debug("[Auto-scaling Agent] requestConfig:Request: \(String(describing:request))")
+        Log.debug("[Auto-scaling Agent] requestConfig:Response: \(String(describing:response))")
         Log.debug("[Auto-scaling Agent] requestConfig:Data: \(String(describing: data))")
         Log.debug("[Auto-scaling Agent] requestConfig:Error: \(String(describing: error))")
         Log.debug("[Auto-scaling Agent] requestConfig:Body: \(String(describing: data))")
-        self.updateConfiguration(response: data!)
+        if let responseData = data {
+            self.updateConfiguration(response: responseData)
+        } else {
+            print("Error updating configuration. Data doesn't exist.")
+        }
     }
+    
   }
 
   // Update local config from autoscaling service
