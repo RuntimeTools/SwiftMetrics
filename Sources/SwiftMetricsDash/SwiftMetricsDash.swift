@@ -41,6 +41,16 @@ public class SwiftMetricsDash {
     var service:SwiftMetricsService
     var createServer: Bool = false
 
+    // CPU summary data
+    let totalProcessCPULoad = 0.0;
+    let totalSystemCPULoad = 0.0;
+    let cpuLoadSamples = 0
+
+    // Memory summary data
+    let totalProcessMemory = 0;
+    let totalSystemMemory = 0;
+    let memorySamples = 0;
+
     public convenience init(swiftMetricsInstance : SwiftMetrics) throws {
        try self.init(swiftMetricsInstance : swiftMetricsInstance , endpoint: nil)
     }
@@ -69,7 +79,7 @@ public class SwiftMetricsDash {
 
     func startServer(router: Router) throws {
       router.all("/swiftmetrics-dash", middleware: StaticFileServer(path: self.SM.localSourceDirectory + "/public"))
-      
+
         if self.createServer {
             let configMgr = ConfigurationManager().load(.environmentVariables)
             Kitura.addHTTPServer(onPort: configMgr.port, with: router)
@@ -100,7 +110,13 @@ class SwiftMetricsService: WebSocketService {
 
 
     func sendCPU(cpu: CPUData) {
-        let cpuLine = JSON(["topic":"cpu", "payload":["time":"\(cpu.timeOfSample)","process":"\(cpu.percentUsedByApplication)","system":"\(cpu.percentUsedBySystem)"]])
+        totalProcessCPULoad += cpu.percentUsedByApplication;
+        totalSystemCPULoad += cpu.percentUsedBySystem;
+        cpuLoadSamples++;
+        var processMean = (totalProcessCPULoad / cpuLoadSamples);
+        var systemMean = (totalSystemCPULoad / cpuLoadSamples);
+
+        let cpuLine = JSON(["topic":"cpu", "payload":["time":"\(cpu.timeOfSample)","process":"\(cpu.percentUsedByApplication)","system":"\(cpu.percentUsedBySystem),"processMean":"\(processMean),"systemMean":"\(systemMean)"]])
 
         for (_,connection) in connections {
             if let messageToSend = cpuLine.rawString() {
@@ -112,11 +128,18 @@ class SwiftMetricsService: WebSocketService {
 
 
     func sendMEM(mem: MemData) {
+        totalProcessMemory += mem.applicationRAMUsed;
+        totalSystemMemory += mem.totalRAMUsed;
+        memorySamples++;
+        var processMean = (totalProcessMemory / memorySamples);
+        var systemMean = (totalSystemMemory / memorySamples);
 
         let memLine = JSON(["topic":"memory","payload":[
                 "time":"\(mem.timeOfSample)",
                 "physical":"\(mem.applicationRAMUsed)",
-                "physical_used":"\(mem.totalRAMUsed)"
+                "physical_used":"\(mem.totalRAMUsed)",
+                "processMean":"\(processMean)",
+                "systemMean":"\(systemMean)"
                 ]])
 
         for (_,connection) in connections {

@@ -134,15 +134,12 @@
       webSocketProtocol = "wss://"
     }
     var client = new WebSocket(webSocketProtocol + hostname + dashboardRoot,"swiftmetrics-dash")
-    let summary = {cpu:{}, gc:{}, memoryPools:{}};
+    let summary = {cpu:{}, gc:{}, memory:{}};
 
     let envTable = new TextTable('#envDiv', '#summary', localizedStrings.envTitle);
     let summaryTable = new TextTable('#summaryDiv', '#summary', localizedStrings.summaryTitle);
     let httpSummary = new HttpSummary('#httpSummaryDiv', '#summary', localizedStrings.httpSummaryTitle);
     httpSummary.setHttpSummaryOptions({host: hostname, filteredPath: location.origin + dashboardRoot});
-
-
-    setHttpTop5Options({host: hostname, filteredPath: location.origin + dashboardRoot});
 
     client.onmessage = function(message) {
         received = JSON.parse(message.data);
@@ -157,6 +154,8 @@
                 break;
             case 'memory':
                 updateMemData(payload);
+                summary.memory.systemMean = received.payload.systemMean;
+                summary.memory.processMean = received.payload.processMean;
                 break;
             case 'env':
                 envTable.populateTableJSON(payload);
@@ -183,11 +182,23 @@
             let valueStr = value.toLocaleString([],{style: 'percent', minimumSignificantDigits: 4, maximumSignificantDigits: 4});
             summaryData.push({Parameter: 'Average System CPU', Value: valueStr});
          }
+         if( summary.memory.processMean ) {
+            summaryData.push({Parameter: 'Average Process Memory', Value: `${summary.memory.processMean} bytes`});
+         }
+         if( summary.memory.systemMean ) {
+            summaryData.push({Parameter: 'Average System Memory', Value: `${summary.memory.systemMean} bytes`});
+         }
         summaryTable.populateTable(summaryData);
     }
 
     let selected_tab = "dashboard-tab"
     window.addEventListener('resize', resize);
+    // Also re-size when we change tabs in case we re-sized
+    // while the new tab wasn't visible.
+    $('.nav-tabs a').on('shown.bs.tab', function(event) {
+      selected_tab = event.target.id;
+      resize();
+    });
 
     function resize() {
         if (selected_tab == "dashboard-tab") {
