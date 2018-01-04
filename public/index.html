@@ -34,20 +34,46 @@
 
     <div class="headerDiv"><span class="rightHeader"></span><span class="leftHeader"></span></div>
 
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-6 hideable" id="httpDiv1"></div>
-            <div class="col-md-3 hideable" id="httpDiv2"></div>
-            <div class="col-md-3 hideable" id="httpDiv3"></div>
+    <div id="tabs" class="container">
+
+      <ul class="nav nav-tabs">
+        <li class="active">
+          <a href="#dashboard" id="dashboard-tab" data-toggle="tab">Dashboard</a>
+        </li>
+        <li>
+          <a href="#summary" id="summary-tab" data-toggle="tab">Summary</a>
+        </li>
+      </ul>
+
+      <div class="tab-content ">
+        <div class="tab-pane active" id="dashboard">
+          <div class="container-fluid">
+          <div class="row">
+              <div class="col-md-6 hideable" id="cpuDiv1"></div>
+              <div class="col-md-6 hideable" id="httpDiv1"></div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 hideable" id="memDiv1"></div>
+            <div class="col-md-6 hideable" id="httpDiv2"></div>
+          </div>
+          </div>
         </div>
 
-        <div class="row">
-            <div class="col-md-4 hideable" id="cpuDiv1"></div>
-            <div class="col-md-4 hideable" id="memDiv1"></div>
-            <div class="col-md-4 hideable" id="envDiv"></div>
+        <div class="tab-pane" id="summary">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="graph-container col-md-7">
+                <div class="col-md-12 height-fill hideable" id="httpSummaryDiv"></div>
+              </div>
+              <div class="graph-container col-md-5">
+                <div class="col-md-12 hideable" id="envDiv"></div>
+                <div class="col-md-12 hideable" id="summaryDiv"></div>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
-
 
 <script type="text/javascript" src="graphmetrics/js/i18n.js"></script>
 <script>
@@ -90,11 +116,12 @@
 
  </script>
 <script type="text/javascript" src="graphmetrics/js/header.js"></script>
-<script type="text/javascript" src="graphmetrics/js/envTable.js"></script>
+<script type="text/javascript" src="graphmetrics/js/textTable.js"></script>
 <script type="text/javascript" src="graphmetrics/js/cpuChart.js"></script>
 <script type="text/javascript" src="graphmetrics/js/httpThroughPutChart.js"></script>
 <script type="text/javascript" src="graphmetrics/js/httpRequestsChart.js"></script>
-<script type="text/javascript" src="graphmetrics/js/httpTop5.js"></script>
+<script type="text/javascript" src="graphmetrics/js/httpSummary.js"></script>
+<script type="text/javascript" src="graphmetrics/js/top5.js"></script>
 <script type="text/javascript" src="graphmetrics/js/memChart.js"></script>
 <script>
     let hostname = location.host;
@@ -107,6 +134,13 @@
       webSocketProtocol = "wss://"
     }
     var client = new WebSocket(webSocketProtocol + hostname + dashboardRoot,"swiftmetrics-dash")
+    let summary = {cpu:{}, gc:{}, memoryPools:{}};
+
+    let envTable = new TextTable('#envDiv', '#summary', localizedStrings.envTitle);
+    let summaryTable = new TextTable('#summaryDiv', '#summary', localizedStrings.summaryTitle);
+    let httpSummary = new HttpSummary('#httpSummaryDiv', '#summary', localizedStrings.httpSummaryTitle);
+    httpSummary.setHttpSummaryOptions({host: hostname, filteredPath: location.origin + dashboardRoot});
+
 
     setHttpTop5Options({host: hostname, filteredPath: location.origin + dashboardRoot});
 
@@ -118,39 +152,58 @@
         switch (topic) {
             case 'cpu':
                 updateCPUData(payload);
+                summary.cpu.systemMean = received.payload.systemMean;
+                summary.cpu.processMean = received.payload.processMean;
                 break;
             case 'memory':
                 updateMemData(payload);
                 break;
             case 'env':
-                populateEnvTable(payload);
+                envTable.populateTableJSON(payload);
                 break;
             case 'http':
                 updateHttpData(payload);
                 break;
             case 'httpURLs':
-                updateURLData(payload);
+                httpSummary.updateURLData(payload);
                 break;
             case 'title' :
                 updateHeader(payload);
                 break;
 
         }
+        let summaryData = [];
+        if( summary.cpu.processMean ) {
+           let value = new Number(summary.cpu.processMean);
+           let valueStr = value.toLocaleString([],{style: 'percent', minimumSignificantDigits: 4, maximumSignificantDigits: 4});
+           summaryData.push({Parameter: 'Average Process CPU', Value: valueStr});
+        }
+        if( summary.cpu.systemMean ) {
+            let value = new Number(summary.cpu.systemMean);
+            let valueStr = value.toLocaleString([],{style: 'percent', minimumSignificantDigits: 4, maximumSignificantDigits: 4});
+            summaryData.push({Parameter: 'Average System CPU', Value: valueStr});
+         }
+        summaryTable.populateTable(summaryData);
     }
 
+    let selected_tab = "dashboard-tab"
     window.addEventListener('resize', resize);
 
     function resize() {
-        canvasWidth = $("#cpuDiv1").width() - 8,
-        httpCanvasWidth = $("#httpDiv1").width() - 8,
-        graphWidth = canvasWidth - margin.left - margin.right,
-        httpGraphWidth = httpCanvasWidth - margin.left - margin.right;
-        resizeCPUChart();
-        resizeHttpChart();
-        resizeHttpThroughputChart();
-        resizeHttpTop5Chart();
-        resizeMemChart();
-        resizeEnvTable();
+        if (selected_tab == "dashboard-tab") {
+          canvasWidth = $("#cpuDiv1").width() - 8,
+          httpCanvasWidth = $("#httpDiv1").width() - 8,
+          graphWidth = canvasWidth - margin.left - margin.right,
+          httpGraphWidth = httpCanvasWidth - margin.left - margin.right;
+          resizeCPUChart();
+          resizeHttpChart();
+          resizeHttpThroughputChart();
+          resizeMemChart();
+      } else if(selected_tab == "summary-tab") {
+          envTable.resizeTable();
+          summaryTable.resizeTable();
+          httpSummary.resizeTable();
+      }
     }
 
 </script>
