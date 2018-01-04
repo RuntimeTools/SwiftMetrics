@@ -41,16 +41,6 @@ public class SwiftMetricsDash {
     var service:SwiftMetricsService
     var createServer: Bool = false
 
-    // CPU summary data
-    let totalProcessCPULoad = 0.0;
-    let totalSystemCPULoad = 0.0;
-    let cpuLoadSamples = 0
-
-    // Memory summary data
-    let totalProcessMemory = 0;
-    let totalSystemMemory = 0;
-    let memorySamples = 0;
-
     public convenience init(swiftMetricsInstance : SwiftMetrics) throws {
        try self.init(swiftMetricsInstance : swiftMetricsInstance , endpoint: nil)
     }
@@ -98,6 +88,17 @@ class SwiftMetricsService: WebSocketService {
     let jobsQueue = DispatchQueue(label: "jobsQueue")
     var monitor:SwiftMonitor
 
+    // CPU summary data
+    var totalProcessCPULoad: Double = 0.0;
+    var totalSystemCPULoad: Double = 0.0;
+    var cpuLoadSamples: Double = 0
+
+    // Memory summary data
+    var totalProcessMemory: Int = 0;
+    var totalSystemMemory: Int = 0;
+    var memorySamples: Int = 0;
+
+
 
     public init(monitor: SwiftMonitor) {
         self.monitor = monitor
@@ -110,13 +111,13 @@ class SwiftMetricsService: WebSocketService {
 
 
     func sendCPU(cpu: CPUData) {
-        totalProcessCPULoad += cpu.percentUsedByApplication;
-        totalSystemCPULoad += cpu.percentUsedBySystem;
-        cpuLoadSamples++;
-        var processMean = (totalProcessCPULoad / cpuLoadSamples);
-        var systemMean = (totalSystemCPULoad / cpuLoadSamples);
+        totalProcessCPULoad += Double(cpu.percentUsedByApplication);
+        totalSystemCPULoad += Double(cpu.percentUsedBySystem);
+        cpuLoadSamples += 1;
+        let processMean = (totalProcessCPULoad / cpuLoadSamples);
+        let systemMean = (totalSystemCPULoad / cpuLoadSamples);
 
-        let cpuLine = JSON(["topic":"cpu", "payload":["time":"\(cpu.timeOfSample)","process":"\(cpu.percentUsedByApplication)","system":"\(cpu.percentUsedBySystem),"processMean":"\(processMean),"systemMean":"\(systemMean)"]])
+        let cpuLine = JSON(["topic":"cpu", "payload":["time":"\(cpu.timeOfSample)","process":"\(cpu.percentUsedByApplication)","system":"\(cpu.percentUsedBySystem)","processMean":"\(processMean)","systemMean":"\(systemMean)"]])
 
         for (_,connection) in connections {
             if let messageToSend = cpuLine.rawString() {
@@ -130,9 +131,9 @@ class SwiftMetricsService: WebSocketService {
     func sendMEM(mem: MemData) {
         totalProcessMemory += mem.applicationRAMUsed;
         totalSystemMemory += mem.totalRAMUsed;
-        memorySamples++;
-        var processMean = (totalProcessMemory / memorySamples);
-        var systemMean = (totalSystemMemory / memorySamples);
+        memorySamples += 1;
+        let processMean = (totalProcessMemory / memorySamples);
+        let systemMean = (totalSystemMemory / memorySamples);
 
         let memLine = JSON(["topic":"memory","payload":[
                 "time":"\(mem.timeOfSample)",
