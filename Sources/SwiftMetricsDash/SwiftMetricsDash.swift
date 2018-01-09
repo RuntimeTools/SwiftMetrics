@@ -82,7 +82,7 @@ class SwiftMetricsService: WebSocketService {
 
     private var connections = [String: WebSocketConnection]()
     var httpAggregateData: HTTPAggregateData = HTTPAggregateData()
-    var httpURLData:[String:(totalTime:Double, numHits:Double)] = [:]
+    var httpURLData:[String:(totalTime:Double, numHits:Double, longestTime:Double)] = [:]
     let httpURLsQueue = DispatchQueue(label: "httpURLsQueue")
     let httpQueue = DispatchQueue(label: "httpStoreQueue")
     let jobsQueue = DispatchQueue(label: "jobsQueue")
@@ -243,10 +243,14 @@ class SwiftMetricsService: WebSocketService {
             if(urlTuple != nil) {
                 let averageResponseTime = urlTuple!.0
                 let hits = urlTuple!.1
+                var longest = urlTuple!.2
+                if (localmyhttp.duration > longest) {
+                    longest = localmyhttp.duration
+                }
                 // Recalculate the average
-                self.httpURLData.updateValue(((averageResponseTime * hits + localmyhttp.duration)/(hits + 1), hits + 1), forKey: localmyhttp.url)
+                self.httpURLData.updateValue(((averageResponseTime * hits + localmyhttp.duration)/(hits + 1), hits + 1, longest), forKey: localmyhttp.url)
             } else {
-                self.httpURLData.updateValue((localmyhttp.duration, 1), forKey: localmyhttp.url)
+                self.httpURLData.updateValue((localmyhttp.duration, 1, localmyhttp.duration), forKey: localmyhttp.url)
             }
         }
     }
@@ -275,7 +279,7 @@ class SwiftMetricsService: WebSocketService {
             var responseData:[JSON] = []
             let localCopy = self.httpURLData
             for (key, value) in localCopy {
-                let json = JSON(["url":key, "averageResponseTime": value.0])
+                let json = JSON(["url":key, "averageResponseTime": value.0, "hits": value.1, "longestResponseTime": value.2])
                     responseData.append(json)
             }
             var messageToSend:String=""
