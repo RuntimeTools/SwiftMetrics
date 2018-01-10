@@ -23,7 +23,7 @@ public struct HTTPData: SMData {
   public let timeOfRequest: Int
   public let url: String
   public let duration: Double
-  public let statusCode: HTTPStatusCode?
+  public let statusCode: Int?
   public let requestMethod: String
 }
 
@@ -73,7 +73,7 @@ private class HttpMonitor: ServerMonitor {
                         self.sM.emitData(HTTPData(timeOfRequest:Int(req.requestTime),
                              url:req.request.urlURL.absoluteString,
                              duration:(self.timeIntervalSince1970MilliSeconds - req.requestTime),
-                             statusCode:response.statusCode, requestMethod:req.request.method))
+                             statusCode:response.statusCode?.rawValue, requestMethod:req.request.method))
                         requestStore.remove(at:index)
                         break
                        }
