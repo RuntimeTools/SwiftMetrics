@@ -24,19 +24,13 @@ import Glibc
 import Darwin
 #endif
 
-public protocol SMData: Encodable {
+public protocol SMData {
 }
 
 public struct CPUData: SMData {
   public let timeOfSample: Int
   public let percentUsedByApplication: Float
   public let percentUsedBySystem: Float
-
-  enum CodingKeys: String, CodingKey {
-    case timeOfSample = "time"
-    case percentUsedByApplication = "process"
-    case percentUsedBySystem = "system"
-  }
 }
 
 public struct MemData: SMData {
@@ -47,12 +41,6 @@ public struct MemData: SMData {
   public let applicationAddressSpaceSize: Int
   public let applicationPrivateSize: Int
   public let applicationRAMUsed: Int
-
-  enum CodingKeys: String, CodingKey {
-    case timeOfSample = "time"
-    case applicationRAMUsed = "physical"
-    case totalRAMUsed = "physical_used"
-  }
 }
 
 public struct EnvData: SMData {
@@ -468,3 +456,4 @@ private func executableFolderURL() -> URL {
     return swiftMon!
   }
 }
+
