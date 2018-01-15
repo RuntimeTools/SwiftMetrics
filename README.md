@@ -284,7 +284,7 @@ Non-release versions of this project (for example on github.com/RuntimeTools/Swi
 2.2.0
 
 ## Release History
-`2.2.0` - New summary tab in SwiftMetrics dashboard
+`2.2.0` - New summary tab in SwiftMetrics dashboard  
 `2.1.0` - Remove KituraRequest dependency and switch to SwiftyRequest  
 `2.0.4` - Reapply Swift-cfenv version change  
 `2.0.3` - Provide crash fix without Swift-cfenv version change  
