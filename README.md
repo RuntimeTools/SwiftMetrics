@@ -281,9 +281,10 @@ This project uses a semver-parsable X.0.Z version number for releases, where X i
 Non-release versions of this project (for example on github.com/RuntimeTools/SwiftMetrics) will use semver-parsable X.0.Z-dev.B version numbers, where X.0.Z is the last release with Z incremented and B is an integer. For further information on the development process go to the  [SwiftMetrics wiki][1]: [Developing](https://github.com/RuntimeTools/SwiftMetrics/wiki/Developing).
 
 ## Version
-2.1.0
+2.2.0
 
 ## Release History
+`2.2.0` - New summary tab in SwiftMetrics dashboard
 `2.1.0` - Remove KituraRequest dependency and switch to SwiftyRequest  
 `2.0.4` - Reapply Swift-cfenv version change  
 `2.0.3` - Provide crash fix without Swift-cfenv version change  
