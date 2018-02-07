@@ -16,7 +16,9 @@
 
 import XCTest
 @testable import SwiftMetricsTests
+@testable import SwiftMetricsRESTTests
 
 XCTMain([
-     testCase(SwiftMetricsTests.allTests),
+     //testCase(SwiftMetricsTests.allTests),
+     testCase(SwiftMetricsRESTTests.allTests),
 ])
