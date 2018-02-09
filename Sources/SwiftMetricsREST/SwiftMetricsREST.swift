@@ -44,14 +44,14 @@ import Configuration
 
     public struct SMRCollection: Codable {
       let id: String
-      let startTime: Double
-      var endTime: Double = 0
-      var duration: Double = 0
+      let startTime: UInt
+      var endTime: UInt = 0
+      var duration: UInt = 0
       var cpu: CPUSummary = CPUSummary()
       var memory: MemSummary = MemSummary()
       var httpUrls: [HttpUrlReport] = []
 
-      init(id: String, startTime: Double) {
+      init(id: String, startTime: UInt) {
         self.id = id
         self.startTime = startTime
       }
@@ -186,7 +186,7 @@ public class SwiftMetricsREST {
               try response.end()
               return
             }
-            temp_collection.collection.endTime = Date().timeIntervalSince1970 * 1000
+            temp_collection.collection.endTime = UInt(Date().timeIntervalSince1970 * 1000)
             temp_collection.collection.duration = temp_collection.collection.endTime - temp_collection.collection.startTime
             self.smrCollectionList[id] = temp_collection
             let data = try! encoder.encode(temp_collection.collection)
@@ -195,18 +195,18 @@ public class SwiftMetricsREST {
             try response.end()
           }
           .put() { req, response, _ in
-            guard let idString = req.parameters["id"], let id = Int(idString), var temp_collection = self.smrCollectionList[id] else {
+            guard let idString = req.parameters["id"], let id = Int(idString) else {
               _ = response.send(status: HTTPStatusCode.badRequest)
               try response.end()
               return
             }
-            // set duration
-            temp_collection.collection.endTime = Date().timeIntervalSince1970 * 1000
-            temp_collection.collection.duration = temp_collection.collection.endTime - temp_collection.collection.startTime
-            let data = try! encoder.encode(temp_collection.collection)
-            response.send(data: data)
-            let new_collection = SMRCollection(id: idString, startTime: Date().timeIntervalSince1970 * 1000)
-            self.smrCollectionList[id] = SMRCollectionInstance(collection: new_collection)
+            if (self.smrCollectionList[id] == nil) {
+              _ = response.send(status: HTTPStatusCode.notFound)
+            } else {
+              let new_collection = SMRCollection(id: idString, startTime: UInt(Date().timeIntervalSince1970 * 1000))
+              self.smrCollectionList[id] = SMRCollectionInstance(collection: new_collection)
+              _ = response.send(status: HTTPStatusCode.OK)
+            }
             // Error is thrown only by response.end() not response.send()
             try response.end()
           }
@@ -216,8 +216,12 @@ public class SwiftMetricsREST {
               try response.end()
               return
             }
-            self.smrCollectionList[id] = nil
-            _ = response.send(status: HTTPStatusCode.OK)
+            if (self.smrCollectionList[id] == nil) {
+              _ = response.send(status: HTTPStatusCode.notFound)
+            } else {
+              self.smrCollectionList[id] = nil
+              _ = response.send(status: HTTPStatusCode.noContent)
+            }
             try response.end()
           }
 
@@ -239,9 +243,13 @@ public class SwiftMetricsREST {
             while (self.smrCollectionList[temp_id] != nil) {
               temp_id += 1
             }
-            let new_collection = SMRCollection(id: String(temp_id), startTime: Date().timeIntervalSince1970 * 1000)
+            let idString = String(temp_id)
+            let new_collection = SMRCollection(id: idString, startTime: UInt(Date().timeIntervalSince1970 * 1000))
             self.smrCollectionList[temp_id] = SMRCollectionInstance(collection: new_collection)
-            let data = try! encoder.encode(CollectionUri(uri: "\(request.originalURL)/\(temp_id)"))
+            response.status(HTTPStatusCode.created)
+            let uriString = request.originalURL + "/" + idString
+            response.headers.append("Location", value: uriString)
+            let data = try! encoder.encode(CollectionUri(uri: uriString))
             response.send(data: data)
             // Error is thrown only by response.end() not response.send()
             try response.end()
