@@ -218,7 +218,7 @@ class SwiftMetricsRESTTests: XCTestCase {
             XCTAssertEqual(result.uri, self.collectionsEndpoint + "/0", "URI should equal \(self.collectionsEndpoint)/0")
             print("\(result)")
             // sleep for hopefully 2 CPU and 2 Memory events
-            sleep(7)
+            sleep(15)
             guard let url2 = URL(string: self.collectionsEndpoint + "/0") else {
               XCTFail("Error: cannot create URL for \(self.collectionsEndpoint)/0")
               return
@@ -227,8 +227,8 @@ class SwiftMetricsRESTTests: XCTestCase {
             urlRequest.httpMethod = "GET"
             let tSMRCCtask2 = session.dataTask(with: urlRequest) { data , response, error in
               let currentTime = UInt(Date().timeIntervalSince1970 * 1000)
-              //give 8 seconds leeway for the sleep
-              let minTime = currentTime - 8000
+              //give 16 seconds leeway for the sleep
+              let minTime = currentTime - 16000
               guard error == nil else {
                 XCTFail("error calling GET on \(self.collectionsEndpoint)/0")
                 print(error!)
@@ -310,7 +310,7 @@ class SwiftMetricsRESTTests: XCTestCase {
         }
         tSMRCCtask.resume()
 
-        waitForExpectations(timeout: 20) { error in
+        waitForExpectations(timeout: 25) { error in
             XCTAssertNil(error)
         }
     }
@@ -522,6 +522,91 @@ class SwiftMetricsRESTTests: XCTestCase {
         }
     }
 
+    func testSMRMultipleHTTPHits() {
+        let expectMultipleHits = expectation(description: "Expect 5 hits on the collection URL")
+
+        guard let url = URL(string: collectionsEndpoint) else {
+          XCTFail("Error: cannot create URL for \(collectionsEndpoint)")
+          return
+        }
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        let session = URLSession(configuration: URLSessionConfiguration.default)
+        let tSMRMHMtask = session.dataTask(with: urlRequest) { data , response, error in
+          guard error == nil else {
+            XCTFail("error calling GET on \(self.collectionsEndpoint)")
+            print(error!)
+            return
+          }
+          guard let httpResponse = response as? HTTPURLResponse else {
+            XCTFail("Error: unable to retrieve HTTP Status code")
+            return
+          }
+          guard let responseData = data else {
+            XCTFail("Error: did not receive data")
+            return
+          }
+          do {
+            XCTAssertEqual(201, httpResponse.statusCode)
+            let result = try self.decoder.decode(CollectionUri.self, from: responseData)
+            let uriString = result.uri
+            guard let url2 = URL(string: uriString) else {
+              XCTFail("Error: cannot create URL for \(result.uri)")
+              return
+            }
+            var urlRequest2 = URLRequest(url: url2)
+            urlRequest2.httpMethod = "GET"
+            // generate 5 hits
+            for _ in 1...5 {
+              let tSMRMHMtask2 = session.dataTask(with: urlRequest2) { _ , _, _ in }
+              tSMRMHMtask2.resume()
+              sleep(2)
+            }
+            let tSMRMHMtask3 = session.dataTask(with: urlRequest2) { data , response, error in
+              guard error == nil else {
+                XCTFail("error calling GET on \(uriString)")
+                print(error!)
+                return
+              }
+              guard let httpResponse = response as? HTTPURLResponse else {
+                XCTFail("Error: unable to retrieve HTTP Status code")
+                return
+              }
+              guard let responseData = data else {
+                XCTFail("Error: did not receive data")
+                return
+              }
+              do {
+                XCTAssertEqual(200, httpResponse.statusCode)
+                let result = try self.decoder.decode(SMRCollection.self, from: responseData)
+                // find report for collection url
+                if let report = result.httpUrls.first(where: { $0.url == uriString }) {
+                  XCTAssertEqual(5, report.hits, "Expected 5 HTTP hits")
+                  expectMultipleHits.fulfill()
+                  print("\(result)")
+                } else {
+                  XCTFail("Unable to find any hits for \(uriString)")
+                }
+              } catch {
+                XCTFail("error trying to decode responseData into SMRCollection struct")
+                return
+              }
+            }
+            tSMRMHMtask3.resume()
+          } catch {
+            XCTFail("error trying to decode responseData into CollectionUri struct")
+            return
+          }
+        }
+        tSMRMHMtask.resume()
+
+        waitForExpectations(timeout: 20) { error in
+            XCTAssertNil(error)
+        }
+    }
+
+
+
     static var allTests : [(String, (SwiftMetricsRESTTests) -> () throws -> Void)] {
         return [
           ("SMRNoCollections", testSMRNoCollections),
@@ -531,6 +616,7 @@ class SwiftMetricsRESTTests: XCTestCase {
           ("SMRFailOnGetInvalidCollection", testSMRFailOnGetInvalidCollection),
           ("SMRFailOnPutInvalidCollection", testSMRFailOnPutInvalidCollection),
           ("SMRFailOnDeleteInvalidCollection", testSMRFailOnDeleteInvalidCollection),
+          ("SMRMultipleHTTPHits", testSMRMultipleHTTPHits),
         ]
     }
 }
