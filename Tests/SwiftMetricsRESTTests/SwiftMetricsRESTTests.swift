@@ -327,7 +327,7 @@ class SwiftMetricsRESTTests: XCTestCase {
         let session = URLSession(configuration: URLSessionConfiguration.default)
         let tSMRRCOPtask = session.dataTask(with: urlRequest) { data , response, error in
           guard error == nil else {
-            XCTFail("error calling GET on \(self.collectionsEndpoint)")
+            XCTFail("error calling POST on \(self.collectionsEndpoint)")
             print(error!)
             return
           }
@@ -413,6 +413,10 @@ class SwiftMetricsRESTTests: XCTestCase {
                   XCTAssertGreaterThanOrEqual(result.httpUrls[0].longestResponseTime, result.httpUrls[0].averageResponseTime, "Memory Process Peak less than mean")
                   expectCollectionReset.fulfill()
                   print("\(result)")
+                  // cleanup
+                  urlRequest2.httpMethod = "DELETE"
+                  let tSMRRCOPtask4 = session.dataTask(with: urlRequest2) { _ , _, _ in }
+                  tSMRRCOPtask4.resume()
                 } catch {
                   XCTFail("error trying to decode responseData into SMRCollection struct")
                   return
@@ -534,7 +538,7 @@ class SwiftMetricsRESTTests: XCTestCase {
         let session = URLSession(configuration: URLSessionConfiguration.default)
         let tSMRMHMtask = session.dataTask(with: urlRequest) { data , response, error in
           guard error == nil else {
-            XCTFail("error calling GET on \(self.collectionsEndpoint)")
+            XCTFail("error calling POST on \(self.collectionsEndpoint)")
             print(error!)
             return
           }
@@ -584,6 +588,10 @@ class SwiftMetricsRESTTests: XCTestCase {
                   XCTAssertEqual(5, report.hits, "Expected 5 HTTP hits")
                   expectMultipleHits.fulfill()
                   print("\(result)")
+                  // cleanup
+                  urlRequest2.httpMethod = "DELETE"
+                  let tSMRMHMtask4 = session.dataTask(with: urlRequest2) { _ , _, _ in }
+                  tSMRMHMtask4.resume()
                 } else {
                   XCTFail("Unable to find any hits for \(uriString)")
                 }
@@ -605,6 +613,80 @@ class SwiftMetricsRESTTests: XCTestCase {
         }
     }
 
+    func testSMRMultiplePOSTCollectionCreations() {
+        let expectMultipleCollections = expectation(description: "Expect 3 collections in the collection list")
+
+        guard let url = URL(string: collectionsEndpoint) else {
+          XCTFail("Error: cannot create URL for \(collectionsEndpoint)")
+          return
+        }
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        let session = URLSession(configuration: URLSessionConfiguration.default)
+        for _ in 1...3 {
+          let tSMRMPCCtask = session.dataTask(with: urlRequest) { _ , response, _ in
+            guard let httpResponse = response as? HTTPURLResponse else {
+              XCTFail("Error: unable to retrieve HTTP Status code")
+              return
+            }
+            XCTAssertEqual(201, httpResponse.statusCode)
+          }
+          tSMRMPCCtask.resume()
+          sleep(2)
+        }
+        urlRequest.httpMethod = "GET"
+        let tSMRMPCCtask2 = session.dataTask(with: urlRequest) { data , response, error in
+          guard error == nil else {
+            XCTFail("error calling GET on \(self.collectionsEndpoint)")
+            print(error!)
+            return
+          }
+          guard let httpResponse = response as? HTTPURLResponse else {
+            XCTFail("Error: unable to retrieve HTTP Status code")
+            return
+          }
+          guard let responseData = data else {
+            XCTFail("Error: did not receive data")
+            return
+          }
+          do {
+            XCTAssertEqual(200, httpResponse.statusCode)
+            let result = try self.decoder.decode(CollectionsList.self, from: responseData)
+            XCTAssertEqual(3, result.collectionUris.count)
+            var idArray = ["0", "1", "2"]
+            for collectionUriString in result.collectionUris {
+              let splitCollectionUriString = collectionUriString.split(separator: "/")
+              let collectionUriIDString = String(splitCollectionUriString[splitCollectionUriString.count - 1])
+              guard let index = idArray.index(of: collectionUriIDString) else {
+                print("\(result)")
+                XCTFail("Collection ID \(collectionUriIDString) not in expected range [0-2]")
+                return
+              }
+              idArray.remove(at: index)
+              guard let url2 = URL(string: self.collectionsEndpoint + "/" + collectionUriIDString) else {
+                XCTFail("Error: cannot create URL for \(self.collectionsEndpoint)/\(collectionUriIDString)")
+                return
+              }
+              var urlRequest2 = URLRequest(url: url2)
+              urlRequest2.httpMethod = "DELETE"
+              let tSMRMPCCtask3 = session.dataTask(with: urlRequest2) { _ , _, _ in }
+              tSMRMPCCtask3.resume()
+            }
+            XCTAssertTrue(idArray.isEmpty, "Did not encounter all expected Collection IDs")
+            expectMultipleCollections.fulfill()
+            print("\(result)")
+          } catch {
+            XCTFail("error trying to decode responseData into CollectionsList struct")
+            return
+          }
+        }
+        tSMRMPCCtask2.resume()
+
+        waitForExpectations(timeout: 10) { error in
+            XCTAssertNil(error)
+        }
+    }
+
 
 
     static var allTests : [(String, (SwiftMetricsRESTTests) -> () throws -> Void)] {
@@ -617,6 +699,7 @@ class SwiftMetricsRESTTests: XCTestCase {
           ("SMRFailOnPutInvalidCollection", testSMRFailOnPutInvalidCollection),
           ("SMRFailOnDeleteInvalidCollection", testSMRFailOnDeleteInvalidCollection),
           ("SMRMultipleHTTPHits", testSMRMultipleHTTPHits),
+          ("SMRMultiplePOSTCollectionCreations", testSMRMultiplePOSTCollectionCreations),
         ]
     }
 }
