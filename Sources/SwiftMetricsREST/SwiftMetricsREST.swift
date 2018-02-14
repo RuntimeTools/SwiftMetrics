@@ -176,7 +176,7 @@ public class SwiftMetricsREST {
 
     func startServer(router: Router) throws {
         router.route("/swiftmetrics/api/v1/collections/:id(\\d+)", mergeParameters: true)
-          .all(handler: processIDdCollection)
+          .all(handler: checkIDdCollection)
 
         router.route("/swiftmetrics/api/v1/collections")
           .get(handler: getCollections)
@@ -218,30 +218,51 @@ public class SwiftMetricsREST {
       try response.end()
     }
 
-    func processIDdCollection(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws -> Void {
+    func checkIDdCollection(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws -> Void {
       if let idString = request.parameters["id"], let id = Int(idString) {
         if (self.smrCollectionList[id] == nil) {
           _ = response.send(status: HTTPStatusCode.notFound)
+          try response.end()
         } else {
-          switch request.method {
-          case RouterMethod.delete:
-            self.smrCollectionList[id] = nil
-            _ = response.send(status: HTTPStatusCode.noContent)
-          case RouterMethod.put:
-            self.smrCollectionList[id] = SMRCollectionInstance(collection: SMRCollection(id: id, startTime: UInt(Date().timeIntervalSince1970 * 1000)))
-            _ = response.send(status: HTTPStatusCode.OK)
-          case RouterMethod.get:
-            self.smrCollectionList[id]!.collection.endTime = UInt(Date().timeIntervalSince1970 * 1000)
-            self.smrCollectionList[id]!.collection.duration = self.smrCollectionList[id]!.collection.endTime - self.smrCollectionList[id]!.collection.startTime
-            let data = try! self.encoder.encode(self.smrCollectionList[id]!.collection)
-            response.send(data: data)
-          default:
-            _ = response.send(status: HTTPStatusCode.badRequest)
-          }
+          try processIDdCollection(requestMethod: request.method, response: response, id: id)
         }
       } else {
         _ = response.send(status: HTTPStatusCode.badRequest)
+        try response.end()
       }
+    }
+
+    func processIDdCollection(requestMethod: RouterMethod, response: RouterResponse, id: Int) throws -> Void {
+      switch requestMethod {
+      case RouterMethod.delete:
+        try deleteIDdCollection(response: response, id: id)
+      case RouterMethod.put:
+        try putIDdCollection(response: response, id: id)
+      case RouterMethod.get:
+        try getIDdCollection(response: response, id: id)
+      default:
+        _ = response.send(status: HTTPStatusCode.badRequest)
+        try response.end()
+      }
+    }
+
+    func deleteIDdCollection(response: RouterResponse, id: Int) throws -> Void {
+      self.smrCollectionList[id] = nil
+      _ = response.send(status: HTTPStatusCode.noContent)
+      try response.end()
+    }
+
+    func putIDdCollection(response: RouterResponse, id: Int) throws -> Void {
+      self.smrCollectionList[id] = SMRCollectionInstance(collection: SMRCollection(id: id, startTime: UInt(Date().timeIntervalSince1970 * 1000)))
+      _ = response.send(status: HTTPStatusCode.OK)
+      try response.end()
+    }
+
+    func getIDdCollection(response: RouterResponse, id: Int) throws -> Void {
+      self.smrCollectionList[id]!.collection.endTime = UInt(Date().timeIntervalSince1970 * 1000)
+      self.smrCollectionList[id]!.collection.duration = self.smrCollectionList[id]!.collection.endTime - self.smrCollectionList[id]!.collection.startTime
+      let data = try! self.encoder.encode(self.smrCollectionList[id]!.collection)
+      response.send(data: data)
       try response.end()
     }
 }
