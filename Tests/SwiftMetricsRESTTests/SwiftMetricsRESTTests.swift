@@ -218,7 +218,7 @@ class SwiftMetricsRESTTests: XCTestCase {
             XCTAssertEqual(result.uri, self.collectionsEndpoint + "/0", "URI should equal \(self.collectionsEndpoint)/0")
             print("\(result)")
             // sleep for hopefully 2 CPU and 2 Memory events
-            sleep(15)
+            sleep(20)
             guard let url2 = URL(string: self.collectionsEndpoint + "/0") else {
               XCTFail("Error: cannot create URL for \(self.collectionsEndpoint)/0")
               return
@@ -228,7 +228,7 @@ class SwiftMetricsRESTTests: XCTestCase {
             let tSMRCCtask2 = session.dataTask(with: urlRequest) { data , response, error in
               let currentTime = UInt(Date().timeIntervalSince1970 * 1000)
               //give 16 seconds leeway for the sleep
-              let minTime = currentTime - 16000
+              let minTime = currentTime - 21000
               guard error == nil else {
                 XCTFail("error calling GET on \(self.collectionsEndpoint)/0")
                 print(error!)
@@ -310,7 +310,7 @@ class SwiftMetricsRESTTests: XCTestCase {
         }
         tSMRCCtask.resume()
 
-        waitForExpectations(timeout: 25) { error in
+        waitForExpectations(timeout: 30) { error in
             XCTAssertNil(error)
         }
     }
