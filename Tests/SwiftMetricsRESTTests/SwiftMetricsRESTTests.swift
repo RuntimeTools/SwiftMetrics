@@ -438,7 +438,7 @@ class SwiftMetricsRESTTests: XCTestCase {
     }
 
     func testSMRFailOnGetInvalidCollection() {
-        let expect400Failure = expectation(description: "Expect a 400 BAD REQUEST response to GETting a non-existant collection")
+        let expect404Failure = expectation(description: "Expect a 404 NOT FOUND response to GETting a non-existant collection")
 
         guard let url = URL(string: collectionsEndpoint + "/777") else {
           XCTFail("Error: cannot create URL for \(collectionsEndpoint)/777")
@@ -456,8 +456,8 @@ class SwiftMetricsRESTTests: XCTestCase {
             XCTFail("Error: unable to retrieve HTTP Status code")
             return
           }
-          XCTAssertEqual(400, httpResponse.statusCode)
-          expect400Failure.fulfill()
+          XCTAssertEqual(404, httpResponse.statusCode)
+          expect404Failure.fulfill()
         }
         tSMRFOGICtask.resume()
 
