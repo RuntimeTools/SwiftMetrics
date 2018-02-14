@@ -45,7 +45,7 @@ import Configuration
     public struct SMRCollection: Codable {
       let id: String
       let startTime: UInt
-      var endTime: UInt = 0
+      var endTime: UInt
       var duration: UInt = 0
       var cpu: CPUSummary = CPUSummary()
       var memory: MemSummary = MemSummary()
@@ -54,13 +54,14 @@ import Configuration
       init(id: String, startTime: UInt) {
         self.id = id
         self.startTime = startTime
+        self.endTime = startTime
       }
     }
 
     public struct SMRCollectionInstance: Codable {
       var collection: SMRCollection
-      var cpuSampleCount: Int = 0
-      var memSampleCount: Int = 0
+      var cpuSampleCount: Double = 0.0
+      var memSampleCount: UInt = 0
 
       init(collection: SMRCollection) {
         self.collection = collection
@@ -104,7 +105,7 @@ public class SwiftMetricsREST {
             router =  endpoint
         }
 
-        // Everything initialised, start serving /metrics
+        // Everything initialised, start serving metrics
         try startServer(router: router)
     }
 
@@ -117,57 +118,59 @@ public class SwiftMetricsREST {
     private func cpuEvent(cpu: CPUData) {
         let procCPU = Double(cpu.percentUsedByApplication)
         let sysCPU = Double(cpu.percentUsedBySystem)
-        for (index, instance) in smrCollectionList {
-          guard var temp_collection = smrCollectionList[index] else {
+        for key in smrCollectionList.keys {
+          guard var temp_cpuSummary = smrCollectionList[key]?.collection.cpu, let count = smrCollectionList[key]?.cpuSampleCount else {
             continue;
           }
-          temp_collection.cpuSampleCount += 1
-          if (procCPU > instance.collection.cpu.processPeak) {
-            temp_collection.collection.cpu.processPeak = procCPU
+          smrCollectionList[key]!.cpuSampleCount += 1.0
+          if (procCPU > temp_cpuSummary.processPeak) {
+            temp_cpuSummary.processPeak = procCPU
           }
-          temp_collection.collection.cpu.processMean = ((instance.collection.cpu.processMean * Double(instance.cpuSampleCount)) + procCPU) / Double(temp_collection.cpuSampleCount)
-          if (sysCPU > instance.collection.cpu.systemPeak) {
-            temp_collection.collection.cpu.systemPeak = sysCPU
+          temp_cpuSummary.processMean = ((temp_cpuSummary.processMean * count) + procCPU) / smrCollectionList[key]!.cpuSampleCount
+          if (sysCPU > temp_cpuSummary.systemPeak) {
+            temp_cpuSummary.systemPeak = sysCPU
           }
-          temp_collection.collection.cpu.systemMean = ((instance.collection.cpu.systemMean * Double(instance.cpuSampleCount)) + sysCPU) / Double(temp_collection.cpuSampleCount)
-          smrCollectionList[index] = temp_collection
+          temp_cpuSummary.systemMean = ((temp_cpuSummary.systemMean * count) + sysCPU) / smrCollectionList[key]!.cpuSampleCount
+          smrCollectionList[key]!.collection.cpu = temp_cpuSummary
         }
     }
 
     private func memEvent(mem: MemData) {
-      for (index, instance) in smrCollectionList {
-        guard var temp_collection = smrCollectionList[index] else {
+      for key in smrCollectionList.keys {
+        let procMem = UInt(mem.applicationRAMUsed)
+        let sysMem = UInt(mem.totalRAMUsed)
+        guard var temp_memSummary = smrCollectionList[key]?.collection.memory, let count = smrCollectionList[key]?.memSampleCount else {
           continue;
         }
-        temp_collection.memSampleCount += 1
-        if (mem.applicationRAMUsed > instance.collection.memory.processPeak) {
-          temp_collection.collection.memory.processPeak = UInt(mem.applicationRAMUsed)
+        smrCollectionList[key]!.memSampleCount += 1
+        if (procMem > temp_memSummary.processPeak) {
+          temp_memSummary.processPeak = procMem
         }
-        temp_collection.collection.memory.processMean = ((instance.collection.memory.processMean * UInt(instance.memSampleCount)) + UInt(mem.applicationRAMUsed)) / UInt(temp_collection.memSampleCount)
-        if (mem.totalRAMUsed > instance.collection.memory.systemPeak) {
-          temp_collection.collection.memory.systemPeak = UInt(mem.totalRAMUsed)
+        temp_memSummary.processMean = ((temp_memSummary.processMean * count) + procMem) / smrCollectionList[key]!.memSampleCount
+        if (sysMem > temp_memSummary.systemPeak) {
+          temp_memSummary.systemPeak = sysMem
         }
-        temp_collection.collection.memory.systemMean = ((instance.collection.memory.systemMean * UInt(instance.memSampleCount)) + UInt(mem.totalRAMUsed)) / UInt(temp_collection.memSampleCount)
-        smrCollectionList[index] = temp_collection
+        temp_memSummary.systemMean = ((temp_memSummary.systemMean * count) + sysMem) / smrCollectionList[key]!.memSampleCount
+        smrCollectionList[key]!.collection.memory = temp_memSummary
       }
     }
 
     private func httpEvent(http: HTTPData) {
-      for (i, instance) in smrCollectionList {
-        guard var temp_collection = smrCollectionList[i] else {
+      for key in smrCollectionList.keys {
+        guard var temp_httpUrlReports = smrCollectionList[key]?.collection.httpUrls else {
           continue;
         }
-        if let index = instance.collection.httpUrls.index(where: { $0.url == http.url })  {
-          temp_collection.collection.httpUrls[index].hits += 1
-          if (http.duration > instance.collection.httpUrls[index].longestResponseTime ) {
-            temp_collection.collection.httpUrls[index].longestResponseTime = http.duration
+        if let index = temp_httpUrlReports.index(where: { $0.url == http.url })  {
+          temp_httpUrlReports[index].hits += 1
+          if (http.duration > temp_httpUrlReports[index].longestResponseTime ) {
+            temp_httpUrlReports[index].longestResponseTime = http.duration
           }
-          temp_collection.collection.httpUrls[index].averageResponseTime = ((instance.collection.httpUrls[index].averageResponseTime * Double(instance.collection.httpUrls[index].hits)) + http.duration) / Double(temp_collection.collection.httpUrls[index].hits)
+          temp_httpUrlReports[index].averageResponseTime = ((temp_httpUrlReports[index].averageResponseTime * Double(temp_httpUrlReports[index].hits - 1)) + http.duration) / Double(temp_httpUrlReports[index].hits)
         } else {
           // if index is nil, then the url wasn't found - add it
-          temp_collection.collection.httpUrls.append(HttpUrlReport(url: http.url, hits: 1, averageResponseTime: http.duration, longestResponseTime: http.duration))
+          temp_httpUrlReports.append(HttpUrlReport(url: http.url, hits: 1, averageResponseTime: http.duration, longestResponseTime: http.duration))
         }
-        smrCollectionList[i] = temp_collection
+        smrCollectionList[key]!.collection.httpUrls = temp_httpUrlReports
       }
     }
 
@@ -203,14 +206,14 @@ public class SwiftMetricsREST {
 
     func postCollections(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws -> Void {
       // create a new metrics collection; returns the created collection uri
-      var temp_id = 0
-      while (self.smrCollectionList[temp_id] != nil) {
-        temp_id += 1
+      var new_id = 0
+      while (self.smrCollectionList[new_id] != nil) {
+        new_id += 1
       }
-      let idString = String(temp_id)
-      self.smrCollectionList[temp_id] = SMRCollectionInstance(collection: SMRCollection(id: idString, startTime: UInt(Date().timeIntervalSince1970 * 1000)))
+      let newIdString = String(new_id)
+      self.smrCollectionList[new_id] = SMRCollectionInstance(collection: SMRCollection(id: newIdString, startTime: UInt(Date().timeIntervalSince1970 * 1000)))
       response.status(HTTPStatusCode.created)
-      let uriString = request.originalURL + "/" + idString
+      let uriString = request.originalURL + "/" + newIdString
       response.headers.append("Location", value: uriString)
       let data = try! self.encoder.encode(CollectionUri(uri: uriString))
       response.send(data: data)
@@ -248,11 +251,10 @@ public class SwiftMetricsREST {
     }
 
     func getIDdCollection(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws -> Void {
-      if let idString = request.parameters["id"],  let id = Int(idString), var temp_collection = self.smrCollectionList[id] {
-        temp_collection.collection.endTime = UInt(Date().timeIntervalSince1970 * 1000)
-        temp_collection.collection.duration = temp_collection.collection.endTime - temp_collection.collection.startTime
-        self.smrCollectionList[id] = temp_collection
-        let data = try! self.encoder.encode(temp_collection.collection)
+      if let idString = request.parameters["id"],  let id = Int(idString), let _ = self.smrCollectionList[id] {
+        self.smrCollectionList[id]!.collection.endTime = UInt(Date().timeIntervalSince1970 * 1000)
+        self.smrCollectionList[id]!.collection.duration = self.smrCollectionList[id]!.collection.endTime - self.smrCollectionList[id]!.collection.startTime
+        let data = try! self.encoder.encode(self.smrCollectionList[id]!.collection)
         response.send(data: data)
       } else {
         _ = response.send(status: HTTPStatusCode.badRequest)
