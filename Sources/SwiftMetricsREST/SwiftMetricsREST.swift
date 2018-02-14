@@ -176,9 +176,7 @@ public class SwiftMetricsREST {
 
     func startServer(router: Router) throws {
         router.route("/swiftmetrics/api/v1/collections/:id(\\d+)", mergeParameters: true)
-          .get(handler: getIDdCollection)
-          .put(handler: putIDdCollection)
-          .delete(handler: deleteIDdCollection)
+          .all(handler: processIDdCollection)
 
         router.route("/swiftmetrics/api/v1/collections")
           .get(handler: getCollections)
@@ -221,45 +219,30 @@ public class SwiftMetricsREST {
       try response.end()
     }
 
-    func deleteIDdCollection(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws -> Void {
+    func processIDdCollection(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws -> Void {
       if let idString = request.parameters["id"], let id = Int(idString) {
         if (self.smrCollectionList[id] == nil) {
           _ = response.send(status: HTTPStatusCode.notFound)
         } else {
-          self.smrCollectionList[id] = nil
-          _ = response.send(status: HTTPStatusCode.noContent)
+          switch request.method {
+          case RouterMethod.delete:
+            self.smrCollectionList[id] = nil
+            _ = response.send(status: HTTPStatusCode.noContent)
+          case RouterMethod.put:
+            self.smrCollectionList[id] = SMRCollectionInstance(collection: SMRCollection(id: idString, startTime: UInt(Date().timeIntervalSince1970 * 1000)))
+            _ = response.send(status: HTTPStatusCode.OK)
+          case RouterMethod.get:
+            self.smrCollectionList[id]!.collection.endTime = UInt(Date().timeIntervalSince1970 * 1000)
+            self.smrCollectionList[id]!.collection.duration = self.smrCollectionList[id]!.collection.endTime - self.smrCollectionList[id]!.collection.startTime
+            let data = try! self.encoder.encode(self.smrCollectionList[id]!.collection)
+            response.send(data: data)
+          default:
+            _ = response.send(status: HTTPStatusCode.badRequest)
+          }
         }
       } else {
         _ = response.send(status: HTTPStatusCode.badRequest)
       }
-      try response.end()
-    }
-
-    func putIDdCollection(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws -> Void {
-      if let idString = request.parameters["id"], let id = Int(idString) {
-        if (self.smrCollectionList[id] == nil) {
-          _ = response.send(status: HTTPStatusCode.notFound)
-        } else {
-          self.smrCollectionList[id] = SMRCollectionInstance(collection: SMRCollection(id: idString, startTime: UInt(Date().timeIntervalSince1970 * 1000)))
-          _ = response.send(status: HTTPStatusCode.OK)
-        }
-      } else {
-        _ = response.send(status: HTTPStatusCode.badRequest)
-      }
-      // Error is thrown only by response.end() not response.send()
-      try response.end()
-    }
-
-    func getIDdCollection(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws -> Void {
-      if let idString = request.parameters["id"],  let id = Int(idString), let _ = self.smrCollectionList[id] {
-        self.smrCollectionList[id]!.collection.endTime = UInt(Date().timeIntervalSince1970 * 1000)
-        self.smrCollectionList[id]!.collection.duration = self.smrCollectionList[id]!.collection.endTime - self.smrCollectionList[id]!.collection.startTime
-        let data = try! self.encoder.encode(self.smrCollectionList[id]!.collection)
-        response.send(data: data)
-      } else {
-        _ = response.send(status: HTTPStatusCode.badRequest)
-      }
-      // Error is thrown only by response.end() not response.send()
       try response.end()
     }
 }
