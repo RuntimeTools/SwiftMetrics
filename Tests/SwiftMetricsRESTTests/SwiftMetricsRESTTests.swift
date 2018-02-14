@@ -245,7 +245,7 @@ class SwiftMetricsRESTTests: XCTestCase {
               do {
                 XCTAssertEqual(200, httpResponse.statusCode)
                 let result = try self.decoder.decode(SMRCollection.self, from: responseData)
-                XCTAssertEqual("0", result.id, "Collection ID should be 0")
+                XCTAssertEqual(0, result.id, "Collection ID should be 0")
                 expectCorrectID.fulfill()
                 XCTAssertLessThan(result.startTime, currentTime, "Collection was created in the future")
                 XCTAssertGreaterThanOrEqual(result.startTime, minTime, "Collection created too long ago")
@@ -344,7 +344,7 @@ class SwiftMetricsRESTTests: XCTestCase {
             let result = try self.decoder.decode(CollectionUri.self, from: responseData)
             let uriString = result.uri
             let splitUriString = uriString.split(separator: "/")
-            let collectionID = String(splitUriString[splitUriString.count - 1])
+            let collectionID = Int(splitUriString[splitUriString.count - 1])
             guard let url2 = URL(string: uriString) else {
               XCTFail("Error: cannot create URL for \(result.uri)")
               return
@@ -385,7 +385,7 @@ class SwiftMetricsRESTTests: XCTestCase {
                   let minTime = currentTime - 1000
                   XCTAssertEqual(200, httpResponse.statusCode)
                   let result = try self.decoder.decode(SMRCollection.self, from: responseData)
-                  XCTAssertEqual(collectionID, result.id, "Collection ID should be \(collectionID)")
+                  XCTAssertEqual(collectionID, result.id, "Collection ID should be \(String(describing: collectionID))")
                   XCTAssertLessThan(result.startTime, currentTime, "Collection was created in the future")
                   XCTAssertGreaterThanOrEqual(result.startTime, minTime, "Collection created too long ago")
                   XCTAssertLessThanOrEqual(result.endTime, currentTime, "Collection finished in the future")
@@ -437,7 +437,7 @@ class SwiftMetricsRESTTests: XCTestCase {
         }
     }
 
-    func testSMRFailOnGetInvalidCollection() {
+    func testSMRFailOnInvalidCollection() {
         let expect404Failure = expectation(description: "Expect a 404 NOT FOUND response to GETting a non-existant collection")
 
         guard let url = URL(string: collectionsEndpoint + "/777") else {
@@ -446,9 +446,9 @@ class SwiftMetricsRESTTests: XCTestCase {
         }
         let urlRequest = URLRequest(url: url)
         let session = URLSession(configuration: URLSessionConfiguration.default)
-        let tSMRFOGICtask = session.dataTask(with: urlRequest) { data , response, error in
+        let tSMRFOICtask = session.dataTask(with: urlRequest) { data , response, error in
           guard error == nil else {
-            XCTFail("error calling GET on \(self.collectionsEndpoint)")
+            XCTFail("error calling GET on \(self.collectionsEndpoint)/777")
             print(error!)
             return
           }
@@ -459,67 +459,7 @@ class SwiftMetricsRESTTests: XCTestCase {
           XCTAssertEqual(404, httpResponse.statusCode)
           expect404Failure.fulfill()
         }
-        tSMRFOGICtask.resume()
-
-        waitForExpectations(timeout: 10) { error in
-            XCTAssertNil(error)
-        }
-    }
-
-    func testSMRFailOnPutInvalidCollection() {
-        let expect404Failure = expectation(description: "Expect a 400 NOT FOUND response to PUTting a non-existant collection")
-
-        guard let url = URL(string: collectionsEndpoint + "/777") else {
-          XCTFail("Error: cannot create URL for \(collectionsEndpoint)/777")
-          return
-        }
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "PUT"
-        let session = URLSession(configuration: URLSessionConfiguration.default)
-        let tSMRFOPICtask = session.dataTask(with: urlRequest) { data , response, error in
-          guard error == nil else {
-            XCTFail("error calling GET on \(self.collectionsEndpoint)")
-            print(error!)
-            return
-          }
-          guard let httpResponse = response as? HTTPURLResponse else {
-            XCTFail("Error: unable to retrieve HTTP Status code")
-            return
-          }
-          XCTAssertEqual(404, httpResponse.statusCode)
-          expect404Failure.fulfill()
-        }
-        tSMRFOPICtask.resume()
-
-        waitForExpectations(timeout: 10) { error in
-            XCTAssertNil(error)
-        }
-    }
-
-    func testSMRFailOnDeleteInvalidCollection() {
-        let expect404Failure = expectation(description: "Expect a 400 NOT FOUND response to DELETEing a non-existant collection")
-
-        guard let url = URL(string: collectionsEndpoint + "/777") else {
-          XCTFail("Error: cannot create URL for \(collectionsEndpoint)/777")
-          return
-        }
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "DELETE"
-        let session = URLSession(configuration: URLSessionConfiguration.default)
-        let tSMRFODICtask = session.dataTask(with: urlRequest) { data , response, error in
-          guard error == nil else {
-            XCTFail("error calling GET on \(self.collectionsEndpoint)")
-            print(error!)
-            return
-          }
-          guard let httpResponse = response as? HTTPURLResponse else {
-            XCTFail("Error: unable to retrieve HTTP Status code")
-            return
-          }
-          XCTAssertEqual(404, httpResponse.statusCode)
-          expect404Failure.fulfill()
-        }
-        tSMRFODICtask.resume()
+        tSMRFOICtask.resume()
 
         waitForExpectations(timeout: 10) { error in
             XCTAssertNil(error)
@@ -695,9 +635,7 @@ class SwiftMetricsRESTTests: XCTestCase {
           ("SMRCollectionCreationAndDeletion", testSMRCollectionCreationAndDeletion),
           ("SMRCollectionContents", testSMRCollectionContents),
           ("SMRResetCollectionOnPut", testSMRResetCollectionOnPut),
-          ("SMRFailOnGetInvalidCollection", testSMRFailOnGetInvalidCollection),
-          ("SMRFailOnPutInvalidCollection", testSMRFailOnPutInvalidCollection),
-          ("SMRFailOnDeleteInvalidCollection", testSMRFailOnDeleteInvalidCollection),
+          ("SMRFailOnInvalidCollection", testSMRFailOnInvalidCollection),
           ("SMRMultipleHTTPHits", testSMRMultipleHTTPHits),
           ("SMRMultiplePOSTCollectionCreations", testSMRMultiplePOSTCollectionCreations),
         ]

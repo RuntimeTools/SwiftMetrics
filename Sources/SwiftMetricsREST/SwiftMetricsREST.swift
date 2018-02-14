@@ -43,7 +43,7 @@ import Configuration
     }
 
     public struct SMRCollection: Codable {
-      let id: String
+      let id: Int
       let startTime: UInt
       var endTime: UInt
       var duration: UInt = 0
@@ -51,7 +51,7 @@ import Configuration
       var memory: MemSummary = MemSummary()
       var httpUrls: [HttpUrlReport] = []
 
-      init(id: String, startTime: UInt) {
+      init(id: Int, startTime: UInt) {
         self.id = id
         self.startTime = startTime
         self.endTime = startTime
@@ -208,10 +208,9 @@ public class SwiftMetricsREST {
       while (self.smrCollectionList[new_id] != nil) {
         new_id += 1
       }
-      let newIdString = String(new_id)
-      self.smrCollectionList[new_id] = SMRCollectionInstance(collection: SMRCollection(id: newIdString, startTime: UInt(Date().timeIntervalSince1970 * 1000)))
+      self.smrCollectionList[new_id] = SMRCollectionInstance(collection: SMRCollection(id: new_id, startTime: UInt(Date().timeIntervalSince1970 * 1000)))
       response.status(HTTPStatusCode.created)
-      let uriString = request.originalURL + "/" + newIdString
+      let uriString = request.originalURL + "/" + String(new_id)
       response.headers.append("Location", value: uriString)
       let data = try! self.encoder.encode(CollectionUri(uri: uriString))
       response.send(data: data)
@@ -229,7 +228,7 @@ public class SwiftMetricsREST {
             self.smrCollectionList[id] = nil
             _ = response.send(status: HTTPStatusCode.noContent)
           case RouterMethod.put:
-            self.smrCollectionList[id] = SMRCollectionInstance(collection: SMRCollection(id: idString, startTime: UInt(Date().timeIntervalSince1970 * 1000)))
+            self.smrCollectionList[id] = SMRCollectionInstance(collection: SMRCollection(id: id, startTime: UInt(Date().timeIntervalSince1970 * 1000)))
             _ = response.send(status: HTTPStatusCode.OK)
           case RouterMethod.get:
             self.smrCollectionList[id]!.collection.endTime = UInt(Date().timeIntervalSince1970 * 1000)
