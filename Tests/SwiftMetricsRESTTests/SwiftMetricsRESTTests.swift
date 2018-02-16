@@ -637,17 +637,26 @@ class SwiftMetricsRESTTests: XCTestCase {
 
 
     static var allTests : [(String, (SwiftMetricsRESTTests) -> () throws -> Void)] {
+      //currently SMRResetCollectionOnPut fails for undiagnosed reasons on Linux
+#if os(Linux)
         return [
           ("SMRNoCollections", testSMRNoCollections),
           ("SMRCollectionCreationAndDeletion", testSMRCollectionCreationAndDeletion),
           ("SMRCollectionContents", testSMRCollectionContents),
-          //currently the next text fails for undiagnosed reasons on Linux
-#if !os(Linux)
-          ("SMRResetCollectionOnPut", testSMRResetCollectionOnPut),
-#endif
           ("SMRFailOnInvalidCollection", testSMRFailOnInvalidCollection),
           ("SMRMultipleHTTPHits", testSMRMultipleHTTPHits),
           ("SMRMultiplePOSTCollectionCreations", testSMRMultiplePOSTCollectionCreations),
         ]
+#else
+        return [
+          ("SMRNoCollections", testSMRNoCollections),
+          ("SMRCollectionCreationAndDeletion", testSMRCollectionCreationAndDeletion),
+          ("SMRCollectionContents", testSMRCollectionContents),
+          ("SMRResetCollectionOnPut", testSMRResetCollectionOnPut),
+          ("SMRFailOnInvalidCollection", testSMRFailOnInvalidCollection),
+          ("SMRMultipleHTTPHits", testSMRMultipleHTTPHits),
+          ("SMRMultiplePOSTCollectionCreations", testSMRMultiplePOSTCollectionCreations),
+        ]
+#endif
     }
 }
