@@ -623,10 +623,12 @@ class SwiftMetricsRESTTests: XCTestCase {
               }
               var urlRequest2 = URLRequest(url: url2)
               urlRequest2.httpMethod = "DELETE"
+              print("+++ Deleting \(tSMRMPCCcollectionUriString) +++")
               let tSMRMPCCtask3 = self.session.dataTask(with: urlRequest2) { _ , _, _ in
                 expectationArray.popLast()!.fulfill()
               }
               tSMRMPCCtask3.resume()
+              sleep(2)
             }
             XCTAssertTrue(idArray.isEmpty, "Did not encounter all expected Collection IDs")
             expectMultipleCollections.fulfill()
