@@ -566,6 +566,9 @@ class SwiftMetricsRESTTests: XCTestCase {
 
     func testSMRMultiplePOSTCollectionCreations() {
         let expectMultipleCollections = expectation(description: "Expect 3 collections in the collection list")
+        let expect1stDeletion = expectation(description: "Expect 1st collection to be deleted")
+        let expect2ndDeletion = expectation(description: "Expect 2nd collection to be deleted")
+        let expect3rdDeletion = expectation(description: "Expect 3rd collection to be deleted")
 
         guard let url = URL(string: collectionsEndpoint) else {
           XCTFail("Error: cannot create URL for \(collectionsEndpoint)")
@@ -604,6 +607,7 @@ class SwiftMetricsRESTTests: XCTestCase {
             let tSMRMPCCresult2 = try self.decoder.decode(CollectionsList.self, from: tSMRMPCCresponseData2)
             XCTAssertEqual(3, tSMRMPCCresult2.collectionUris.count)
             var idArray = ["0", "1", "2"]
+            var expectationArray = [expect3rdDeletion, expect2ndDeletion, expect1stDeletion]
             for tSMRMPCCcollectionUriString in tSMRMPCCresult2.collectionUris {
               let tSMRMPCCsplitCollectionUriString = tSMRMPCCcollectionUriString.split(separator: "/")
               let tSMRMPCCcollectionUriIDString = String(tSMRMPCCsplitCollectionUriString[tSMRMPCCsplitCollectionUriString.count - 1])
@@ -613,13 +617,15 @@ class SwiftMetricsRESTTests: XCTestCase {
                 return
               }
               idArray.remove(at: index)
-              guard let url2 = URL(string: self.collectionsEndpoint + "/" + tSMRMPCCcollectionUriIDString) else {
-                XCTFail("Error: cannot create URL for \(self.collectionsEndpoint)/\(tSMRMPCCcollectionUriIDString)")
+              guard let url2 = URL(string: tSMRMPCCcollectionUriString) else {
+                XCTFail("Error: cannot create URL for \(tSMRMPCCcollectionUriString)")
                 return
               }
               var urlRequest2 = URLRequest(url: url2)
               urlRequest2.httpMethod = "DELETE"
-              let tSMRMPCCtask3 = self.session.dataTask(with: urlRequest2) { _ , _, _ in }
+              let tSMRMPCCtask3 = self.session.dataTask(with: urlRequest2) { _ , _, _ in
+                expectationArray.popLast()!.fulfill()
+              }
               tSMRMPCCtask3.resume()
             }
             XCTAssertTrue(idArray.isEmpty, "Did not encounter all expected Collection IDs")
@@ -632,7 +638,7 @@ class SwiftMetricsRESTTests: XCTestCase {
         }
         tSMRMPCCtask2.resume()
 
-        waitForExpectations(timeout: 10) { error in
+        waitForExpectations(timeout: 30) { error in
             XCTAssertNil(error)
         }
     }
