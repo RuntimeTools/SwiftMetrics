@@ -570,6 +570,7 @@ class SwiftMetricsRESTTests: XCTestCase {
         let expect2ndDeletion = expectation(description: "Expect 2nd collection to be deleted")
         let expect3rdDeletion = expectation(description: "Expect 3rd collection to be deleted")
 
+        var expectationArray = [expect3rdDeletion, expect2ndDeletion, expect1stDeletion]
         guard let url = URL(string: collectionsEndpoint) else {
           XCTFail("Error: cannot create URL for \(collectionsEndpoint)")
           return
@@ -607,7 +608,6 @@ class SwiftMetricsRESTTests: XCTestCase {
             let tSMRMPCCresult2 = try self.decoder.decode(CollectionsList.self, from: tSMRMPCCresponseData2)
             XCTAssertEqual(3, tSMRMPCCresult2.collectionUris.count)
             var idArray = ["0", "1", "2"]
-            var expectationArray = [expect3rdDeletion, expect2ndDeletion, expect1stDeletion]
             for tSMRMPCCcollectionUriString in tSMRMPCCresult2.collectionUris {
               let tSMRMPCCsplitCollectionUriString = tSMRMPCCcollectionUriString.split(separator: "/")
               let tSMRMPCCcollectionUriIDString = String(tSMRMPCCsplitCollectionUriString[tSMRMPCCsplitCollectionUriString.count - 1])
@@ -623,7 +623,6 @@ class SwiftMetricsRESTTests: XCTestCase {
               }
               var urlRequest2 = URLRequest(url: url2)
               urlRequest2.httpMethod = "DELETE"
-              print("+++ Deleting \(tSMRMPCCcollectionUriString) +++")
               let tSMRMPCCtask3 = self.session.dataTask(with: urlRequest2) { _ , _, _ in
                 expectationArray.popLast()!.fulfill()
               }
@@ -684,7 +683,12 @@ class SwiftMetricsRESTTests: XCTestCase {
             XCTAssertEqual(400, tSMRFOIICMhttpResponse2.statusCode)
             // cleanup
             tSMRFOIICMurlRequest2.httpMethod = "DELETE"
-            let tSMRFOIICMtask3 = self.session.dataTask(with: tSMRFOIICMurlRequest2) { _ , _, _ in
+            let tSMRFOIICMtask3 = self.session.dataTask(with: tSMRFOIICMurlRequest2) { _, tSMRFOIICMresponse3, _ in
+              guard let tSMRFOIICMhttpResponse3 = tSMRFOIICMresponse3 as? HTTPURLResponse else {
+                XCTFail("Error: unable to retrieve HTTP Status code")
+                return
+              }
+              XCTAssertEqual(204, tSMRFOIICMhttpResponse3.statusCode)
               expect400Failure.fulfill()
             }
             tSMRFOIICMtask3.resume()
@@ -709,7 +713,6 @@ class SwiftMetricsRESTTests: XCTestCase {
           ("SMRFailOnInvalidCollection", testSMRFailOnInvalidCollection),
           ("SMRMultipleHTTPHits", testSMRMultipleHTTPHits),
           ("SMRMultiplePOSTCollectionCreations", testSMRMultiplePOSTCollectionCreations),
-          ("SMRFailOnInvalidIDdCollectionMethod", testSMRFailOnInvalidIDdCollectionMethod),
         ]
 #else
         return [
