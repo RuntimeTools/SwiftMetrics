@@ -196,10 +196,8 @@ public class SwiftMetricsREST {
       for id in self.smrCollectionList.keys.sorted() {
         collectionsList.collectionUris.append("\(request.originalURL)/\(id)")
       }
-      let data = try! self.encoder.encode(collectionsList)
-      response.send(data: data)
       // Error is thrown only by response.end() not response.send()
-      try response.end()
+      try response.status(HTTPStatusCode.OK).send(data: try! self.encoder.encode(collectionsList)).end()
     }
 
     func postCollections(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws -> Void {
@@ -209,26 +207,23 @@ public class SwiftMetricsREST {
         new_id += 1
       }
       self.smrCollectionList[new_id] = SMRCollectionInstance(collection: SMRCollection(id: new_id, startTime: UInt(Date().timeIntervalSince1970 * 1000)))
-      response.status(HTTPStatusCode.created)
       let uriString = request.originalURL + "/" + String(new_id)
       response.headers.append("Location", value: uriString)
-      let data = try! self.encoder.encode(CollectionUri(uri: uriString))
-      response.send(data: data)
       // Error is thrown only by response.end() not response.send()
-      try response.end()
+      try response.status(HTTPStatusCode.created).send(data: try! self.encoder.encode(CollectionUri(uri: uriString))).end()
     }
 
     func checkIDdCollection(request: RouterRequest, response: RouterResponse, next: @escaping () -> Void) throws -> Void {
       if let idString = request.parameters["id"], let id = Int(idString) {
         if (self.smrCollectionList[id] == nil) {
-          _ = response.send(status: HTTPStatusCode.notFound)
-          try response.end()
+          // Error is thrown only by response.end() not response.send()
+          try response.send(status: HTTPStatusCode.notFound).end()
         } else {
           try processIDdCollection(requestMethod: request.method, response: response, id: id)
         }
       } else {
-        _ = response.send(status: HTTPStatusCode.badRequest)
-        try response.end()
+        // Error is thrown only by response.end() not response.send()
+        try response.send(status: HTTPStatusCode.badRequest).end()
       }
     }
 
@@ -241,28 +236,27 @@ public class SwiftMetricsREST {
       case RouterMethod.get:
         try getIDdCollection(response: response, id: id)
       default:
-        _ = response.send(status: HTTPStatusCode.badRequest)
-        try response.end()
+        // Error is thrown only by response.end() not response.send()
+        try response.send(status: HTTPStatusCode.badRequest).end()
       }
     }
 
     func deleteIDdCollection(response: RouterResponse, id: Int) throws -> Void {
       self.smrCollectionList[id] = nil
-      _ = response.send(status: HTTPStatusCode.noContent)
-      try response.end()
+      // Error is thrown only by response.end() not response.send()
+      try response.send(status: HTTPStatusCode.noContent).end()
     }
 
     func putIDdCollection(response: RouterResponse, id: Int) throws -> Void {
       self.smrCollectionList[id] = SMRCollectionInstance(collection: SMRCollection(id: id, startTime: UInt(Date().timeIntervalSince1970 * 1000)))
-      _ = response.send(status: HTTPStatusCode.OK)
-      try response.end()
+      // Error is thrown only by response.end() not response.send()
+      try response.send(status: HTTPStatusCode.noContent).end()
     }
 
     func getIDdCollection(response: RouterResponse, id: Int) throws -> Void {
       self.smrCollectionList[id]!.collection.endTime = UInt(Date().timeIntervalSince1970 * 1000)
       self.smrCollectionList[id]!.collection.duration = self.smrCollectionList[id]!.collection.endTime - self.smrCollectionList[id]!.collection.startTime
-      let data = try! self.encoder.encode(self.smrCollectionList[id]!.collection)
-      response.send(data: data)
-      try response.end()
+      // Error is thrown only by response.end() not response.send()
+      try response.status(HTTPStatusCode.OK).send(data: try! self.encoder.encode(self.smrCollectionList[id]!.collection)).end()
     }
 }

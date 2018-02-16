@@ -24,6 +24,7 @@ class SwiftMetricsRESTTests: XCTestCase {
 
     let collectionsSubpath = "/swiftmetrics/api/v1/collections"
     let decoder = JSONDecoder()
+    let session = URLSession(configuration: URLSessionConfiguration.default)
 
     var sm: SwiftMetrics?
     var smr: SwiftMetricsREST?
@@ -58,27 +59,26 @@ class SwiftMetricsRESTTests: XCTestCase {
           return
         }
         let urlRequest = URLRequest(url: url)
-        let session = URLSession(configuration: URLSessionConfiguration.default)
-        let tSMRNCtask = session.dataTask(with: urlRequest) { data , response, error in
-          guard error == nil else {
+        let tSMRNCtask = self.session.dataTask(with: urlRequest) { tSMRNCdata , tSMRNCresponse, tSMRNCerror in
+          guard tSMRNCerror == nil else {
             XCTFail("error calling GET on \(self.collectionsEndpoint)")
-            print(error!)
+            print(tSMRNCerror!)
             return
           }
-          guard let responseData = data else {
+          guard let tSMRNCresponseData = tSMRNCdata else {
             XCTFail("Error: did not receive data")
             return
           }
-          guard let httpResponse = response as? HTTPURLResponse else {
+          guard let tSMRNChttpResponse = tSMRNCresponse as? HTTPURLResponse else {
             XCTFail("Error: unable to retrieve HTTP Status code")
             return
           }
           do {
-            XCTAssertEqual(200, httpResponse.statusCode)
-            let result = try self.decoder.decode(CollectionsList.self, from: responseData)
-            XCTAssertTrue(result.collectionUris.isEmpty, "There should be no collections definied")
+            XCTAssertEqual(200, tSMRNChttpResponse.statusCode)
+            let tSMRNCresult = try self.decoder.decode(CollectionsList.self, from: tSMRNCresponseData)
+            XCTAssertTrue(tSMRNCresult.collectionUris.isEmpty, "There should be no collections definied")
             expectNoCollections.fulfill()
-            print("\(result)")
+            print("\(tSMRNCresult)")
           } catch  {
             XCTFail("error trying to decode responseData into Swift struct")
             return
@@ -102,67 +102,66 @@ class SwiftMetricsRESTTests: XCTestCase {
         }
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
-        let session = URLSession(configuration: URLSessionConfiguration.default)
-        let tSMRCCADtask = session.dataTask(with: urlRequest) { data , response, error in
-          guard error == nil else {
+        let tSMRCCADtask = self.session.dataTask(with: urlRequest) { tSMRCCADdata, tSMRCCADresponse, tSMRCCADerror in
+          guard tSMRCCADerror == nil else {
             XCTFail("error calling POST on \(self.collectionsEndpoint)")
-            print(error!)
+            print(tSMRCCADerror!)
             return
           }
-          guard let responseData = data else {
+          guard let tSMRCCADresponseData = tSMRCCADdata else {
             XCTFail("Error: did not receive data")
             return
           }
-          guard let httpResponse = response as? HTTPURLResponse else {
+          guard let tSMRCCADhttpResponse = tSMRCCADresponse as? HTTPURLResponse else {
             XCTFail("Error: unable to retrieve HTTP Status code")
             return
           }
           do {
-            XCTAssertEqual(201, httpResponse.statusCode)
-            let result = try self.decoder.decode(CollectionUri.self, from: responseData)
-            XCTAssertEqual(result.uri, self.collectionsEndpoint + "/0", "URI should equal \(self.collectionsEndpoint)/0")
-            XCTAssertEqual(result.uri, httpResponse.allHeaderFields["Location"] as! String, "URI should be available in response header 'Location'")
+            XCTAssertEqual(201, tSMRCCADhttpResponse.statusCode)
+            let tSMRCCADresult = try self.decoder.decode(CollectionUri.self, from: tSMRCCADresponseData)
+            XCTAssertEqual(tSMRCCADresult.uri, self.collectionsEndpoint + "/0", "URI should equal \(self.collectionsEndpoint)/0")
+            XCTAssertEqual(tSMRCCADresult.uri, tSMRCCADhttpResponse.allHeaderFields["Location"] as! String, "URI should be available in response header 'Location'")
             expectCorrectCollectionURI.fulfill()
-            print("\(result)")
+            print("\(tSMRCCADresult)")
             urlRequest.httpMethod = "GET"
-            let tSMRCCADtask2 = session.dataTask(with: urlRequest) { data , response, error in
-              guard error == nil else {
+            let tSMRCCADtask2 = self.session.dataTask(with: urlRequest) { tSMRCCADdata2 , tSMRCCADresponse2, tSMRCCADerror2 in
+              guard tSMRCCADerror2 == nil else {
                 XCTFail("error calling GET on \(self.collectionsEndpoint)")
-                print(error!)
+                print(tSMRCCADerror2!)
                 return
               }
-              guard let responseData = data else {
+              guard let tSMRCCADresponseData2 = tSMRCCADdata2 else {
                 XCTFail("Error: did not receive data")
                 return
               }
-              guard let httpResponse = response as? HTTPURLResponse else {
+              guard let tSMRCCADhttpResponse2 = tSMRCCADresponse2 as? HTTPURLResponse else {
                 XCTFail("Error: unable to retrieve HTTP Status code")
                 return
               }
               do {
-                XCTAssertEqual(200, httpResponse.statusCode)
-                let result = try self.decoder.decode(CollectionsList.self, from: responseData)
-                XCTAssertEqual(1, result.collectionUris.count, "There should only be one collection")
-                XCTAssertEqual(result.collectionUris[0], self.collectionsEndpoint + "/0", "URI should equal \(self.collectionsEndpoint)/0")
+                XCTAssertEqual(200, tSMRCCADhttpResponse2.statusCode)
+                let tSMRCCADresult2 = try self.decoder.decode(CollectionsList.self, from: tSMRCCADresponseData2)
+                XCTAssertEqual(1, tSMRCCADresult2.collectionUris.count, "There should only be one collection")
+                XCTAssertEqual(tSMRCCADresult2.collectionUris[0], self.collectionsEndpoint + "/0", "URI should equal \(self.collectionsEndpoint)/0")
                 expectOneCollection.fulfill()
-                print("\(result)")
+                print("\(tSMRCCADresult2)")
                 guard let url2 = URL(string: self.collectionsEndpoint + "/0") else {
                   XCTFail("Error: cannot create URL for \(self.collectionsEndpoint)/0")
                   return
                 }
                 var colletionRequest = URLRequest(url: url2)
                 colletionRequest.httpMethod = "DELETE"
-                let tSMRCCADtask3 = session.dataTask(with: colletionRequest) { data , response, error in
-                  guard error == nil else {
+                let tSMRCCADtask3 = self.session.dataTask(with: colletionRequest) { tSMRCCADdata3, tSMRCCADresponse3, tSMRCCADerror3 in
+                  guard tSMRCCADerror3 == nil else {
                     XCTFail("error calling DELETE on \(self.collectionsEndpoint)/0")
-                    print(error!)
+                    print(tSMRCCADerror3!)
                     return
                   }
-                  guard let httpResponse = response as? HTTPURLResponse else {
+                  guard let tSMRCCADhttpResponse3 = tSMRCCADresponse3 as? HTTPURLResponse else {
                     XCTFail("Error: unable to retrieve HTTP Status code")
                     return
                   }
-                  XCTAssertEqual(204, httpResponse.statusCode)
+                  XCTAssertEqual(204, tSMRCCADhttpResponse3.statusCode)
                   expectCorrectDeletionRepsonse.fulfill()
                 }
                 tSMRCCADtask3.resume()
@@ -197,26 +196,25 @@ class SwiftMetricsRESTTests: XCTestCase {
         }
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
-        let session = URLSession(configuration: URLSessionConfiguration.default)
-        let tSMRCCtask = session.dataTask(with: urlRequest) { data , response, error in
-          guard error == nil else {
+        let tSMRCCtask = self.session.dataTask(with: urlRequest) { tSMRCCdata, tSMRCCresponse, tSMRCCerror in
+          guard tSMRCCerror == nil else {
             XCTFail("error calling POST on \(self.collectionsEndpoint)")
-            print(error!)
+            print(tSMRCCerror!)
             return
           }
-          guard let responseData = data else {
+          guard let tSMRCCresponseData = tSMRCCdata else {
             XCTFail("Error: did not receive data")
             return
           }
-          guard let httpResponse = response as? HTTPURLResponse else {
+          guard let tSMRCChttpResponse = tSMRCCresponse as? HTTPURLResponse else {
             XCTFail("Error: unable to retrieve HTTP Status code")
             return
           }
           do {
-            XCTAssertEqual(201, httpResponse.statusCode)
-            let result = try self.decoder.decode(CollectionUri.self, from: responseData)
-            XCTAssertEqual(result.uri, self.collectionsEndpoint + "/0", "URI should equal \(self.collectionsEndpoint)/0")
-            print("\(result)")
+            XCTAssertEqual(201, tSMRCChttpResponse.statusCode)
+            let tSMRCCresult = try self.decoder.decode(CollectionUri.self, from: tSMRCCresponseData)
+            XCTAssertEqual(tSMRCCresult.uri, self.collectionsEndpoint + "/0", "URI should equal \(self.collectionsEndpoint)/0")
+            print("\(tSMRCCresult)")
             // sleep for hopefully 2 CPU and 2 Memory events
             sleep(20)
             guard let url2 = URL(string: self.collectionsEndpoint + "/0") else {
@@ -225,77 +223,77 @@ class SwiftMetricsRESTTests: XCTestCase {
             }
             urlRequest = URLRequest(url: url2)
             urlRequest.httpMethod = "GET"
-            let tSMRCCtask2 = session.dataTask(with: urlRequest) { data , response, error in
+            let tSMRCCtask2 = self.session.dataTask(with: urlRequest) { tSMRCCdata2, tSMRCCresponse2, tSMRCCerror2 in
               let currentTime = UInt(Date().timeIntervalSince1970 * 1000)
               //give 16 seconds leeway for the sleep
               let minTime = currentTime - 21000
-              guard error == nil else {
+              guard tSMRCCerror2 == nil else {
                 XCTFail("error calling GET on \(self.collectionsEndpoint)/0")
-                print(error!)
+                print(tSMRCCerror2!)
                 return
               }
-              guard let responseData = data else {
+              guard let tSMRCCresponseData2 = tSMRCCdata2 else {
                 XCTFail("Error: did not receive data")
                 return
               }
-              guard let httpResponse = response as? HTTPURLResponse else {
+              guard let tSMRCChttpResponse2 = tSMRCCresponse2 as? HTTPURLResponse else {
                 XCTFail("Error: unable to retrieve HTTP Status code")
                 return
               }
               do {
-                XCTAssertEqual(200, httpResponse.statusCode)
-                let result = try self.decoder.decode(SMRCollection.self, from: responseData)
-                XCTAssertEqual(0, result.id, "Collection ID should be 0")
+                XCTAssertEqual(200, tSMRCChttpResponse2.statusCode)
+                let tSMRCCresult2 = try self.decoder.decode(SMRCollection.self, from: tSMRCCresponseData2)
+                XCTAssertEqual(0, tSMRCCresult2.id, "Collection ID should be 0")
                 expectCorrectID.fulfill()
-                XCTAssertLessThan(result.startTime, currentTime, "Collection was created in the future")
-                XCTAssertGreaterThanOrEqual(result.startTime, minTime, "Collection created too long ago")
-                XCTAssertLessThanOrEqual(result.endTime, currentTime, "Collection finished in the future")
-                XCTAssertGreaterThan(result.endTime, minTime, "Collection finished too long ago")
-                XCTAssertGreaterThanOrEqual(result.endTime, result.startTime, "Collection started after it finished")
-                XCTAssertEqual(result.endTime - result.startTime, result.duration, "Duration length inaccurate")
+                XCTAssertLessThan(tSMRCCresult2.startTime, currentTime, "Collection was created in the future")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.startTime, minTime, "Collection created too long ago")
+                XCTAssertLessThanOrEqual(tSMRCCresult2.endTime, currentTime, "Collection finished in the future")
+                XCTAssertGreaterThan(tSMRCCresult2.endTime, minTime, "Collection finished too long ago")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.endTime, tSMRCCresult2.startTime, "Collection started after it finished")
+                XCTAssertEqual(tSMRCCresult2.endTime - tSMRCCresult2.startTime, tSMRCCresult2.duration, "Duration length inaccurate")
                 expectCorrectTimeData.fulfill()
                 // cpu values should be between 0 and 1
-                XCTAssertGreaterThanOrEqual(result.cpu.systemMean, 0, "CPU System Mean not big enough")
-                XCTAssertGreaterThanOrEqual(result.cpu.processMean, 0, "CPU Process Mean not big enough")
-                XCTAssertGreaterThanOrEqual(result.cpu.systemPeak, 0, "CPU System Peak not big enough")
-                XCTAssertGreaterThanOrEqual(result.cpu.processPeak, 0, "CPU Process Peak not big enough")
-                XCTAssertLessThanOrEqual(result.cpu.systemMean, 1, "CPU System Mean not small enough")
-                XCTAssertLessThanOrEqual(result.cpu.processMean, 1, "CPU Process Mean not small enough")
-                XCTAssertLessThanOrEqual(result.cpu.systemPeak, 1, "CPU System Peak not small enough")
-                XCTAssertLessThanOrEqual(result.cpu.processPeak, 1, "CPU Process Peak not small enough")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.cpu.systemMean, 0, "CPU System Mean not big enough")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.cpu.processMean, 0, "CPU Process Mean not big enough")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.cpu.systemPeak, 0, "CPU System Peak not big enough")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.cpu.processPeak, 0, "CPU Process Peak not big enough")
+                XCTAssertLessThanOrEqual(tSMRCCresult2.cpu.systemMean, 1, "CPU System Mean not small enough")
+                XCTAssertLessThanOrEqual(tSMRCCresult2.cpu.processMean, 1, "CPU Process Mean not small enough")
+                XCTAssertLessThanOrEqual(tSMRCCresult2.cpu.systemPeak, 1, "CPU System Peak not small enough")
+                XCTAssertLessThanOrEqual(tSMRCCresult2.cpu.processPeak, 1, "CPU Process Peak not small enough")
                 // peaks should be bigger than means
-                XCTAssertGreaterThanOrEqual(result.cpu.systemPeak, result.cpu.systemMean, "CPU System Peak less than mean")
-                XCTAssertGreaterThanOrEqual(result.cpu.processPeak, result.cpu.processMean, "CPU Process Peak less than mean")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.cpu.systemPeak, tSMRCCresult2.cpu.systemMean, "CPU System Peak less than mean")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.cpu.processPeak, tSMRCCresult2.cpu.processMean, "CPU Process Peak less than mean")
                 // system should be higher than process
-                XCTAssertGreaterThanOrEqual(result.cpu.systemPeak, result.cpu.processPeak, "CPU Process Peak higher than System Peak")
-                XCTAssertGreaterThanOrEqual(result.cpu.systemMean, result.cpu.processMean, "CPU Process Mean higher than System Mean")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.cpu.systemPeak, tSMRCCresult2.cpu.processPeak, "CPU Process Peak higher than System Peak")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.cpu.systemMean, tSMRCCresult2.cpu.processMean, "CPU Process Mean higher than System Mean")
                 expectCorrectCPUData.fulfill()
                 // mem values should be positive
-                XCTAssertGreaterThanOrEqual(result.memory.systemMean, 0, "Memory System Mean not big enough")
-                XCTAssertGreaterThanOrEqual(result.memory.processMean, 0, "Memory Process Mean not big enough")
-                XCTAssertGreaterThanOrEqual(result.memory.systemPeak, 0, "Memory System Peak not big enough")
-                XCTAssertGreaterThanOrEqual(result.memory.processPeak, 0, "Memory Process Peak not big enough")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.memory.systemMean, 0, "Memory System Mean not big enough")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.memory.processMean, 0, "Memory Process Mean not big enough")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.memory.systemPeak, 0, "Memory System Peak not big enough")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.memory.processPeak, 0, "Memory Process Peak not big enough")
                 // peaks should be bigger than means
-                XCTAssertGreaterThanOrEqual(result.memory.systemPeak, result.memory.systemMean, "Memory System Peak less than mean")
-                XCTAssertGreaterThanOrEqual(result.memory.processPeak, result.memory.processMean, "Memory Process Peak less than mean")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.memory.systemPeak, tSMRCCresult2.memory.systemMean, "Memory System Peak less than mean")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.memory.processPeak, tSMRCCresult2.memory.processMean, "Memory Process Peak less than mean")
                 // system should be higher than process
-                XCTAssertGreaterThanOrEqual(result.memory.systemPeak, result.memory.processPeak, "Memory Process Peak higher than System Peak")
-                XCTAssertGreaterThanOrEqual(result.memory.systemMean, result.memory.processMean, "Memory Process Mean higher than System Mean")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.memory.systemPeak, tSMRCCresult2.memory.processPeak, "Memory Process Peak higher than System Peak")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.memory.systemMean, tSMRCCresult2.memory.processMean, "Memory Process Mean higher than System Mean")
                 expectCorrectMemoryData.fulfill()
                 // There should only be one HTTP record - for the creation POST call.
-                XCTAssertEqual(1, result.httpUrls.count, "Only expected one HTTP record")
-                XCTAssertEqual(1, result.httpUrls[0].hits, "Only expected one HTTP hit")
-                XCTAssertEqual(self.collectionsEndpoint, result.httpUrls[0].url, "HTTP URL not \(self.collectionsEndpoint)/0")
+                XCTAssertEqual(1, tSMRCCresult2.httpUrls.count, "Only expected one HTTP record")
+                XCTAssertEqual(1, tSMRCCresult2.httpUrls[0].hits, "Only expected one HTTP hit")
+                XCTAssertEqual(self.collectionsEndpoint, tSMRCCresult2.httpUrls[0].url, "HTTP URL not \(self.collectionsEndpoint)/0")
                 // HTTP times should be positive
-                XCTAssertGreaterThanOrEqual(result.httpUrls[0].averageResponseTime, 0, "HTTP Average response time not big enough")
-                XCTAssertGreaterThanOrEqual(result.httpUrls[0].longestResponseTime, 0, "HTTP Longest response time not big enough")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.httpUrls[0].averageResponseTime, 0, "HTTP Average response time not big enough")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.httpUrls[0].longestResponseTime, 0, "HTTP Longest response time not big enough")
                 // Longest should be higher than average
-                XCTAssertGreaterThanOrEqual(result.httpUrls[0].longestResponseTime, result.httpUrls[0].averageResponseTime, "Memory Process Peak less than mean")
+                XCTAssertGreaterThanOrEqual(tSMRCCresult2.httpUrls[0].longestResponseTime, tSMRCCresult2.httpUrls[0].averageResponseTime, "Memory Process Peak less than mean")
                 expectCorrectHTTPData.fulfill()
-                print("\(result)")
+                print("\(tSMRCCresult2)")
                 // cleanup
                 urlRequest.httpMethod = "DELETE"
-                let tSMRCCtask3 = session.dataTask(with: urlRequest) { _ , _, _ in }
+                let tSMRCCtask3 = self.session.dataTask(with: urlRequest) { _ , _, _ in }
                 tSMRCCtask3.resume()
               } catch  {
                 XCTFail("error trying to decode responseData into Swift struct")
@@ -324,58 +322,58 @@ class SwiftMetricsRESTTests: XCTestCase {
         }
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
-        let session = URLSession(configuration: URLSessionConfiguration.default)
-        let tSMRRCOPtask = session.dataTask(with: urlRequest) { data , response, error in
-          guard error == nil else {
+        let tSMRRCOPtask = self.session.dataTask(with: urlRequest) { tSMRRCOPdata , tSMRRCOPresponse, tSMRRCOPerror in
+          guard tSMRRCOPerror == nil else {
             XCTFail("error calling POST on \(self.collectionsEndpoint)")
-            print(error!)
+            print(tSMRRCOPerror!)
             return
           }
-          guard let httpResponse = response as? HTTPURLResponse else {
+          guard let tSMRRCOPhttpResponse = tSMRRCOPresponse as? HTTPURLResponse else {
             XCTFail("Error: unable to retrieve HTTP Status code")
             return
           }
-          guard let responseData = data else {
+          guard let tSMRRCOPresponseData = tSMRRCOPdata else {
             XCTFail("Error: did not receive data")
             return
           }
           do {
-            XCTAssertEqual(201, httpResponse.statusCode)
-            let result = try self.decoder.decode(CollectionUri.self, from: responseData)
-            let uriString = result.uri
-            let splitUriString = uriString.split(separator: "/")
-            let collectionID = Int(splitUriString[splitUriString.count - 1])
-            guard let url2 = URL(string: uriString) else {
-              XCTFail("Error: cannot create URL for \(result.uri)")
+            XCTAssertEqual(201, tSMRRCOPhttpResponse.statusCode)
+            let tSMRRCOPresult = try self.decoder.decode(CollectionUri.self, from: tSMRRCOPresponseData)
+            let tSMRRCOPuriString = tSMRRCOPresult.uri
+            let tSMRRCOPsplitUriString = tSMRRCOPuriString.split(separator: "/")
+            let tSMRRCOPcollectionID = Int(tSMRRCOPsplitUriString[tSMRRCOPsplitUriString.count - 1])
+            XCTAssertEqual(0, tSMRRCOPcollectionID, "Collection ID not 0")
+            guard let url2 = URL(string: self.collectionsEndpoint + "/0") else {
+              XCTFail("Error: cannot create URL for \(self.collectionsEndpoint)/0")
               return
             }
             // wait for some time to pass before resetting
             sleep(8)
             var urlRequest2 = URLRequest(url: url2)
             urlRequest2.httpMethod = "PUT"
-            let tSMRRCOPtask2 = session.dataTask(with: urlRequest2) { data , response, error in
-              guard error == nil else {
-                XCTFail("error calling PUT on \(uriString)")
-                print(error!)
+            let tSMRRCOPtask2 = self.session.dataTask(with: urlRequest2) { tSMRRCOPdata2, tSMRRCOPresponse2, tSMRRCOPerror2 in
+              guard tSMRRCOPerror2 == nil else {
+                XCTFail("error calling PUT on \(self.collectionsEndpoint)/0")
+                print(tSMRRCOPerror2!)
                 return
               }
-              guard let httpResponse = response as? HTTPURLResponse else {
+              guard let tSMRRCOPhttpResponse2 = tSMRRCOPresponse2 as? HTTPURLResponse else {
                 XCTFail("Error: unable to retrieve HTTP Status code")
                 return
               }
-              XCTAssertEqual(200, httpResponse.statusCode)
+              XCTAssertEqual(204, tSMRRCOPhttpResponse2.statusCode)
               urlRequest2.httpMethod = "GET"
-              let tSMRRCOPtask3 = session.dataTask(with: urlRequest2) { data , response, error in
-                guard error == nil else {
-                  XCTFail("error calling GET on \(uriString)")
-                  print(error!)
+              let tSMRRCOPtask3 = self.session.dataTask(with: urlRequest2) { tSMRRCOPdata3, tSMRRCOPresponse3, tSMRRCOPerror3 in
+                guard tSMRRCOPerror3 == nil else {
+                  XCTFail("error calling GET on \(self.collectionsEndpoint)/0)")
+                  print(tSMRRCOPerror3!)
                   return
                 }
-                guard let httpResponse = response as? HTTPURLResponse else {
+                guard let tSMRRCOPhttpResponse3 = tSMRRCOPresponse3 as? HTTPURLResponse else {
                   XCTFail("Error: unable to retrieve HTTP Status code")
                   return
                 }
-                guard let responseData = data else {
+                guard let tSMRRCOPresponseData3 = tSMRRCOPdata3 else {
                   XCTFail("Error: did not receive data")
                   return
                 }
@@ -383,39 +381,39 @@ class SwiftMetricsRESTTests: XCTestCase {
                   let currentTime = UInt(Date().timeIntervalSince1970 * 1000)
                   // reset takes place in under a second
                   let minTime = currentTime - 1000
-                  XCTAssertEqual(200, httpResponse.statusCode)
-                  let result = try self.decoder.decode(SMRCollection.self, from: responseData)
-                  XCTAssertEqual(collectionID, result.id, "Collection ID should be \(String(describing: collectionID))")
-                  XCTAssertLessThan(result.startTime, currentTime, "Collection was created in the future")
-                  XCTAssertGreaterThanOrEqual(result.startTime, minTime, "Collection created too long ago")
-                  XCTAssertLessThanOrEqual(result.endTime, currentTime, "Collection finished in the future")
-                  XCTAssertGreaterThan(result.endTime, minTime, "Collection finished too long ago")
-                  XCTAssertGreaterThanOrEqual(result.endTime, result.startTime, "Collection started after it finished")
-                  XCTAssertEqual(result.endTime - result.startTime, result.duration, "Duration length inaccurate")
+                  XCTAssertEqual(200, tSMRRCOPhttpResponse3.statusCode)
+                  let tSMRRCOPresult3 = try self.decoder.decode(SMRCollection.self, from: tSMRRCOPresponseData3)
+                  XCTAssertEqual(tSMRRCOPcollectionID, tSMRRCOPresult3.id, "Collection ID should be \(String(describing: tSMRRCOPcollectionID))")
+                  XCTAssertLessThan(tSMRRCOPresult3.startTime, currentTime, "Collection was created in the future")
+                  XCTAssertGreaterThanOrEqual(tSMRRCOPresult3.startTime, minTime, "Collection created too long ago")
+                  XCTAssertLessThanOrEqual(tSMRRCOPresult3.endTime, currentTime, "Collection finished in the future")
+                  XCTAssertGreaterThan(tSMRRCOPresult3.endTime, minTime, "Collection finished too long ago")
+                  XCTAssertGreaterThanOrEqual(tSMRRCOPresult3.endTime, tSMRRCOPresult3.startTime, "Collection started after it finished")
+                  XCTAssertEqual(tSMRRCOPresult3.endTime - tSMRRCOPresult3.startTime, tSMRRCOPresult3.duration, "Duration length inaccurate")
                   // cpu values should be 0.0
-                  XCTAssertEqual(result.cpu.systemMean, 0.0, "CPU System Mean too big")
-                  XCTAssertEqual(result.cpu.processMean, 0.0, "CPU Process Mean too big")
-                  XCTAssertEqual(result.cpu.systemPeak, 0.0, "CPU System Peak too big")
-                  XCTAssertEqual(result.cpu.processPeak, 0.0, "CPU Process Peak too big")
+                  XCTAssertEqual(tSMRRCOPresult3.cpu.systemMean, 0.0, "CPU System Mean too big")
+                  XCTAssertEqual(tSMRRCOPresult3.cpu.processMean, 0.0, "CPU Process Mean too big")
+                  XCTAssertEqual(tSMRRCOPresult3.cpu.systemPeak, 0.0, "CPU System Peak too big")
+                  XCTAssertEqual(tSMRRCOPresult3.cpu.processPeak, 0.0, "CPU Process Peak too big")
                   // mem values should be 0
-                  XCTAssertEqual(result.memory.systemMean, 0, "Memory System Mean too big")
-                  XCTAssertEqual(result.memory.processMean, 0, "Memory Process Mean too big")
-                  XCTAssertEqual(result.memory.systemPeak, 0, "Memory System Peak too big")
-                  XCTAssertEqual(result.memory.processPeak, 0, "Memory Process Peak too big")
+                  XCTAssertEqual(tSMRRCOPresult3.memory.systemMean, 0, "Memory System Mean too big")
+                  XCTAssertEqual(tSMRRCOPresult3.memory.processMean, 0, "Memory Process Mean too big")
+                  XCTAssertEqual(tSMRRCOPresult3.memory.systemPeak, 0, "Memory System Peak too big")
+                  XCTAssertEqual(tSMRRCOPresult3.memory.processPeak, 0, "Memory Process Peak too big")
                   // There should only be one HTTP record - for the PUT call.
-                  XCTAssertEqual(1, result.httpUrls.count, "Only expected one HTTP record")
-                  XCTAssertEqual(1, result.httpUrls[0].hits, "Only expected one HTTP hit")
-                  XCTAssertEqual(uriString, result.httpUrls[0].url, "HTTP URL not \(uriString)")
+                  XCTAssertEqual(1, tSMRRCOPresult3.httpUrls.count, "Only expected one HTTP record")
+                  XCTAssertEqual(1, tSMRRCOPresult3.httpUrls[0].hits, "Only expected one HTTP hit")
+                  XCTAssertEqual(tSMRRCOPuriString, tSMRRCOPresult3.httpUrls[0].url, "HTTP URL not \(tSMRRCOPuriString)")
                   // HTTP times should be positive
-                  XCTAssertGreaterThanOrEqual(result.httpUrls[0].averageResponseTime, 0, "HTTP Average response time not big enough")
-                  XCTAssertGreaterThanOrEqual(result.httpUrls[0].longestResponseTime, 0, "HTTP Longest response time not big enough")
+                  XCTAssertGreaterThanOrEqual(tSMRRCOPresult3.httpUrls[0].averageResponseTime, 0, "HTTP Average response time not big enough")
+                  XCTAssertGreaterThanOrEqual(tSMRRCOPresult3.httpUrls[0].longestResponseTime, 0, "HTTP Longest response time not big enough")
                   // Longest should be higher than average
-                  XCTAssertGreaterThanOrEqual(result.httpUrls[0].longestResponseTime, result.httpUrls[0].averageResponseTime, "Memory Process Peak less than mean")
+                  XCTAssertGreaterThanOrEqual(tSMRRCOPresult3.httpUrls[0].longestResponseTime, tSMRRCOPresult3.httpUrls[0].averageResponseTime, "Memory Process Peak less than mean")
                   expectCollectionReset.fulfill()
-                  print("\(result)")
+                  print("\(tSMRRCOPresult3)")
                   // cleanup
                   urlRequest2.httpMethod = "DELETE"
-                  let tSMRRCOPtask4 = session.dataTask(with: urlRequest2) { _ , _, _ in }
+                  let tSMRRCOPtask4 = self.session.dataTask(with: urlRequest2) { _ , _, _ in }
                   tSMRRCOPtask4.resume()
                 } catch {
                   XCTFail("error trying to decode responseData into SMRCollection struct")
@@ -433,7 +431,16 @@ class SwiftMetricsRESTTests: XCTestCase {
         tSMRRCOPtask.resume()
 
         waitForExpectations(timeout: 20) { error in
-            XCTAssertNil(error)
+          guard let urlF = URL(string: self.collectionsEndpoint + "/0") else {
+            XCTFail("Error: cannot create URL for \(self.collectionsEndpoint)/0")
+            return
+          }
+          var urlRequestF = URLRequest(url: urlF)
+          urlRequestF.httpMethod = "DELETE"
+          let tSMRRCOPtaskF = self.session.dataTask(with: urlRequestF) { _ , _, _ in }
+          tSMRRCOPtaskF.resume()
+          sleep(2)
+          XCTAssertNil(error)
         }
     }
 
@@ -445,18 +452,17 @@ class SwiftMetricsRESTTests: XCTestCase {
           return
         }
         let urlRequest = URLRequest(url: url)
-        let session = URLSession(configuration: URLSessionConfiguration.default)
-        let tSMRFOICtask = session.dataTask(with: urlRequest) { data , response, error in
-          guard error == nil else {
+        let tSMRFOICtask = self.session.dataTask(with: urlRequest) { tSMRFOICdata, tSMRFOICresponse, tSMRFOICerror in
+          guard tSMRFOICerror == nil else {
             XCTFail("error calling GET on \(self.collectionsEndpoint)/777")
-            print(error!)
+            print(tSMRFOICerror!)
             return
           }
-          guard let httpResponse = response as? HTTPURLResponse else {
+          guard let tSMRFOIChttpResponse = tSMRFOICresponse as? HTTPURLResponse else {
             XCTFail("Error: unable to retrieve HTTP Status code")
             return
           }
-          XCTAssertEqual(404, httpResponse.statusCode)
+          XCTAssertEqual(404, tSMRFOIChttpResponse.statusCode)
           expect404Failure.fulfill()
         }
         tSMRFOICtask.resume()
@@ -475,65 +481,64 @@ class SwiftMetricsRESTTests: XCTestCase {
         }
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
-        let session = URLSession(configuration: URLSessionConfiguration.default)
-        let tSMRMHMtask = session.dataTask(with: urlRequest) { data , response, error in
-          guard error == nil else {
+        let tSMRMHMtask = self.session.dataTask(with: urlRequest) { tSMRMHMdata, tSMRMHMresponse, tSMRMHMerror in
+          guard tSMRMHMerror == nil else {
             XCTFail("error calling POST on \(self.collectionsEndpoint)")
-            print(error!)
+            print(tSMRMHMerror!)
             return
           }
-          guard let httpResponse = response as? HTTPURLResponse else {
+          guard let tSMRMHMhttpResponse = tSMRMHMresponse as? HTTPURLResponse else {
             XCTFail("Error: unable to retrieve HTTP Status code")
             return
           }
-          guard let responseData = data else {
+          guard let tSMRMHMresponseData = tSMRMHMdata else {
             XCTFail("Error: did not receive data")
             return
           }
           do {
-            XCTAssertEqual(201, httpResponse.statusCode)
-            let result = try self.decoder.decode(CollectionUri.self, from: responseData)
-            let uriString = result.uri
-            guard let url2 = URL(string: uriString) else {
-              XCTFail("Error: cannot create URL for \(result.uri)")
+            XCTAssertEqual(201, tSMRMHMhttpResponse.statusCode)
+            let tSMRMHMresult = try self.decoder.decode(CollectionUri.self, from: tSMRMHMresponseData)
+            let tSMRMHMuriString = tSMRMHMresult.uri
+            guard let url2 = URL(string: tSMRMHMuriString) else {
+              XCTFail("Error: cannot create URL for \(tSMRMHMresult.uri)")
               return
             }
             var urlRequest2 = URLRequest(url: url2)
             urlRequest2.httpMethod = "GET"
             // generate 5 hits
             for _ in 1...5 {
-              let tSMRMHMtask2 = session.dataTask(with: urlRequest2) { _ , _, _ in }
+              let tSMRMHMtask2 = self.session.dataTask(with: urlRequest2) { _ , _, _ in }
               tSMRMHMtask2.resume()
               sleep(2)
             }
-            let tSMRMHMtask3 = session.dataTask(with: urlRequest2) { data , response, error in
-              guard error == nil else {
-                XCTFail("error calling GET on \(uriString)")
-                print(error!)
+            let tSMRMHMtask3 = self.session.dataTask(with: urlRequest2) { tSMRMHMdata3 , tSMRMHMresponse3, tSMRMHMerror3 in
+              guard tSMRMHMerror3 == nil else {
+                XCTFail("error calling GET on \(tSMRMHMuriString)")
+                print(tSMRMHMerror3!)
                 return
               }
-              guard let httpResponse = response as? HTTPURLResponse else {
+              guard let tSMRMHMhttpResponse3 = tSMRMHMresponse3 as? HTTPURLResponse else {
                 XCTFail("Error: unable to retrieve HTTP Status code")
                 return
               }
-              guard let responseData = data else {
+              guard let tSMRMHMresponseData3 = tSMRMHMdata3 else {
                 XCTFail("Error: did not receive data")
                 return
               }
               do {
-                XCTAssertEqual(200, httpResponse.statusCode)
-                let result = try self.decoder.decode(SMRCollection.self, from: responseData)
+                XCTAssertEqual(200, tSMRMHMhttpResponse3.statusCode)
+                let tSMRMHMresult3 = try self.decoder.decode(SMRCollection.self, from: tSMRMHMresponseData3)
                 // find report for collection url
-                if let report = result.httpUrls.first(where: { $0.url == uriString }) {
-                  XCTAssertEqual(5, report.hits, "Expected 5 HTTP hits")
+                if let tSMRMHMreport3 = tSMRMHMresult3.httpUrls.first(where: { $0.url == tSMRMHMuriString }) {
+                  XCTAssertEqual(5, tSMRMHMreport3.hits, "Expected 5 HTTP hits")
                   expectMultipleHits.fulfill()
-                  print("\(result)")
+                  print("\(tSMRMHMresult3)")
                   // cleanup
                   urlRequest2.httpMethod = "DELETE"
-                  let tSMRMHMtask4 = session.dataTask(with: urlRequest2) { _ , _, _ in }
+                  let tSMRMHMtask4 = self.session.dataTask(with: urlRequest2) { _ , _, _ in }
                   tSMRMHMtask4.resume()
                 } else {
-                  XCTFail("Unable to find any hits for \(uriString)")
+                  XCTFail("Unable to find any hits for \(tSMRMHMuriString)")
                 }
               } catch {
                 XCTFail("error trying to decode responseData into SMRCollection struct")
@@ -562,59 +567,58 @@ class SwiftMetricsRESTTests: XCTestCase {
         }
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
-        let session = URLSession(configuration: URLSessionConfiguration.default)
         for _ in 1...3 {
-          let tSMRMPCCtask = session.dataTask(with: urlRequest) { _ , response, _ in
-            guard let httpResponse = response as? HTTPURLResponse else {
+          let tSMRMPCCtask = self.session.dataTask(with: urlRequest) { _ , tSMRMPCCresponse, _ in
+            guard let tSMRMPCChttpResponse = tSMRMPCCresponse as? HTTPURLResponse else {
               XCTFail("Error: unable to retrieve HTTP Status code")
               return
             }
-            XCTAssertEqual(201, httpResponse.statusCode)
+            XCTAssertEqual(201, tSMRMPCChttpResponse.statusCode)
           }
           tSMRMPCCtask.resume()
           sleep(2)
         }
         urlRequest.httpMethod = "GET"
-        let tSMRMPCCtask2 = session.dataTask(with: urlRequest) { data , response, error in
-          guard error == nil else {
+        let tSMRMPCCtask2 = self.session.dataTask(with: urlRequest) { tSMRMPCCdata2, tSMRMPCCresponse2, tSMRMPCCerror2 in
+          guard tSMRMPCCerror2 == nil else {
             XCTFail("error calling GET on \(self.collectionsEndpoint)")
-            print(error!)
+            print(tSMRMPCCerror2!)
             return
           }
-          guard let httpResponse = response as? HTTPURLResponse else {
+          guard let tSMRMPCChttpResponse2 = tSMRMPCCresponse2 as? HTTPURLResponse else {
             XCTFail("Error: unable to retrieve HTTP Status code")
             return
           }
-          guard let responseData = data else {
+          guard let tSMRMPCCresponseData2 = tSMRMPCCdata2 else {
             XCTFail("Error: did not receive data")
             return
           }
           do {
-            XCTAssertEqual(200, httpResponse.statusCode)
-            let result = try self.decoder.decode(CollectionsList.self, from: responseData)
-            XCTAssertEqual(3, result.collectionUris.count)
+            XCTAssertEqual(200, tSMRMPCChttpResponse2.statusCode)
+            let tSMRMPCCresult2 = try self.decoder.decode(CollectionsList.self, from: tSMRMPCCresponseData2)
+            XCTAssertEqual(3, tSMRMPCCresult2.collectionUris.count)
             var idArray = ["0", "1", "2"]
-            for collectionUriString in result.collectionUris {
-              let splitCollectionUriString = collectionUriString.split(separator: "/")
-              let collectionUriIDString = String(splitCollectionUriString[splitCollectionUriString.count - 1])
-              guard let index = idArray.index(of: collectionUriIDString) else {
-                print("\(result)")
-                XCTFail("Collection ID \(collectionUriIDString) not in expected range [0-2]")
+            for tSMRMPCCcollectionUriString in tSMRMPCCresult2.collectionUris {
+              let tSMRMPCCsplitCollectionUriString = tSMRMPCCcollectionUriString.split(separator: "/")
+              let tSMRMPCCcollectionUriIDString = String(tSMRMPCCsplitCollectionUriString[tSMRMPCCsplitCollectionUriString.count - 1])
+              guard let index = idArray.index(of: tSMRMPCCcollectionUriIDString) else {
+                print("\(tSMRMPCCresult2)")
+                XCTFail("Collection ID \(tSMRMPCCcollectionUriIDString) not in expected range [0-2]")
                 return
               }
               idArray.remove(at: index)
-              guard let url2 = URL(string: self.collectionsEndpoint + "/" + collectionUriIDString) else {
-                XCTFail("Error: cannot create URL for \(self.collectionsEndpoint)/\(collectionUriIDString)")
+              guard let url2 = URL(string: self.collectionsEndpoint + "/" + tSMRMPCCcollectionUriIDString) else {
+                XCTFail("Error: cannot create URL for \(self.collectionsEndpoint)/\(tSMRMPCCcollectionUriIDString)")
                 return
               }
               var urlRequest2 = URLRequest(url: url2)
               urlRequest2.httpMethod = "DELETE"
-              let tSMRMPCCtask3 = session.dataTask(with: urlRequest2) { _ , _, _ in }
+              let tSMRMPCCtask3 = self.session.dataTask(with: urlRequest2) { _ , _, _ in }
               tSMRMPCCtask3.resume()
             }
             XCTAssertTrue(idArray.isEmpty, "Did not encounter all expected Collection IDs")
             expectMultipleCollections.fulfill()
-            print("\(result)")
+            print("\(tSMRMPCCresult2)")
           } catch {
             XCTFail("error trying to decode responseData into CollectionsList struct")
             return
