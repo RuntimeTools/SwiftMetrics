@@ -292,11 +292,12 @@ class SwiftMetricsRESTTests: XCTestCase {
                 XCTAssertGreaterThanOrEqual(tSMRCCresult2.httpUrls[0].longestResponseTime, 0, "HTTP Longest response time not big enough")
                 // Longest should be higher than average
                 XCTAssertGreaterThanOrEqual(tSMRCCresult2.httpUrls[0].longestResponseTime, tSMRCCresult2.httpUrls[0].averageResponseTime, "Memory Process Peak less than mean")
-                expectCorrectHTTPData.fulfill()
                 print("\(tSMRCCresult2)")
                 // cleanup
                 urlRequest.httpMethod = "DELETE"
-                let tSMRCCtask3 = self.session.dataTask(with: urlRequest) { _ , _, _ in }
+                let tSMRCCtask3 = self.session.dataTask(with: urlRequest) { _ , _, _ in
+                  expectCorrectHTTPData.fulfill()
+                }
                 tSMRCCtask3.resume()
               } catch  {
                 XCTFail("error trying to decode responseData into Swift struct")
@@ -412,11 +413,12 @@ class SwiftMetricsRESTTests: XCTestCase {
                   XCTAssertGreaterThanOrEqual(tSMRRCOPresult3.httpUrls[0].longestResponseTime, 0, "HTTP Longest response time not big enough")
                   // Longest should be higher than average
                   XCTAssertGreaterThanOrEqual(tSMRRCOPresult3.httpUrls[0].longestResponseTime, tSMRRCOPresult3.httpUrls[0].averageResponseTime, "Memory Process Peak less than mean")
-                  expectCollectionReset.fulfill()
                   print("\(tSMRRCOPresult3)")
                   // cleanup
                   urlRequest2.httpMethod = "DELETE"
-                  let tSMRRCOPtask4 = self.session.dataTask(with: urlRequest2) { _ , _, _ in }
+                  let tSMRRCOPtask4 = self.session.dataTask(with: urlRequest2) { _ , _, _ in
+                    expectCollectionReset.fulfill()
+                  }
                   tSMRRCOPtask4.resume()
                 } catch {
                   XCTFail("error trying to decode responseData into SMRCollection struct")
@@ -534,11 +536,12 @@ class SwiftMetricsRESTTests: XCTestCase {
                 // find report for collection url
                 if let tSMRMHMreport3 = tSMRMHMresult3.httpUrls.first(where: { $0.url == tSMRMHMuriString }) {
                   XCTAssertEqual(5, tSMRMHMreport3.hits, "Expected 5 HTTP hits")
-                  expectMultipleHits.fulfill()
                   print("\(tSMRMHMresult3)")
                   // cleanup
                   urlRequest2.httpMethod = "DELETE"
-                  let tSMRMHMtask4 = self.session.dataTask(with: urlRequest2) { _ , _, _ in }
+                  let tSMRMHMtask4 = self.session.dataTask(with: urlRequest2) { _ , _, _ in
+                    expectMultipleHits.fulfill()
+                  }
                   tSMRMHMtask4.resume()
                 } else {
                   XCTFail("Unable to find any hits for \(tSMRMHMuriString)")
@@ -671,10 +674,11 @@ class SwiftMetricsRESTTests: XCTestCase {
               return
             }
             XCTAssertEqual(400, tSMRFOIICMhttpResponse2.statusCode)
-            expect400Failure.fulfill()
             // cleanup
             tSMRFOIICMurlRequest2.httpMethod = "DELETE"
-            let tSMRFOIICMtask3 = self.session.dataTask(with: tSMRFOIICMurlRequest2) { _ , _, _ in }
+            let tSMRFOIICMtask3 = self.session.dataTask(with: tSMRFOIICMurlRequest2) { _ , _, _ in
+              expect400Failure.fulfill()
+            }
             tSMRFOIICMtask3.resume()
             sleep(2)
           }
