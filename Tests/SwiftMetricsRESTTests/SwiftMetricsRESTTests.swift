@@ -634,7 +634,58 @@ class SwiftMetricsRESTTests: XCTestCase {
         }
     }
 
+    func testSMRFailOnInvalidIDdCollectionMethod() {
+        let expect400Failure = expectation(description: "Expect a 400 BAD REQUEST response to POSTting an existing collection")
 
+        guard let tSMRFOIICMurl = URL(string: collectionsEndpoint) else {
+          XCTFail("Error: cannot create URL for \(collectionsEndpoint)")
+          return
+        }
+        var tSMRFOIICMurlRequest = URLRequest(url: tSMRFOIICMurl)
+        tSMRFOIICMurlRequest.httpMethod = "POST"
+        let tSMRFOIICMtask = self.session.dataTask(with: tSMRFOIICMurlRequest) { tSMRFOIICMdata, tSMRFOIICMresponse, tSMRFOIICMerror in
+          guard tSMRFOIICMerror == nil else {
+            XCTFail("error calling POST on \(self.collectionsEndpoint)")
+            print(tSMRFOIICMerror!)
+            return
+          }
+          guard let tSMRFOIICMhttpResponse = tSMRFOIICMresponse as? HTTPURLResponse else {
+            XCTFail("Error: unable to retrieve HTTP Status code")
+            return
+          }
+          XCTAssertEqual(201, tSMRFOIICMhttpResponse.statusCode)
+          guard let tSMRFOIICMurl2 = URL(string: self.collectionsEndpoint + "/0") else {
+            XCTFail("Error: cannot create URL for \(self.collectionsEndpoint)/0")
+            return
+          }
+          var tSMRFOIICMurlRequest2 = URLRequest(url: tSMRFOIICMurl2)
+          tSMRFOIICMurlRequest2.httpMethod = "POST"
+          let tSMRFOIICMtask2 = self.session.dataTask(with: tSMRFOIICMurlRequest2) { tSMRFOIICMdata2, tSMRFOIICMresponse2, tSMRFOIICMerror2 in
+            guard tSMRFOIICMerror2 == nil else {
+              XCTFail("error calling POST on \(self.collectionsEndpoint)")
+              print(tSMRFOIICMerror2!)
+              return
+            }
+            guard let tSMRFOIICMhttpResponse2 = tSMRFOIICMresponse2 as? HTTPURLResponse else {
+              XCTFail("Error: unable to retrieve HTTP Status code")
+              return
+            }
+            XCTAssertEqual(400, tSMRFOIICMhttpResponse2.statusCode)
+            expect400Failure.fulfill()
+            // cleanup
+            tSMRFOIICMurlRequest2.httpMethod = "DELETE"
+            let tSMRFOIICMtask3 = self.session.dataTask(with: tSMRFOIICMurlRequest2) { _ , _, _ in }
+            tSMRFOIICMtask3.resume()
+            sleep(2)
+          }
+          tSMRFOIICMtask2.resume()
+        }
+        tSMRFOIICMtask.resume()
+
+        waitForExpectations(timeout: 10) { error in
+            XCTAssertNil(error)
+        }
+    }
 
     static var allTests : [(String, (SwiftMetricsRESTTests) -> () throws -> Void)] {
       //currently SMRResetCollectionOnPut fails for undiagnosed reasons on Linux
@@ -646,6 +697,7 @@ class SwiftMetricsRESTTests: XCTestCase {
           ("SMRFailOnInvalidCollection", testSMRFailOnInvalidCollection),
           ("SMRMultipleHTTPHits", testSMRMultipleHTTPHits),
           ("SMRMultiplePOSTCollectionCreations", testSMRMultiplePOSTCollectionCreations),
+          ("SMRFailOnInvalidIDdCollectionMethod", testSMRFailOnInvalidIDdCollectionMethod),
         ]
 #else
         return [
@@ -656,6 +708,7 @@ class SwiftMetricsRESTTests: XCTestCase {
           ("SMRFailOnInvalidCollection", testSMRFailOnInvalidCollection),
           ("SMRMultipleHTTPHits", testSMRMultipleHTTPHits),
           ("SMRMultiplePOSTCollectionCreations", testSMRMultiplePOSTCollectionCreations),
+          ("SMRFailOnInvalidIDdCollectionMethod", testSMRFailOnInvalidIDdCollectionMethod),
         ]
 #endif
     }
