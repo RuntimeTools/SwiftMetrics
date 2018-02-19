@@ -570,7 +570,7 @@ class SwiftMetricsRESTTests: XCTestCase {
         let expect2ndDeletion = expectation(description: "Expect 2nd collection to be deleted")
         let expect3rdDeletion = expectation(description: "Expect 3rd collection to be deleted")
 
-        var expectationArray = [expect3rdDeletion, expect2ndDeletion, expect1stDeletion]
+        var expectationArray = [expect1stDeletion, expect2ndDeletion, expect3rdDeletion]
         guard let url = URL(string: collectionsEndpoint) else {
           XCTFail("Error: cannot create URL for \(collectionsEndpoint)")
           return
@@ -623,10 +623,16 @@ class SwiftMetricsRESTTests: XCTestCase {
               }
               var urlRequest2 = URLRequest(url: url2)
               urlRequest2.httpMethod = "DELETE"
+#if os(Linux) // due to the same URLSession problem, not all the delete tasks come back on Linux
+              let tSMRMPCCtask3 = self.session.dataTask(with: urlRequest2) { _ , _, _ in }
+              tSMRMPCCtask3.resume()
+              expectationArray[Int(tSMRMPCCcollectionUriIDString)!].fulfill()
+#else
               let tSMRMPCCtask3 = self.session.dataTask(with: urlRequest2) { _ , _, _ in
-                expectationArray.popLast()!.fulfill()
+                expectationArray[Int(tSMRMPCCcollectionUriIDString)!].fulfill()
               }
               tSMRMPCCtask3.resume()
+#endif
               sleep(2)
             }
             XCTAssertTrue(idArray.isEmpty, "Did not encounter all expected Collection IDs")
@@ -682,8 +688,13 @@ class SwiftMetricsRESTTests: XCTestCase {
             }
             XCTAssertEqual(400, tSMRFOIICMhttpResponse2.statusCode)
             // cleanup
-            tSMRFOIICMurlRequest2.httpMethod = "DELETE"
-            let tSMRFOIICMtask3 = self.session.dataTask(with: tSMRFOIICMurlRequest2) { _, tSMRFOIICMresponse3, _ in
+            guard let tSMRFOIICMurl3 = URL(string: self.collectionsEndpoint + "/0") else {
+              XCTFail("Error: cannot create URL for \(self.collectionsEndpoint)/0")
+              return
+            }
+            var tSMRFOIICMurlRequest3 = URLRequest(url: tSMRFOIICMurl3)
+            tSMRFOIICMurlRequest3.httpMethod = "DELETE"
+            let tSMRFOIICMtask3 = self.session.dataTask(with: tSMRFOIICMurlRequest3) { _, tSMRFOIICMresponse3, _ in
               guard let tSMRFOIICMhttpResponse3 = tSMRFOIICMresponse3 as? HTTPURLResponse else {
                 XCTFail("Error: unable to retrieve HTTP Status code")
                 return
@@ -698,7 +709,7 @@ class SwiftMetricsRESTTests: XCTestCase {
         }
         tSMRFOIICMtask.resume()
 
-        waitForExpectations(timeout: 10) { error in
+        waitForExpectations(timeout: 20) { error in
             XCTAssertNil(error)
         }
     }
