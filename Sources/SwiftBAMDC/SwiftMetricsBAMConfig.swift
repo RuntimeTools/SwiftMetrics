@@ -640,7 +640,7 @@ public class TokenUtil {
             }
         }
 
-        Log.debug("[SwiftMetricsBAMConfig] Encrypt failed: \(key)")
+        Log.error("[SwiftMetricsBAMConfig] Encrypt failed: \(key)")
         return ""
     }
 
@@ -673,7 +673,7 @@ public class TokenUtil {
             }
         }
 
-        Log.debug("[SwiftMetricsBAMConfig] Decrypt failed: \(key) val: \(value)")
+        Log.error("[SwiftMetricsBAMConfig] Decrypt failed: \(key) val: \(value)")
 
         return ""
     }
