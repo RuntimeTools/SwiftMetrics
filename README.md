@@ -32,6 +32,12 @@ Application Metrics for Swift provides the following built-in data collection so
 
 The Application Metrics for Swift agent supports the following runtime environments:
 
+* **Swift v4.1 GA** on:
+  * 64-bit runtime on Linux (Ubuntu 14.04, 16.04)
+  * 64-bit runtime on macOS (x64)
+* **Swift v4 GA** on:
+  * 64-bit runtime on Linux (Ubuntu 14.04, 16.04)
+  * 64-bit runtime on macOS (x64)
 * **Swift v3 GA** on:
   * 64-bit runtime on Linux (Ubuntu 14.04, 15.10)
   * 64-bit runtime on macOS (x64)
