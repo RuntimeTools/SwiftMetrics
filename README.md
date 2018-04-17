@@ -38,7 +38,7 @@ The Application Metrics for Swift agent supports the following runtime environme
 * **Swift v4 GA** on:
   * 64-bit runtime on Linux (Ubuntu 14.04, 16.04)
   * 64-bit runtime on macOS (x64)
-* **Swift v3 GA** on:
+* **Swift v3.1.1 GA** using SwiftMetrics version 1.2.5 on:
   * 64-bit runtime on Linux (Ubuntu 14.04, 15.10)
   * 64-bit runtime on macOS (x64)
 
