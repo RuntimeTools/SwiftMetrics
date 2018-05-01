@@ -207,7 +207,7 @@ public class SwiftMetricsREST {
         new_id += 1
       }
       self.smrCollectionList[new_id] = SMRCollectionInstance(collection: SMRCollection(id: new_id, startTime: UInt(Date().timeIntervalSince1970 * 1000)))
-      let uriString = "vollections/" + String(new_id)
+      let uriString = "collections/" + String(new_id)
       response.headers.append("Location", value: uriString)
       // Error is thrown only by response.end() not response.send()
       try response.status(HTTPStatusCode.created).send(data: try! self.encoder.encode(CollectionUri(uri: uriString))).end()
