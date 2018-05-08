@@ -194,7 +194,7 @@ public class SwiftMetricsREST {
       // return a list of current metrics contexts
       var collectionsList = CollectionsList()
       for id in self.smrCollectionList.keys.sorted() {
-        collectionsList.collectionUris.append("\(request.originalURL)/\(id)")
+        collectionsList.collectionUris.append("collections/\(id)")
       }
       // Error is thrown only by response.end() not response.send()
       try response.status(HTTPStatusCode.OK).send(data: try! self.encoder.encode(collectionsList)).end()
@@ -207,7 +207,7 @@ public class SwiftMetricsREST {
         new_id += 1
       }
       self.smrCollectionList[new_id] = SMRCollectionInstance(collection: SMRCollection(id: new_id, startTime: UInt(Date().timeIntervalSince1970 * 1000)))
-      let uriString = request.originalURL + "/" + String(new_id)
+      let uriString = "collections/" + String(new_id)
       response.headers.append("Location", value: uriString)
       // Error is thrown only by response.end() not response.send()
       try response.status(HTTPStatusCode.created).send(data: try! self.encoder.encode(CollectionUri(uri: uriString))).end()
