@@ -4,7 +4,7 @@
 The REST API enables the collection of metrics from the running Swift application. The API context root will be the server's default endpoint plus /swiftmetrics eg.
 `http://localhost:9080/swiftmetrics/`
 
-## Usage
+## Enabling the REST API
 
 To enable the REST API in your program, you must include the **SwiftMetricsREST** module in your program
 
@@ -40,6 +40,7 @@ let smp = try SwiftMetricsPrometheus(swiftMetricsInstance : sm, endpoint: router
 let smr = try SwiftMetricsREST(swiftMetricsInstance : sm, endpoint: router)
 ```
 
+## Usage
 Metrics are accumulated in a **collection**.
 The start time of the metrics accumulation is from either creation of the collection
 `POST <context_root>/api/v1/collections`
@@ -49,14 +50,14 @@ or from the time of a clear request
 
 1. Create a new metrics collections. Metrics are recorded from collection creation time.
   - `POST <context_root>/api/v1/collections`
-  - returned URI `<context_root>/api/v1/collection/3`
+  - returned URI `collections/3`
 2. Retrieve the metrics from the collection at required interval.
-  - `GET <context_root>/api/v1/collection/3`
+  - `GET <context_root>/api/v1/collections/3`
   - Process the returned JSON format metrics.
   - Optionally clear the metrics from the collection.<br>
-  `PUT <context_root>/api/v1/collection/3`
+  `PUT <context_root>/api/v1/collections/3`
 3. Delete the collection.
-  - `DELETE <context_root>/api/v1/collection/3`
+  - `DELETE <context_root>/api/v1/collections/3`
 
 
 
@@ -97,8 +98,8 @@ Returns a list of the current metrics collections URIs.
   Example:
   ```JSON
   {
-    "collectionUris": ["http://localhost:9080/javametrics/api/v1/collections/0",
-  "http://localhost:9080/javametrics/api/v1/collections/1"]
+    "collectionUris": ["collections/0",
+  "collections/1"]
   }
   ```
 
@@ -108,7 +109,9 @@ Returns a list of the current metrics collections URIs.
 
 ### <a name="create_collection"></a>Create metrics collection
 
-Creates a new metrics collection.
+Creates a new metrics collection. The collection uri is returned in the Location header.
+
+A maximum of 10 collections are allowed at any one time. Return code 400 indicates too many collections.
 
 * **URL**
 
@@ -132,12 +135,13 @@ Creates a new metrics collection.
   * **Content:** The uri of the created **collection**.
   Example:
   ```JSON
-  {"uri":"http://localhost:9080/javametrics/api/v1/collections/1"}
+  {"uri":"collections/1"}
   ```
 
 * **Error Responses**
 
-  * na
+  * **Code:** `400 (BAD REQUEST)`
+  * **Content** none
 
 
 ### <a name="retrieve_collection"></a>Retrieve metrics collection
