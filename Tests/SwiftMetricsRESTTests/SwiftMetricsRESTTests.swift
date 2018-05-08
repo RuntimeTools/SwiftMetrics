@@ -22,14 +22,12 @@ import Foundation
 
 class SwiftMetricsRESTTests: XCTestCase {
 
-    let collectionsSubpath = "/swiftmetrics/api/v1/collections"
     let decoder = JSONDecoder()
     let session = URLSession(configuration: URLSessionConfiguration.default)
+    let collectionsEndpoint: String = "collections"
 
     var sm: SwiftMetrics?
     var smr: SwiftMetricsREST?
-    var collectionsEndpoint: String = ""
-
 
     override func setUp() {
         super.setUp()
@@ -38,7 +36,6 @@ class SwiftMetricsRESTTests: XCTestCase {
             sm = try SwiftMetrics()
             smr = try SwiftMetricsREST(swiftMetricsInstance: sm!)
             let configMgr = ConfigurationManager().load(.environmentVariables)
-            collectionsEndpoint = "http://localhost:" + String(describing: configMgr.port) + collectionsSubpath
         } catch {
             XCTFail("Unable to instantiate SwiftMetrics")
         }
