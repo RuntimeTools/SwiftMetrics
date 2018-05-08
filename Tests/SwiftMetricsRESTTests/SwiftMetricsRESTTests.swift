@@ -116,7 +116,7 @@ class SwiftMetricsRESTTests: XCTestCase {
           do {
             XCTAssertEqual(201, tSMRCCADhttpResponse.statusCode)
             let tSMRCCADresult = try self.decoder.decode(CollectionUri.self, from: tSMRCCADresponseData)
-            XCTAssertEqual(tSMRCCADresult.uri, self.collectionsEndpoint + "/0", "URI should equal \(self.collectionsEndpoint)/0")
+            XCTAssertEqual(tSMRCCADresult.uri, "collections/0", "URI should equal collections/0")
             XCTAssertEqual(tSMRCCADresult.uri, tSMRCCADhttpResponse.allHeaderFields["Location"] as! String, "URI should be available in response header 'Location'")
             expectCorrectCollectionURI.fulfill()
             print("\(tSMRCCADresult)")
