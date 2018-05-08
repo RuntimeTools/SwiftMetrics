@@ -22,9 +22,10 @@ import Foundation
 
 class SwiftMetricsRESTTests: XCTestCase {
 
+    let collectionsSubpath = "/swiftmetrics/api/v1/collections"
     let decoder = JSONDecoder()
     let session = URLSession(configuration: URLSessionConfiguration.default)
-    let collectionsEndpoint: String = "collections"
+    var collectionsEndpoint: String = ""
 
     var sm: SwiftMetrics?
     var smr: SwiftMetricsREST?
@@ -36,6 +37,7 @@ class SwiftMetricsRESTTests: XCTestCase {
             sm = try SwiftMetrics()
             smr = try SwiftMetricsREST(swiftMetricsInstance: sm!)
             let configMgr = ConfigurationManager().load(.environmentVariables)
+            collectionsEndpoint = "http://localhost:" + String(describing: configMgr.port) + collectionsSubpath
         } catch {
             XCTFail("Unable to instantiate SwiftMetrics")
         }
@@ -117,7 +119,7 @@ class SwiftMetricsRESTTests: XCTestCase {
             XCTAssertEqual(201, tSMRCCADhttpResponse.statusCode)
             let tSMRCCADresult = try self.decoder.decode(CollectionUri.self, from: tSMRCCADresponseData)
             XCTAssertEqual(tSMRCCADresult.uri, "collections/0", "URI should equal collections/0")
-            XCTAssertEqual(tSMRCCADresult.uri, tSMRCCADhttpResponse.allHeaderFields["Location"] as! String, "URI should be available in response header 'Location'")
+            XCTAssertTrue((tSMRCCADhttpResponse.allHeaderFields["Location"] as! String).contains(tSMRCCADresult.uri), "URI should be available in response header 'Location'")
             expectCorrectCollectionURI.fulfill()
             print("\(tSMRCCADresult)")
             urlRequest.httpMethod = "GET"
@@ -139,7 +141,7 @@ class SwiftMetricsRESTTests: XCTestCase {
                 XCTAssertEqual(200, tSMRCCADhttpResponse2.statusCode)
                 let tSMRCCADresult2 = try self.decoder.decode(CollectionsList.self, from: tSMRCCADresponseData2)
                 XCTAssertEqual(1, tSMRCCADresult2.collectionUris.count, "There should only be one collection")
-                XCTAssertEqual(tSMRCCADresult2.collectionUris[0], self.collectionsEndpoint + "/0", "URI should equal \(self.collectionsEndpoint)/0")
+                XCTAssertEqual(tSMRCCADresult2.collectionUris[0], "collections/0", "URI should equal collections/0")
                 expectOneCollection.fulfill()
                 print("\(tSMRCCADresult2)")
                 guard let url2 = URL(string: self.collectionsEndpoint + "/0") else {
@@ -210,7 +212,7 @@ class SwiftMetricsRESTTests: XCTestCase {
           do {
             XCTAssertEqual(201, tSMRCChttpResponse.statusCode)
             let tSMRCCresult = try self.decoder.decode(CollectionUri.self, from: tSMRCCresponseData)
-            XCTAssertEqual(tSMRCCresult.uri, self.collectionsEndpoint + "/0", "URI should equal \(self.collectionsEndpoint)/0")
+            XCTAssertEqual(tSMRCCresult.uri, "collections/0", "URI should equal collections/0")
             print("\(tSMRCCresult)")
             // sleep for hopefully 2 CPU and 2 Memory events
             sleep(20)
@@ -501,8 +503,10 @@ class SwiftMetricsRESTTests: XCTestCase {
             XCTAssertEqual(201, tSMRMHMhttpResponse.statusCode)
             let tSMRMHMresult = try self.decoder.decode(CollectionUri.self, from: tSMRMHMresponseData)
             let tSMRMHMuriString = tSMRMHMresult.uri
-            guard let url2 = URL(string: tSMRMHMuriString) else {
-              XCTFail("Error: cannot create URL for \(tSMRMHMresult.uri)")
+            let tSMRMHMsplitUriString = tSMRMHMuriString.split(separator: "/")
+          let tSMRMHMcollectionID = String(tSMRMHMsplitUriString[tSMRMHMsplitUriString.count - 1])
+            guard let url2 = URL(string: self.collectionsEndpoint + "/" + tSMRMHMcollectionID) else {
+              XCTFail("Error: cannot create URL for \(self.collectionsEndpoint)/\(tSMRMHMcollectionID)")
               return
             }
             var urlRequest2 = URLRequest(url: url2)
@@ -531,7 +535,7 @@ class SwiftMetricsRESTTests: XCTestCase {
                 XCTAssertEqual(200, tSMRMHMhttpResponse3.statusCode)
                 let tSMRMHMresult3 = try self.decoder.decode(SMRCollection.self, from: tSMRMHMresponseData3)
                 // find report for collection url
-                if let tSMRMHMreport3 = tSMRMHMresult3.httpUrls.first(where: { $0.url == tSMRMHMuriString }) {
+                if let tSMRMHMreport3 = tSMRMHMresult3.httpUrls.first(where: { $0.url == self.collectionsEndpoint + "/" + tSMRMHMcollectionID }) {
                   XCTAssertEqual(5, tSMRMHMreport3.hits, "Expected 5 HTTP hits")
                   print("\(tSMRMHMresult3)")
                   // cleanup
@@ -541,7 +545,7 @@ class SwiftMetricsRESTTests: XCTestCase {
                   }
                   tSMRMHMtask4.resume()
                 } else {
-                  XCTFail("Unable to find any hits for \(tSMRMHMuriString)")
+                  XCTFail("Unable to find any hits for \(self.collectionsEndpoint + "/" + tSMRMHMcollectionID)")
                 }
               } catch {
                 XCTFail("error trying to decode responseData into SMRCollection struct")
