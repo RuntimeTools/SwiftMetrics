@@ -618,8 +618,8 @@ class SwiftMetricsRESTTests: XCTestCase {
                 return
               }
               idArray.remove(at: index)
-              guard let url2 = URL(string: tSMRMPCCcollectionUriString) else {
-                XCTFail("Error: cannot create URL for \(tSMRMPCCcollectionUriString)")
+              guard let url2 = URL(string: collectionsEndpoint + "/" + tSMRMPCCcollectionUriIDString) else {
+                XCTFail("Error: cannot create URL for \(collectionsEndpoint + "/" + tSMRMPCCcollectionUriIDString)")
                 return
               }
               var urlRequest2 = URLRequest(url: url2)
