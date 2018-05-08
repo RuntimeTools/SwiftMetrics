@@ -616,27 +616,31 @@ public class TokenUtil {
         let i = cipher_init(key: key)
 
         if let ky = i["key"], let vl = i["iv"] {
-            let c = Cryptor(operation: .encrypt,
-                            algorithm: .aes,
-                            options:   .pkcs7Padding,
-                            key:       ky,
-                            iv:        vl)
+            do {
+                let c = try Cryptor(operation: .encrypt,
+                                    algorithm: .aes,
+                                    options:   .pkcs7Padding,
+                                    key:       ky,
+                                    iv:        vl)
 
-            let b = c.update(string: value)?.final()
+                let b = c.update(string: value)?.final()
 
-            if let bv = b {
-                let d = Data(bytes: bv, count: bv.count).base64EncodedData()
+                if let bv = b {
+                    let d = Data(bytes: bv, count: bv.count).base64EncodedData()
 
-                let s = String(data: d, encoding: String.Encoding.utf8)
+                    let s = String(data: d, encoding: String.Encoding.utf8)
 
-                if let sv = s {
-                    Log.debug("[SwiftMetricsBAMConfig] Encrypt successful: \(key) val: \(sv)")
-                    return sv
+                    if let sv = s {
+                        Log.debug("[SwiftMetricsBAMConfig] Encrypt successful: \(key) val: \(sv)")
+                        return sv
+                    }
                 }
+            } catch {
+                // do nothing
             }
         }
 
-        Log.debug("[SwiftMetricsBAMConfig] Encrypt failed: \(key)")
+        Log.error("[SwiftMetricsBAMConfig] Encrypt failed: \(key)")
         return ""
     }
 
@@ -644,28 +648,32 @@ public class TokenUtil {
         let i = cipher_init(key: key)
 
         if let ky = i["key"], let vl = i["iv"] {
-            let c = Cryptor(operation: .decrypt,
-                            algorithm: .aes,
-                            options:   .pkcs7Padding,
-                            key:       ky,
-                            iv:        vl)
-            let b = Data(base64Encoded: value)
-            if let bv = b {
-                let p = c.update(data: bv)?.final()
+            do {
+                let c = try Cryptor(operation: .decrypt,
+                                    algorithm: .aes,
+                                    options:   .pkcs7Padding,
+                                    key:       ky,
+                                    iv:        vl)
+                let b = Data(base64Encoded: value)
+                if let bv = b {
+                    let p = c.update(data: bv)?.final()
 
-                if let pv = p {
-                    let d = Data(bytes: pv, count: pv.count)
-                    let s = String(data: d, encoding: String.Encoding.utf8)
+                    if let pv = p {
+                        let d = Data(bytes: pv, count: pv.count)
+                        let s = String(data: d, encoding: String.Encoding.utf8)
 
-                    if let sv = s {
-                        Log.debug("[SwiftMetricsBAMConfig] Decrypt successful: \(key) val: \(value)")
-                        return sv
+                        if let sv = s {
+                            Log.debug("[SwiftMetricsBAMConfig] Decrypt successful: \(key) val: \(value)")
+                            return sv
+                        }
                     }
                 }
+            } catch {
+                // do nothing
             }
         }
 
-        Log.debug("[SwiftMetricsBAMConfig] Decrypt failed: \(key) val: \(value)")
+        Log.error("[SwiftMetricsBAMConfig] Decrypt failed: \(key) val: \(value)")
 
         return ""
     }

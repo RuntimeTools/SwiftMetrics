@@ -4,7 +4,9 @@
 The REST API enables the collection of metrics from the running Swift application. The API context root will be the server's default endpoint plus /swiftmetrics eg.
 `http://localhost:9080/swiftmetrics/`
 
+
 ## Enabling the REST API
+
 
 To enable the REST API in your program, you must include the **SwiftMetricsREST** module in your program
 
@@ -39,6 +41,7 @@ let smd = try SwiftMetricsDash(swiftMetricsInstance : sm, endpoint: router)
 let smp = try SwiftMetricsPrometheus(swiftMetricsInstance : sm, endpoint: router)
 let smr = try SwiftMetricsREST(swiftMetricsInstance : sm, endpoint: router)
 ```
+
 
 ## Usage
 Metrics are accumulated in a **collection**.
@@ -98,8 +101,8 @@ Returns a list of the current metrics collections URIs.
   Example:
   ```JSON
   {
-    "collectionUris": ["collections/0",
-  "collections/1"]
+    "collectionUris": ["http://localhost:9080/javametrics/api/v1/collections/0",
+    "http://localhost:9080/javametrics/api/v1/collections/1"]
   }
   ```
 
@@ -109,9 +112,11 @@ Returns a list of the current metrics collections URIs.
 
 ### <a name="create_collection"></a>Create metrics collection
 
+
 Creates a new metrics collection. The collection uri is returned in the Location header.
 
 A maximum of 10 collections are allowed at any one time. Return code 400 indicates too many collections.
+
 
 * **URL**
 
@@ -135,7 +140,7 @@ A maximum of 10 collections are allowed at any one time. Return code 400 indicat
   * **Content:** The uri of the created **collection**.
   Example:
   ```JSON
-  {"uri":"collections/1"}
+   {"uri":"collections/1"}
   ```
 
 * **Error Responses**
