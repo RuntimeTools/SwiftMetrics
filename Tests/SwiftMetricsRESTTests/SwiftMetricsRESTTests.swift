@@ -406,7 +406,7 @@ class SwiftMetricsRESTTests: XCTestCase {
                   // There should only be one HTTP record - for the PUT call.
                   XCTAssertEqual(1, tSMRRCOPresult3.httpUrls.count, "Only expected one HTTP record")
                   XCTAssertEqual(1, tSMRRCOPresult3.httpUrls[0].hits, "Only expected one HTTP hit")
-                  XCTAssertEqual(tSMRRCOPuriString, tSMRRCOPresult3.httpUrls[0].url, "HTTP URL not \(tSMRRCOPuriString)")
+                  XCTAssertTrue(tSMRRCOPresult3.httpUrls[0].url.hasSuffix(tSMRRCOPuriString), "HTTP URL does not end with \(tSMRRCOPuriString)")
                   // HTTP times should be positive
                   XCTAssertGreaterThanOrEqual(tSMRRCOPresult3.httpUrls[0].averageResponseTime, 0, "HTTP Average response time not big enough")
                   XCTAssertGreaterThanOrEqual(tSMRRCOPresult3.httpUrls[0].longestResponseTime, 0, "HTTP Longest response time not big enough")
