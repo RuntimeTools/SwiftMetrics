@@ -276,17 +276,17 @@ class SwiftMetricsService: WebSocketService {
             }
         }
         httpURLsQueue.sync {
-            var responseData:[JSON] = []
+            var responseData:[String] = []
             let localCopy = self.httpURLData
             for (key, value) in localCopy {
-                let json = JSON(["url":key, "averageResponseTime": value.0, "hits": value.1, "longestResponseTime": value.2])
+                let json = "{\"url\":" + key + ", \"averageResponseTime\":" + String(format:"%f", value.0) + ", \"hits\":" + String(format:"%f", value.1) + ", \"longestResponseTime\":" + String(format:"%f", value.2) + "}"
                     responseData.append(json)
             }
             var messageToSend:String=""
 
             // build up the messageToSend string
             for response in responseData {
-                messageToSend += response.rawString()! + ","
+                messageToSend += response + ","
             }
 
             if !messageToSend.isEmpty {
