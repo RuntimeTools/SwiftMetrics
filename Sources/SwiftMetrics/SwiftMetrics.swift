@@ -114,8 +114,6 @@ open class SwiftMetrics {
       }
       if let i = workingPath.range(of: ".build") {
         applicationPath = String(workingPath[..<i.lowerBound])
-      } else {
-        print("SwiftMetrics: Error finding .build directory")
       }
     } else {
       // We're in Bluemix, use the path the swift-buildpack saves libraries to
@@ -130,8 +128,6 @@ open class SwiftMetrics {
       let packagesPath = applicationPath + "Packages/"
       if fm.fileExists(atPath: packagesPath) {
         _ = fm.changeCurrentDirectoryPath(packagesPath)
-      } else {
-        print("SwiftMetrics: Error finding directory containing source code in \(applicationPath)")
       }
     }
     do {
@@ -456,4 +452,3 @@ private func executableFolderURL() -> URL {
     return swiftMon!
   }
 }
-
