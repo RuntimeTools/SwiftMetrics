@@ -117,12 +117,18 @@ class SwiftMetricsService: WebSocketService {
         let processMean = (totalProcessCPULoad / cpuLoadSamples);
         let systemMean = (totalSystemCPULoad / cpuLoadSamples);
 
-        let cpuLine = JSON(["topic":"cpu", "payload":["time":"\(cpu.timeOfSample)","process":"\(cpu.percentUsedByApplication)","system":"\(cpu.percentUsedBySystem)","processMean":"\(processMean)","systemMean":"\(systemMean)"]])
+        let cpuLine =
+            "{\"topic\":\"cpu\"," +
+            "\"payload\":{" +
+                "\"process\":\"\(cpu.percentUsedByApplication)\"," +
+                "\"systemMean\":\"\(systemMean)\"," +
+                "\"processMean\":\"\(processMean)\"," +
+                "\"time\":\"\(cpu.timeOfSample)\"," +
+                "\"system\":\"\(cpu.percentUsedBySystem)\"" +
+            "}}"
 
         for (_,connection) in connections {
-            if let messageToSend = cpuLine.rawString() {
-                connection.send(message: messageToSend)
-            }
+            connection.send(message: cpuLine)
         }
 
     }
@@ -135,18 +141,18 @@ class SwiftMetricsService: WebSocketService {
         let processMean = (totalProcessMemory / memorySamples);
         let systemMean = (totalSystemMemory / memorySamples);
 
-        let memLine = JSON(["topic":"memory","payload":[
-                "time":"\(mem.timeOfSample)",
-                "physical":"\(mem.applicationRAMUsed)",
-                "physical_used":"\(mem.totalRAMUsed)",
-                "processMean":"\(processMean)",
-                "systemMean":"\(systemMean)"
-                ]])
+        let memLine =
+            "{\"topic\":\"memory\"," +
+            "\"payload\":{" +
+                "\"time\":\"\(mem.timeOfSample)\"," +
+                "\"physical\":\"\(mem.applicationRAMUsed)\"," +
+                "\"physical_used\":\"\(mem.totalRAMUsed)\"," +
+                "\"processMean\":\"\(processMean)\"," +
+                "\"systemMean\":\"\(systemMean)\"" +
+            "}}"
 
         for (_,connection) in connections {
-            if let messageToSend = memLine.rawString() {
-                connection.send(message: messageToSend)
-            }
+            connection.send(message: memLine)
         }
     }
 
@@ -191,30 +197,29 @@ class SwiftMetricsService: WebSocketService {
         }
 
 
-        let envLine = JSON(["topic":"env","payload":[
-                ["Parameter":"Command Line","Value":"\(commandLine)"],
-                ["Parameter":"Hostname","Value":"\(hostname)"],
-                ["Parameter":"Number of Processors","Value":"\(numPar)"],
-                ["Parameter":"OS Architecture","Value":"\(os)"]
-                ]])
+        let envLine =
+            "{\"topic\":\"env\",\"payload\":[" +
+                "{\"Parameter\":\"Command Line\",\"Value\":\"\(commandLine)\"}," +
+                "{\"Parameter\":\"Hostname\",\"Value\":\"\(hostname)\"}," +
+                "{\"Parameter\":\"Number of Processors\",\"Value\":\"\(numPar)\"}," +
+                "{\"Parameter\":\"OS Architecture\",\"Value\":\"\(os)\"}" +
+            "]}"
 
         for (_,connection) in connections {
-            if let messageToSend = envLine.rawString() {
-                connection.send(message: messageToSend)
-            }
+            connection.send(message: envLine)
         }
     }
 
 
     public func sendTitle()  {
-        let titleLine = JSON(["topic":"title","payload":[
-            "title":"Application Metrics for Swift",
-            "docs": "http://github.com/RuntimeTools/SwiftMetrics"]])
+        let titleLine =
+            "{\"topic\":\"title\",\"payload\":{" +
+                "\"title\":\"Application Metrics for Swift\"," +
+                "\"docs\": \"http://github.com/RuntimeTools/SwiftMetrics\"" +
+            "}}"
 
          for (_,connection) in connections {
-            if let messageToSend = titleLine.rawString() {
-                connection.send(message: messageToSend)
-            }
+            connection.send(message: titleLine)
         }
     }
 
@@ -259,34 +264,37 @@ class SwiftMetricsService: WebSocketService {
         httpQueue.sync {
             let localCopy = self.httpAggregateData
             if localCopy.total > 0 {
-                let httpLine = JSON([
-                "topic":"http","payload":[
-                    "time":"\(localCopy.timeOfRequest)",
-                    "url":"\(localCopy.url)",
-                    "longest":"\(localCopy.longest)",
-                    "average":"\(localCopy.average)",
-                    "total":"\(localCopy.total)"]])
+                let httpLine =
+                    "{\"topic\":\"http\",\"payload\":{" +
+                        "\"time\":\"\(localCopy.timeOfRequest)\"," +
+                        "\"url\":\"\(localCopy.url)\"," +
+                        "\"longest\":\"\(localCopy.longest)\"," +
+                        "\"average\":\"\(localCopy.average)\"," +
+                        "\"total\":\"\(localCopy.total)\"" +
+                    "}}"
 
                 for (_,connection) in self.connections {
-                    if let messageToSend = httpLine.rawString() {
-                        connection.send(message: messageToSend)
-                    }
+                    connection.send(message: httpLine)
                 }
                 self.httpAggregateData = HTTPAggregateData()
             }
         }
         httpURLsQueue.sync {
-            var responseData:[JSON] = []
+            var responseData:[String] = []
             let localCopy = self.httpURLData
             for (key, value) in localCopy {
-                let json = JSON(["url":key, "averageResponseTime": value.0, "hits": value.1, "longestResponseTime": value.2])
+                let json =
+                    "{\"url\":\"\(key)\"," +
+                    "\"averageResponseTime\":\(String(value.0))," +
+                    "\"hits\":\(String(value.1))," +
+                    "\"longestResponseTime\":\(String(value.2))}"
                     responseData.append(json)
             }
             var messageToSend:String=""
 
             // build up the messageToSend string
             for response in responseData {
-                messageToSend += response.rawString()! + ","
+                messageToSend += response + ","
             }
 
             if !messageToSend.isEmpty {
