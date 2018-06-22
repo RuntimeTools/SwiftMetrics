@@ -1,18 +1,18 @@
 /**
-* Copyright IBM Corporation 2017
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-**/
+ * Copyright IBM Corporation 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
 
 import Kitura
 import SwiftMetricsKitura
@@ -27,12 +27,70 @@ import CloudFoundryEnv
 import Dispatch
 
 struct HTTPAggregateData: SMData {
-  public var timeOfRequest: Int = 0
-  public var url: String = ""
-  public var longest: Double = 0
-  public var average: Double = 0
-  public var total: Int = 0
+    public var timeOfRequest: Int = 0
+    public var url: String = ""
+    public var longest: Double = 0
+    public var average: Double = 0
+    public var total: Int = 0
 }
+
+// Structs for CPU Data and wrapper object
+struct CpuData: Codable {
+    let process: Float
+    let systemMean: Double
+    let processMean: Double
+    let time: Int
+    let system: Float
+}
+
+struct Cpu: Codable {
+    let topic = "cpu"
+    let payload: CpuData
+}
+
+struct MemoryData: Codable {
+    let time: Int
+    let physical: Int
+    let physical_used: Int
+    let processMean: Int
+    let systemMean: Int
+}
+
+struct Memory: Codable {
+    let topic = "memory"
+    let payload: MemoryData
+}
+
+struct TitleData: Codable {
+    let title: String
+    let docs: String
+}
+
+struct Title: Codable {
+    let topic = "title"
+    let payload: TitleData
+}
+
+struct HTTPRequestsData: Codable {
+    let time: Int
+    let url: String
+    let longest: Double
+    let average: Double
+    let total: Int
+}
+
+struct HTTPRequests: Codable {
+    let topic = "http"
+    let payload: HTTPRequestsData
+}
+
+struct HTTPResponseData: Codable {
+    let url: String
+    let averageResponseTime: Double
+    let hits: Double
+    let longestResponseTime: Double
+}
+
 var router = Router()
 public class SwiftMetricsDash {
 
@@ -42,7 +100,7 @@ public class SwiftMetricsDash {
     var createServer: Bool = false
 
     public convenience init(swiftMetricsInstance : SwiftMetrics) throws {
-       try self.init(swiftMetricsInstance : swiftMetricsInstance , endpoint: nil)
+        try self.init(swiftMetricsInstance : swiftMetricsInstance , endpoint: nil)
     }
 
     public init(swiftMetricsInstance : SwiftMetrics , endpoint: Router!) throws {
@@ -68,7 +126,7 @@ public class SwiftMetricsDash {
     }
 
     func startServer(router: Router) throws {
-      router.all("/swiftmetrics-dash", middleware: StaticFileServer(path: self.SM.localSourceDirectory + "/public"))
+        router.all("/swiftmetrics-dash", middleware: StaticFileServer(path: self.SM.localSourceDirectory + "/public"))
 
         if self.createServer {
             let configMgr = ConfigurationManager().load(.environmentVariables)
@@ -76,7 +134,7 @@ public class SwiftMetricsDash {
             print("SwiftMetricsDash : Starting on port \(configMgr.port)")
             Kitura.start()
         }
-     }
+    }
 }
 class SwiftMetricsService: WebSocketService {
 
@@ -87,6 +145,7 @@ class SwiftMetricsService: WebSocketService {
     let httpQueue = DispatchQueue(label: "httpStoreQueue")
     let jobsQueue = DispatchQueue(label: "jobsQueue")
     var monitor:SwiftMonitor
+    let encoder = JSONEncoder()
 
     // CPU summary data
     var totalProcessCPULoad: Double = 0.0;
@@ -117,20 +176,15 @@ class SwiftMetricsService: WebSocketService {
         let processMean = (totalProcessCPULoad / cpuLoadSamples);
         let systemMean = (totalSystemCPULoad / cpuLoadSamples);
 
-        let cpuLine =
-            "{\"topic\":\"cpu\"," +
-            "\"payload\":{" +
-                "\"process\":\"\(cpu.percentUsedByApplication)\"," +
-                "\"systemMean\":\"\(systemMean)\"," +
-                "\"processMean\":\"\(processMean)\"," +
-                "\"time\":\"\(cpu.timeOfSample)\"," +
-                "\"system\":\"\(cpu.percentUsedBySystem)\"" +
-            "}}"
+        let cpu = Cpu(payload: CpuData(
+            process: cpu.percentUsedByApplication,
+            systemMean: systemMean,
+            processMean: processMean,
+            time: cpu.timeOfSample,
+            system: cpu.percentUsedBySystem
+        ))
 
-        for (_,connection) in connections {
-            connection.send(message: cpuLine)
-        }
-
+        sendCodable(mData: cpu)
     }
 
 
@@ -141,19 +195,15 @@ class SwiftMetricsService: WebSocketService {
         let processMean = (totalProcessMemory / memorySamples);
         let systemMean = (totalSystemMemory / memorySamples);
 
-        let memLine =
-            "{\"topic\":\"memory\"," +
-            "\"payload\":{" +
-                "\"time\":\"\(mem.timeOfSample)\"," +
-                "\"physical\":\"\(mem.applicationRAMUsed)\"," +
-                "\"physical_used\":\"\(mem.totalRAMUsed)\"," +
-                "\"processMean\":\"\(processMean)\"," +
-                "\"systemMean\":\"\(systemMean)\"" +
-            "}}"
+        let memory = Memory(payload: MemoryData(
+            time: mem.timeOfSample,
+            physical: mem.applicationRAMUsed,
+            physical_used: mem.totalRAMUsed,
+            processMean: processMean,
+            systemMean: systemMean
+        ))
 
-        for (_,connection) in connections {
-            connection.send(message: memLine)
-        }
+        sendCodable(mData: memory)
     }
 
     public func connected(connection: WebSocketConnection) {
@@ -179,21 +229,21 @@ class SwiftMetricsService: WebSocketService {
 
         for (param, value) in self.monitor.getEnvironmentData() {
             switch param {
-                case "command.line":
-                    commandLine = value
-                    break
-                case "environment.HOSTNAME":
-                    hostname = value
-                    break
-                case "os.arch":
-                    os = value
-                    break
-                case "number.of.processors":
-                    numPar = value
-                    break
-                default:
-                    break
-             }
+            case "command.line":
+                commandLine = value
+                break
+            case "environment.HOSTNAME":
+                hostname = value
+                break
+            case "os.arch":
+                os = value
+                break
+            case "number.of.processors":
+                numPar = value
+                break
+            default:
+                break
+            }
         }
 
 
@@ -203,7 +253,7 @@ class SwiftMetricsService: WebSocketService {
                 "{\"Parameter\":\"Hostname\",\"Value\":\"\(hostname)\"}," +
                 "{\"Parameter\":\"Number of Processors\",\"Value\":\"\(numPar)\"}," +
                 "{\"Parameter\":\"OS Architecture\",\"Value\":\"\(os)\"}" +
-            "]}"
+        "]}"
 
         for (_,connection) in connections {
             connection.send(message: envLine)
@@ -212,20 +262,17 @@ class SwiftMetricsService: WebSocketService {
 
 
     public func sendTitle()  {
-        let titleLine =
-            "{\"topic\":\"title\",\"payload\":{" +
-                "\"title\":\"Application Metrics for Swift\"," +
-                "\"docs\": \"http://github.com/RuntimeTools/SwiftMetrics\"" +
-            "}}"
+        let title = Title(payload: TitleData(
+            title: "Application Metrics for Swift",
+            docs: "http://github.com/RuntimeTools/SwiftMetrics"
+        ))
 
-         for (_,connection) in connections {
-            connection.send(message: titleLine)
-        }
+        sendCodable(mData: title)
     }
 
     public func storeHTTP(myhttp: HTTPData) {
         let localmyhttp = myhttp
-    	  httpQueue.sync {
+        httpQueue.sync {
             if self.httpAggregateData.total == 0 {
                 self.httpAggregateData.total = 1
                 self.httpAggregateData.timeOfRequest = localmyhttp.timeOfRequest
@@ -264,18 +311,17 @@ class SwiftMetricsService: WebSocketService {
         httpQueue.sync {
             let localCopy = self.httpAggregateData
             if localCopy.total > 0 {
-                let httpLine =
-                    "{\"topic\":\"http\",\"payload\":{" +
-                        "\"time\":\"\(localCopy.timeOfRequest)\"," +
-                        "\"url\":\"\(localCopy.url)\"," +
-                        "\"longest\":\"\(localCopy.longest)\"," +
-                        "\"average\":\"\(localCopy.average)\"," +
-                        "\"total\":\"\(localCopy.total)\"" +
-                    "}}"
 
-                for (_,connection) in self.connections {
-                    connection.send(message: httpLine)
-                }
+                let httpData = HTTPRequests(payload: HTTPRequestsData(
+                    time: localCopy.timeOfRequest,
+                    url: localCopy.url,
+                    longest: localCopy.longest,
+                    average: localCopy.average,
+                    total: localCopy.total
+                ))
+
+                sendCodable(mData: httpData)
+
                 self.httpAggregateData = HTTPAggregateData()
             }
         }
@@ -283,12 +329,19 @@ class SwiftMetricsService: WebSocketService {
             var responseData:[String] = []
             let localCopy = self.httpURLData
             for (key, value) in localCopy {
-                let json =
-                    "{\"url\":\"\(key)\"," +
-                    "\"averageResponseTime\":\(String(value.0))," +
-                    "\"hits\":\(String(value.1))," +
-                    "\"longestResponseTime\":\(String(value.2))}"
-                    responseData.append(json)
+                let json = HTTPResponseData(
+                    url: key,
+                    averageResponseTime: value.0,
+                    hits: value.1,
+                    longestResponseTime: value.2
+                )
+                // encode memory as JSON object
+                do {
+                    let data = try encoder.encode(json)
+                    responseData.append(String(data: data, encoding: .utf8)!)
+                } catch {
+                    print("HTTPResponseData could not be converted to JSON.")
+                }
             }
             var messageToSend:String=""
 
@@ -298,19 +351,32 @@ class SwiftMetricsService: WebSocketService {
             }
 
             if !messageToSend.isEmpty {
-              // remove the last ','
-              messageToSend = String(messageToSend[..<messageToSend.index(before: messageToSend.endIndex)])
-              // construct the final JSON obkect
-              let messageToSend2 = "{\"topic\":\"httpURLs\",\"payload\":[" + messageToSend + "]}"
-              for (_,connection) in self.connections {
-                  connection.send(message: messageToSend2)
-              }
+                // remove the last ','
+                messageToSend = String(messageToSend[..<messageToSend.index(before: messageToSend.endIndex)])
+                // construct the final JSON obkect
+                let messageToSend2 = "{\"topic\":\"httpURLs\",\"payload\":[" + messageToSend + "]}"
+                for (_,connection) in self.connections {
+                    connection.send(message: messageToSend2)
+                }
             }
             jobsQueue.async {
                 // re-run this function after 2 seconds
                 sleep(2)
                 self.sendhttpData()
             }
+        }
+    }
+
+    func sendCodable<MESSAGE: Codable>(mData: MESSAGE) {
+        do {
+            // encode memory as JSON object
+            let data = try encoder.encode(mData)
+            // send data in connections
+            for (_,connection) in connections {
+                connection.send(message: String(data: data, encoding: .utf8)!)
+            }
+        } catch {
+            print("Codable object could not be converted to JSON.")
         }
     }
 
