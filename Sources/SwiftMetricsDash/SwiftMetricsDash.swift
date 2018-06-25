@@ -91,6 +91,16 @@ struct HTTPResponseData: Codable {
     let longestResponseTime: Double
 }
 
+struct Env: Codable {
+    let topic = "env"
+    let payload: [EnvParams]
+}
+
+struct EnvParams: Codable {
+    let Parameter: String
+    let Value: String
+}
+
 var router = Router()
 public class SwiftMetricsDash {
 
@@ -246,18 +256,14 @@ class SwiftMetricsService: WebSocketService {
             }
         }
 
+        let env = Env(payload: [
+            EnvParams(Parameter: "Command Line", Value: commandLine),
+            EnvParams(Parameter: "Hostname", Value: hostname),
+            EnvParams(Parameter: "Number of Processors", Value: numPar),
+            EnvParams(Parameter: "OS Architecture", Value: os)
+        ])
 
-        let envLine =
-            "{\"topic\":\"env\",\"payload\":[" +
-                "{\"Parameter\":\"Command Line\",\"Value\":\"\(commandLine)\"}," +
-                "{\"Parameter\":\"Hostname\",\"Value\":\"\(hostname)\"}," +
-                "{\"Parameter\":\"Number of Processors\",\"Value\":\"\(numPar)\"}," +
-                "{\"Parameter\":\"OS Architecture\",\"Value\":\"\(os)\"}" +
-        "]}"
-
-        for (_,connection) in connections {
-            connection.send(message: envLine)
-        }
+        sendCodable(mData: env)
     }
 
 
@@ -336,12 +342,8 @@ class SwiftMetricsService: WebSocketService {
                     longestResponseTime: value.2
                 )
                 // encode memory as JSON object
-                do {
-                    let data = try encoder.encode(json)
-                    responseData.append(String(data: data, encoding: .utf8)!)
-                } catch {
-                    print("HTTPResponseData could not be converted to JSON.")
-                }
+                let data = try! encoder.encode(json)
+                responseData.append(String(data: data, encoding: .utf8)!)
             }
             var messageToSend:String=""
 
@@ -368,15 +370,11 @@ class SwiftMetricsService: WebSocketService {
     }
 
     func sendCodable<MESSAGE: Codable>(mData: MESSAGE) {
-        do {
-            // encode memory as JSON object
-            let data = try encoder.encode(mData)
-            // send data in connections
-            for (_,connection) in connections {
-                connection.send(message: String(data: data, encoding: .utf8)!)
-            }
-        } catch {
-            print("Codable object could not be converted to JSON.")
+        // encode memory as JSON object
+        let data = try! encoder.encode(mData)
+        // send data in connections
+        for (_,connection) in connections {
+            connection.send(message: String(data: data, encoding: .utf8)!)
         }
     }
 
