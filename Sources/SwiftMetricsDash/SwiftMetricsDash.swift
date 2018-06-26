@@ -167,14 +167,16 @@ class SwiftMetricsService: WebSocketService {
     var totalSystemMemory: Int = 0;
     var memorySamples: Int = 0;
 
-
+    //countdown timer
+    let countdownTimer: DispatchSourceTimer = DispatchSource.makeTimerSource();
 
     public init(monitor: SwiftMonitor) {
         self.monitor = monitor
         monitor.on(sendCPU)
         monitor.on(sendMEM)
         monitor.on(storeHTTP)
-        sendhttpData()
+
+        httpTimerStart()
     }
 
 
@@ -261,7 +263,7 @@ class SwiftMetricsService: WebSocketService {
             EnvParams(Parameter: "Hostname", Value: hostname),
             EnvParams(Parameter: "Number of Processors", Value: numPar),
             EnvParams(Parameter: "OS Architecture", Value: os)
-        ])
+            ])
 
         sendCodable(mData: env)
     }
@@ -313,7 +315,7 @@ class SwiftMetricsService: WebSocketService {
         }
     }
 
-    func sendhttpData()  {
+    func sendhttpData() {
         httpQueue.sync {
             let localCopy = self.httpAggregateData
             if localCopy.total > 0 {
@@ -332,24 +334,25 @@ class SwiftMetricsService: WebSocketService {
             }
         }
         httpURLsQueue.sync {
-            var responseData:[String] = []
+            var responseData:[HTTPResponseData] = []
             let localCopy = self.httpURLData
             for (key, value) in localCopy {
-                let json = HTTPResponseData(
+                let httpRD = HTTPResponseData(
                     url: key,
                     averageResponseTime: value.0,
                     hits: value.1,
                     longestResponseTime: value.2
                 )
-                // encode memory as JSON object
-                let data = try! encoder.encode(json)
-                responseData.append(String(data: data, encoding: .utf8)!)
+
+                responseData.append(httpRD)
             }
             var messageToSend:String=""
 
             // build up the messageToSend string
             for response in responseData {
-                messageToSend += response + ","
+                if let data = try? JSONEncoder().encode(response) {
+                    messageToSend += String(data: data, encoding: .utf8)! + ","
+                }
             }
 
             if !messageToSend.isEmpty {
@@ -361,12 +364,13 @@ class SwiftMetricsService: WebSocketService {
                     connection.send(message: messageToSend2)
                 }
             }
-            jobsQueue.async {
-                // re-run this function after 2 seconds
-                sleep(2)
-                self.sendhttpData()
-            }
         }
+    }
+
+    func httpTimerStart() {
+        countdownTimer.schedule(deadline: .now(), repeating: .seconds(2), leeway: .milliseconds(100))
+        countdownTimer.setEventHandler(handler: self.sendhttpData)
+        countdownTimer.resume()
     }
 
     func sendCodable<MESSAGE: Codable>(mData: MESSAGE) {
