@@ -33,74 +33,6 @@ struct HTTPAggregateData: SMData {
     public var average: Double = 0
     public var total: Int = 0
 }
-
-// Structs for CPU Data and wrapper object
-struct CpuData: Codable {
-    let process: Float
-    let systemMean: Double
-    let processMean: Double
-    let time: Int
-    let system: Float
-}
-
-struct Cpu: Codable {
-    let topic = "cpu"
-    let payload: CpuData
-}
-
-struct MemoryData: Codable {
-    let time: Int
-    let physical: Int
-    let physical_used: Int
-    let processMean: Int
-    let systemMean: Int
-}
-
-struct Memory: Codable {
-    let topic = "memory"
-    let payload: MemoryData
-}
-
-struct TitleData: Codable {
-    let title: String
-    let docs: String
-}
-
-struct Title: Codable {
-    let topic = "title"
-    let payload: TitleData
-}
-
-struct HTTPRequestsData: Codable {
-    let time: Int
-    let url: String
-    let longest: Double
-    let average: Double
-    let total: Int
-}
-
-struct HTTPRequests: Codable {
-    let topic = "http"
-    let payload: HTTPRequestsData
-}
-
-struct HTTPResponseData: Codable {
-    let url: String
-    let averageResponseTime: Double
-    let hits: Double
-    let longestResponseTime: Double
-}
-
-struct Env: Codable {
-    let topic = "env"
-    let payload: [EnvParams]
-}
-
-struct EnvParams: Codable {
-    let Parameter: String
-    let Value: String
-}
-
 var router = Router()
 public class SwiftMetricsDash {
 
@@ -155,7 +87,6 @@ class SwiftMetricsService: WebSocketService {
     let httpQueue = DispatchQueue(label: "httpStoreQueue")
     let jobsQueue = DispatchQueue(label: "jobsQueue")
     var monitor:SwiftMonitor
-    let encoder = JSONEncoder()
 
     // CPU summary data
     var totalProcessCPULoad: Double = 0.0;
@@ -175,7 +106,6 @@ class SwiftMetricsService: WebSocketService {
         monitor.on(sendCPU)
         monitor.on(sendMEM)
         monitor.on(storeHTTP)
-
         httpTimerStart()
     }
 
@@ -188,15 +118,20 @@ class SwiftMetricsService: WebSocketService {
         let processMean = (totalProcessCPULoad / cpuLoadSamples);
         let systemMean = (totalSystemCPULoad / cpuLoadSamples);
 
-        let cpu = Cpu(payload: CpuData(
-            process: cpu.percentUsedByApplication,
-            systemMean: systemMean,
-            processMean: processMean,
-            time: cpu.timeOfSample,
-            system: cpu.percentUsedBySystem
-        ))
+        let cpuLine =
+            "{\"topic\":\"cpu\"," +
+                "\"payload\":{" +
+                "\"process\":\"\(cpu.percentUsedByApplication)\"," +
+                "\"systemMean\":\"\(systemMean)\"," +
+                "\"processMean\":\"\(processMean)\"," +
+                "\"time\":\"\(cpu.timeOfSample)\"," +
+                "\"system\":\"\(cpu.percentUsedBySystem)\"" +
+        "}}"
 
-        sendCodable(mData: cpu)
+        for (_,connection) in connections {
+            connection.send(message: cpuLine)
+        }
+
     }
 
 
@@ -207,15 +142,19 @@ class SwiftMetricsService: WebSocketService {
         let processMean = (totalProcessMemory / memorySamples);
         let systemMean = (totalSystemMemory / memorySamples);
 
-        let memory = Memory(payload: MemoryData(
-            time: mem.timeOfSample,
-            physical: mem.applicationRAMUsed,
-            physical_used: mem.totalRAMUsed,
-            processMean: processMean,
-            systemMean: systemMean
-        ))
+        let memLine =
+            "{\"topic\":\"memory\"," +
+                "\"payload\":{" +
+                "\"time\":\"\(mem.timeOfSample)\"," +
+                "\"physical\":\"\(mem.applicationRAMUsed)\"," +
+                "\"physical_used\":\"\(mem.totalRAMUsed)\"," +
+                "\"processMean\":\"\(processMean)\"," +
+                "\"systemMean\":\"\(systemMean)\"" +
+        "}}"
 
-        sendCodable(mData: memory)
+        for (_,connection) in connections {
+            connection.send(message: memLine)
+        }
     }
 
     public func connected(connection: WebSocketConnection) {
@@ -258,24 +197,31 @@ class SwiftMetricsService: WebSocketService {
             }
         }
 
-        let env = Env(payload: [
-            EnvParams(Parameter: "Command Line", Value: commandLine),
-            EnvParams(Parameter: "Hostname", Value: hostname),
-            EnvParams(Parameter: "Number of Processors", Value: numPar),
-            EnvParams(Parameter: "OS Architecture", Value: os)
-            ])
 
-        sendCodable(mData: env)
+        let envLine =
+            "{\"topic\":\"env\",\"payload\":[" +
+                "{\"Parameter\":\"Command Line\",\"Value\":\"\(commandLine)\"}," +
+                "{\"Parameter\":\"Hostname\",\"Value\":\"\(hostname)\"}," +
+                "{\"Parameter\":\"Number of Processors\",\"Value\":\"\(numPar)\"}," +
+                "{\"Parameter\":\"OS Architecture\",\"Value\":\"\(os)\"}" +
+        "]}"
+
+        for (_,connection) in connections {
+            connection.send(message: envLine)
+        }
     }
 
 
     public func sendTitle()  {
-        let title = Title(payload: TitleData(
-            title: "Application Metrics for Swift",
-            docs: "http://github.com/RuntimeTools/SwiftMetrics"
-        ))
+        let titleLine =
+            "{\"topic\":\"title\",\"payload\":{" +
+                "\"title\":\"Application Metrics for Swift\"," +
+                "\"docs\": \"http://github.com/RuntimeTools/SwiftMetrics\"" +
+        "}}"
 
-        sendCodable(mData: title)
+        for (_,connection) in connections {
+            connection.send(message: titleLine)
+        }
     }
 
     public func storeHTTP(myhttp: HTTPData) {
@@ -315,44 +261,41 @@ class SwiftMetricsService: WebSocketService {
         }
     }
 
-    func sendhttpData() {
+    func sendhttpData()  {
         httpQueue.sync {
             let localCopy = self.httpAggregateData
             if localCopy.total > 0 {
+                let httpLine =
+                    "{\"topic\":\"http\",\"payload\":{" +
+                        "\"time\":\"\(localCopy.timeOfRequest)\"," +
+                        "\"url\":\"\(localCopy.url)\"," +
+                        "\"longest\":\"\(localCopy.longest)\"," +
+                        "\"average\":\"\(localCopy.average)\"," +
+                        "\"total\":\"\(localCopy.total)\"" +
+                "}}"
 
-                let httpData = HTTPRequests(payload: HTTPRequestsData(
-                    time: localCopy.timeOfRequest,
-                    url: localCopy.url,
-                    longest: localCopy.longest,
-                    average: localCopy.average,
-                    total: localCopy.total
-                ))
-
-                sendCodable(mData: httpData)
-
+                for (_,connection) in self.connections {
+                    connection.send(message: httpLine)
+                }
                 self.httpAggregateData = HTTPAggregateData()
             }
         }
         httpURLsQueue.sync {
-            var responseData:[HTTPResponseData] = []
+            var responseData:[String] = []
             let localCopy = self.httpURLData
             for (key, value) in localCopy {
-                let httpRD = HTTPResponseData(
-                    url: key,
-                    averageResponseTime: value.0,
-                    hits: value.1,
-                    longestResponseTime: value.2
-                )
-
-                responseData.append(httpRD)
+                let json =
+                    "{\"url\":\"\(key)\"," +
+                        "\"averageResponseTime\":\(String(value.0))," +
+                        "\"hits\":\(String(value.1))," +
+                "\"longestResponseTime\":\(String(value.2))}"
+                responseData.append(json)
             }
             var messageToSend:String=""
 
             // build up the messageToSend string
             for response in responseData {
-                if let data = try? JSONEncoder().encode(response) {
-                    messageToSend += String(data: data, encoding: .utf8)! + ","
-                }
+                messageToSend += response + ","
             }
 
             if !messageToSend.isEmpty {
@@ -371,15 +314,6 @@ class SwiftMetricsService: WebSocketService {
         countdownTimer.schedule(deadline: .now(), repeating: .seconds(2), leeway: .milliseconds(100))
         countdownTimer.setEventHandler(handler: self.sendhttpData)
         countdownTimer.resume()
-    }
-
-    func sendCodable<MESSAGE: Codable>(mData: MESSAGE) {
-        // encode memory as JSON object
-        let data = try! encoder.encode(mData)
-        // send data in connections
-        for (_,connection) in connections {
-            connection.send(message: String(data: data, encoding: .utf8)!)
-        }
     }
 
 }
