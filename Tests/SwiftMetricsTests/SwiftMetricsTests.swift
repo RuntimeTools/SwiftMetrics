@@ -61,7 +61,7 @@ class SwiftMetricsTests: XCTestCase {
 
         monitoring!.on(processCPU)
 
-        waitForExpectations(timeout: 30) { error in
+        waitForExpectations(timeout: 10) { error in
             XCTAssertNil(error)
         }
     }
@@ -82,7 +82,7 @@ class SwiftMetricsTests: XCTestCase {
 
         monitoring!.on(processInit)
 
-        waitForExpectations(timeout: 30) { error in
+        waitForExpectations(timeout: 10) { error in
             XCTAssertNil(error)
         }
     }
@@ -103,7 +103,7 @@ class SwiftMetricsTests: XCTestCase {
 
         monitoring!.on(processEnv)
 
-        waitForExpectations(timeout: 30) { error in
+        waitForExpectations(timeout: 10) { error in
             XCTAssertNil(error)
         }
     }
@@ -131,7 +131,7 @@ class SwiftMetricsTests: XCTestCase {
 
         monitoring!.on(processMem)
 
-        waitForExpectations(timeout: 30) { error in
+        waitForExpectations(timeout: 10) { error in
             XCTAssertNil(error)
         }
     }
@@ -152,7 +152,7 @@ class SwiftMetricsTests: XCTestCase {
        }
 
        monitoring!.on(processLatency)
-       waitForExpectations(timeout: 30) { error in
+       waitForExpectations(timeout: 10) { error in
           XCTAssertNil(error)
        }
    }
@@ -172,7 +172,7 @@ class SwiftMetricsTests: XCTestCase {
         monitoring = sm!.monitor()
 
         monitoring!.on(processCPU)
-        waitForExpectations(timeout: 30) { error in
+        waitForExpectations(timeout: 10) { error in
             XCTAssertNil(error)
         }
     }
