@@ -1,18 +1,18 @@
 /**
-* Copyright IBM Corporation 2017
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-**/
+ * Copyright IBM Corporation 2017
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
 
 import Kitura
 import SwiftMetricsKitura
@@ -27,11 +27,11 @@ import CloudFoundryEnv
 import Dispatch
 
 struct HTTPAggregateData: SMData {
-  public var timeOfRequest: Int = 0
-  public var url: String = ""
-  public var longest: Double = 0
-  public var average: Double = 0
-  public var total: Int = 0
+    public var timeOfRequest: Int = 0
+    public var url: String = ""
+    public var longest: Double = 0
+    public var average: Double = 0
+    public var total: Int = 0
 }
 var router = Router()
 public class SwiftMetricsDash {
@@ -42,7 +42,7 @@ public class SwiftMetricsDash {
     var createServer: Bool = false
 
     public convenience init(swiftMetricsInstance : SwiftMetrics) throws {
-       try self.init(swiftMetricsInstance : swiftMetricsInstance , endpoint: nil)
+        try self.init(swiftMetricsInstance : swiftMetricsInstance , endpoint: nil)
     }
 
     public init(swiftMetricsInstance : SwiftMetrics , endpoint: Router!) throws {
@@ -68,7 +68,7 @@ public class SwiftMetricsDash {
     }
 
     func startServer(router: Router) throws {
-      router.all("/swiftmetrics-dash", middleware: StaticFileServer(path: self.SM.localSourceDirectory + "/public"))
+        router.all("/swiftmetrics-dash", middleware: StaticFileServer(path: self.SM.localSourceDirectory + "/public"))
 
         if self.createServer {
             let configMgr = ConfigurationManager().load(.environmentVariables)
@@ -76,7 +76,7 @@ public class SwiftMetricsDash {
             print("SwiftMetricsDash : Starting on port \(configMgr.port)")
             Kitura.start()
         }
-     }
+    }
 }
 class SwiftMetricsService: WebSocketService {
 
@@ -98,14 +98,15 @@ class SwiftMetricsService: WebSocketService {
     var totalSystemMemory: Int = 0;
     var memorySamples: Int = 0;
 
-
+    //countdown timer
+    let countdownTimer: DispatchSourceTimer = DispatchSource.makeTimerSource();
 
     public init(monitor: SwiftMonitor) {
         self.monitor = monitor
         monitor.on(sendCPU)
         monitor.on(sendMEM)
         monitor.on(storeHTTP)
-        sendhttpData()
+        httpTimerStart()
     }
 
 
@@ -117,12 +118,18 @@ class SwiftMetricsService: WebSocketService {
         let processMean = (totalProcessCPULoad / cpuLoadSamples);
         let systemMean = (totalSystemCPULoad / cpuLoadSamples);
 
-        let cpuLine = JSON(["topic":"cpu", "payload":["time":"\(cpu.timeOfSample)","process":"\(cpu.percentUsedByApplication)","system":"\(cpu.percentUsedBySystem)","processMean":"\(processMean)","systemMean":"\(systemMean)"]])
+        let cpuLine =
+            "{\"topic\":\"cpu\"," +
+                "\"payload\":{" +
+                "\"process\":\"\(cpu.percentUsedByApplication)\"," +
+                "\"systemMean\":\"\(systemMean)\"," +
+                "\"processMean\":\"\(processMean)\"," +
+                "\"time\":\"\(cpu.timeOfSample)\"," +
+                "\"system\":\"\(cpu.percentUsedBySystem)\"" +
+        "}}"
 
         for (_,connection) in connections {
-            if let messageToSend = cpuLine.rawString() {
-                connection.send(message: messageToSend)
-            }
+            connection.send(message: cpuLine)
         }
 
     }
@@ -135,18 +142,18 @@ class SwiftMetricsService: WebSocketService {
         let processMean = (totalProcessMemory / memorySamples);
         let systemMean = (totalSystemMemory / memorySamples);
 
-        let memLine = JSON(["topic":"memory","payload":[
-                "time":"\(mem.timeOfSample)",
-                "physical":"\(mem.applicationRAMUsed)",
-                "physical_used":"\(mem.totalRAMUsed)",
-                "processMean":"\(processMean)",
-                "systemMean":"\(systemMean)"
-                ]])
+        let memLine =
+            "{\"topic\":\"memory\"," +
+                "\"payload\":{" +
+                "\"time\":\"\(mem.timeOfSample)\"," +
+                "\"physical\":\"\(mem.applicationRAMUsed)\"," +
+                "\"physical_used\":\"\(mem.totalRAMUsed)\"," +
+                "\"processMean\":\"\(processMean)\"," +
+                "\"systemMean\":\"\(systemMean)\"" +
+        "}}"
 
         for (_,connection) in connections {
-            if let messageToSend = memLine.rawString() {
-                connection.send(message: messageToSend)
-            }
+            connection.send(message: memLine)
         }
     }
 
@@ -173,54 +180,53 @@ class SwiftMetricsService: WebSocketService {
 
         for (param, value) in self.monitor.getEnvironmentData() {
             switch param {
-                case "command.line":
-                    commandLine = value
-                    break
-                case "environment.HOSTNAME":
-                    hostname = value
-                    break
-                case "os.arch":
-                    os = value
-                    break
-                case "number.of.processors":
-                    numPar = value
-                    break
-                default:
-                    break
-             }
+            case "command.line":
+                commandLine = value
+                break
+            case "environment.HOSTNAME":
+                hostname = value
+                break
+            case "os.arch":
+                os = value
+                break
+            case "number.of.processors":
+                numPar = value
+                break
+            default:
+                break
+            }
         }
 
 
-        let envLine = JSON(["topic":"env","payload":[
-                ["Parameter":"Command Line","Value":"\(commandLine)"],
-                ["Parameter":"Hostname","Value":"\(hostname)"],
-                ["Parameter":"Number of Processors","Value":"\(numPar)"],
-                ["Parameter":"OS Architecture","Value":"\(os)"]
-                ]])
+        let envLine =
+            "{\"topic\":\"env\",\"payload\":[" +
+                "{\"Parameter\":\"Command Line\",\"Value\":\"\(commandLine)\"}," +
+                "{\"Parameter\":\"Hostname\",\"Value\":\"\(hostname)\"}," +
+                "{\"Parameter\":\"Number of Processors\",\"Value\":\"\(numPar)\"}," +
+                "{\"Parameter\":\"OS Architecture\",\"Value\":\"\(os)\"}" +
+        "]}"
 
         for (_,connection) in connections {
-            if let messageToSend = envLine.rawString() {
-                connection.send(message: messageToSend)
-            }
+            connection.send(message: envLine)
         }
     }
 
 
     public func sendTitle()  {
-        let titleLine = JSON(["topic":"title","payload":[
-            "title":"Application Metrics for Swift",
-            "docs": "http://github.com/RuntimeTools/SwiftMetrics"]])
+        let titleLine =
+            "{\"topic\":\"title\",\"payload\":{" +
+                "\"title\":\"Application Metrics for Swift\"," +
+                "\"docs\": \"http://github.com/RuntimeTools/SwiftMetrics\"" +
+        "}}"
 
-         for (_,connection) in connections {
-            if let messageToSend = titleLine.rawString() {
-                connection.send(message: messageToSend)
-            }
+        for (_,connection) in connections {
+            connection.send(message: titleLine)
         }
     }
 
     public func storeHTTP(myhttp: HTTPData) {
         let localmyhttp = myhttp
-    	  httpQueue.sync {
+        httpQueue.sync {
             if self.httpAggregateData.total == 0 {
                 self.httpAggregateData.total = 1
                 self.httpAggregateData.timeOfRequest = localmyhttp.timeOfRequest
@@ -259,51 +265,55 @@ class SwiftMetricsService: WebSocketService {
         httpQueue.sync {
             let localCopy = self.httpAggregateData
             if localCopy.total > 0 {
-                let httpLine = JSON([
-                "topic":"http","payload":[
-                    "time":"\(localCopy.timeOfRequest)",
-                    "url":"\(localCopy.url)",
-                    "longest":"\(localCopy.longest)",
-                    "average":"\(localCopy.average)",
-                    "total":"\(localCopy.total)"]])
+                let httpLine =
+                    "{\"topic\":\"http\",\"payload\":{" +
+                        "\"time\":\"\(localCopy.timeOfRequest)\"," +
+                        "\"url\":\"\(localCopy.url)\"," +
+                        "\"longest\":\"\(localCopy.longest)\"," +
+                        "\"average\":\"\(localCopy.average)\"," +
+                        "\"total\":\"\(localCopy.total)\"" +
+                "}}"
 
                 for (_,connection) in self.connections {
-                    if let messageToSend = httpLine.rawString() {
-                        connection.send(message: messageToSend)
-                    }
+                    connection.send(message: httpLine)
                 }
                 self.httpAggregateData = HTTPAggregateData()
             }
         }
         httpURLsQueue.sync {
-            var responseData:[JSON] = []
+            var responseData:[String] = []
             let localCopy = self.httpURLData
             for (key, value) in localCopy {
-                let json = JSON(["url":key, "averageResponseTime": value.0, "hits": value.1, "longestResponseTime": value.2])
-                    responseData.append(json)
+                let json =
+                    "{\"url\":\"\(key)\"," +
+                        "\"averageResponseTime\":\(String(value.0))," +
+                        "\"hits\":\(String(value.1))," +
+                "\"longestResponseTime\":\(String(value.2))}"
+                responseData.append(json)
             }
             var messageToSend:String=""
 
             // build up the messageToSend string
             for response in responseData {
-                messageToSend += response.rawString()! + ","
+                messageToSend += response + ","
             }
 
             if !messageToSend.isEmpty {
-              // remove the last ','
-              messageToSend = String(messageToSend[..<messageToSend.index(before: messageToSend.endIndex)])
-              // construct the final JSON obkect
-              let messageToSend2 = "{\"topic\":\"httpURLs\",\"payload\":[" + messageToSend + "]}"
-              for (_,connection) in self.connections {
-                  connection.send(message: messageToSend2)
-              }
-            }
-            jobsQueue.async {
-                // re-run this function after 2 seconds
-                sleep(2)
-                self.sendhttpData()
+                // remove the last ','
+                messageToSend = String(messageToSend[..<messageToSend.index(before: messageToSend.endIndex)])
+                // construct the final JSON obkect
+                let messageToSend2 = "{\"topic\":\"httpURLs\",\"payload\":[" + messageToSend + "]}"
+                for (_,connection) in self.connections {
+                    connection.send(message: messageToSend2)
+                }
             }
         }
+    }
+
+    func httpTimerStart() {
+        countdownTimer.schedule(deadline: .now(), repeating: .seconds(2), leeway: .milliseconds(100))
+        countdownTimer.setEventHandler(handler: self.sendhttpData)
+        countdownTimer.resume()
     }
 
 }
