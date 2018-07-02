@@ -20,13 +20,23 @@ matrix:
     - os: linux
       dist: trusty
       sudo: required
+    - os: linux
+      dist: trusty
+      sudo: required
+      env: SWIFT_SNAPSHOT=swift-4.2-DEVELOPMENT-SNAPSHOT-2018-07-01-a
     - os: osx
       osx_image: xcode9.2
       sudo: required
       env: SWIFT_SNAPSHOT=4.0.3
     - os: osx
-      osx_image: xcode9.3
+      osx_image: xcode9.4
       sudo: required
+# BlueCryptor requires xcode10 with Swift 4.2, but there is not yet a Travis
+# image available - see: https://github.com/travis-ci/travis-ci/issues/9730
+#    - os: osx
+#      osx_image: xcode9.4
+#      sudo: required
+#      env: SWIFT_SNAPSHOT=swift-4.2-DEVELOPMENT-SNAPSHOT-2018-06-04-a
 
 before_install:
   - git clone https://github.com/IBM-Swift/Package-Builder.git
