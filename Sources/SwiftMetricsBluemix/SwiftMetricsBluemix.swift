@@ -444,7 +444,6 @@ public class SwiftMetricsBluemix {
   private func updateConfiguration(response: Data) {
     do {
         let json = try JSONDecoder().decode(ConfigResponse.self, from: response)
-        print(json)
         Log.debug("[Auto-scaling Agent] attempting to update configuration with \(json)")
         if json.agent.isEmpty {
             isAgentEnabled = false
@@ -461,4 +460,16 @@ public class SwiftMetricsBluemix {
     }
   }
     
+}
+
+public struct ConfigResponse: Codable {
+    var agent: [String]
+    var metricsConfig: String
+    var reportInterval: Int
+    
+    public enum CodingKeys: String, CodingKey {
+        case agent = "agent"
+        case metricsConfig = "metricsConfig"
+        case reportInterval = "reportInterval"
+    }
 }
