@@ -24,7 +24,6 @@ class CoreSwiftMetricsTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-
         do {
             sm = try SwiftMetrics()
             XCTAssertNotNil(sm, "Cannot find SwiftMetrics instance")
@@ -157,30 +156,22 @@ class CoreSwiftMetricsTests: XCTestCase {
        }
    }
 
-   func testSwiftMetricsLifecycle() {
-       let expectCPU = expectation(description: "Expect a CPU event after stop and restart")
-       let expectStop = expectation(description: "Do not expect a CPU event while stopped")
-       expectStop.isInverted = true
-       var fulfilled = false;
-
-       func processCPU(cpu: CPUData) {
-           if(!fulfilled) {
-               fulfilled = true
-               expectCPU.fulfill()
-               expectStop.fulfill()
-           }
-       }
-
-       sm!.stop()
-
-       // expect no events
-       wait(for: [expectStop], timeout: 10)
-
-       monitoring = sm!.monitor()
-
-       monitoring!.on(processCPU)
-       wait(for: [expectCPU], timeout: 10)
-   }
+    func testSwiftMetricsLifecycle() {
+      let expectCPU = expectation(description: "Expect a CPU event after stop and restart")
+      var fulfilled = false;
+      func processCPU(cpu: CPUData) {
+          if(!fulfilled) {
+              fulfilled = true
+              expectCPU.fulfill()
+          }
+      }
+      sm!.stop()
+      monitoring = sm!.monitor()
+      monitoring!.on(processCPU)
+      waitForExpectations(timeout: 10) { error in
+          XCTAssertNil(error)
+      }
+    }
 
     static var allTests : [(String, (CoreSwiftMetricsTests) -> () throws -> Void)] {
         return [
