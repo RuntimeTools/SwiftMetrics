@@ -14,6 +14,9 @@
 * limitations under the License.
 **/
 
+
+/* === THESE TESTS MUST BE RUN FIRST OR THEY WILL FAIL ===
+* See https://github.com/RuntimeTools/SwiftMetrics/issues/190 for details on the issue. **/
 import XCTest
 @testable import SwiftMetrics
 
