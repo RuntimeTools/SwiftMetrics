@@ -226,6 +226,7 @@ class SwiftMetricsService: WebSocketService {
 
     public func storeHTTP(myhttp: HTTPData) {
         let localmyhttp = myhttp
+        let urlWithVerb = localmyhttp.requestMethod + " " + localmyhttp.url
         httpQueue.sync {
             if self.httpAggregateData.total == 0 {
                 self.httpAggregateData.total = 1
@@ -245,7 +246,7 @@ class SwiftMetricsService: WebSocketService {
             }
         }
         httpURLsQueue.async {
-            let urlTuple = self.httpURLData[localmyhttp.url]
+            let urlTuple = self.httpURLData[urlWithVerb]
             if(urlTuple != nil) {
                 let averageResponseTime = urlTuple!.0
                 let hits = urlTuple!.1
@@ -254,9 +255,9 @@ class SwiftMetricsService: WebSocketService {
                     longest = localmyhttp.duration
                 }
                 // Recalculate the average
-                self.httpURLData.updateValue(((averageResponseTime * hits + localmyhttp.duration)/(hits + 1), hits + 1, longest), forKey: localmyhttp.url)
+                self.httpURLData.updateValue(((averageResponseTime * hits + localmyhttp.duration)/(hits + 1), hits + 1, longest), forKey: urlWithVerb)
             } else {
-                self.httpURLData.updateValue((localmyhttp.duration, 1, localmyhttp.duration), forKey: localmyhttp.url)
+                self.httpURLData.updateValue((localmyhttp.duration, 1, localmyhttp.duration), forKey: urlWithVerb)
             }
         }
     }
