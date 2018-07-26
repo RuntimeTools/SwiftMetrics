@@ -52,7 +52,7 @@ let package = Package(
             path: "commonSample/Sources"),
       .target(name: "SwiftMetricsEmitSample", dependencies: ["SwiftMetrics"],
             path: "emitSample/Sources"),
-      .testTarget(name: "SwiftMetricsTests", dependencies: ["SwiftMetrics"]),
+      .testTarget(name: "CoreSwiftMetricsTests", dependencies: ["SwiftMetrics"]),
       .testTarget(name: "SwiftMetricsRESTTests", dependencies: ["SwiftMetricsREST"])
    ]
 )

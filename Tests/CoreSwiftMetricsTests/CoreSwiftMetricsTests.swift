@@ -14,17 +14,19 @@
 * limitations under the License.
 **/
 
+
+/* === THESE TESTS MUST BE RUN FIRST OR THEY WILL FAIL ===
+* See https://github.com/RuntimeTools/SwiftMetrics/issues/190 for details on the issue. **/
 import XCTest
 @testable import SwiftMetrics
 
-class SwiftMetricsTests: XCTestCase {
+class CoreSwiftMetricsTests: XCTestCase {
 
     var sm: SwiftMetrics?
     var monitoring: SwiftMonitor?
 
     override func setUp() {
         super.setUp()
-
         do {
             sm = try SwiftMetrics()
             XCTAssertNotNil(sm, "Cannot find SwiftMetrics instance")
@@ -158,26 +160,23 @@ class SwiftMetricsTests: XCTestCase {
    }
 
     func testSwiftMetricsLifecycle() {
-        let expectCPU = expectation(description: "Expect a CPU event after stop and restart")
-        var fulfilled = false;
-
-        func processCPU(cpu: CPUData) {
-            if(!fulfilled) {
-                fulfilled = true
-                expectCPU.fulfill()
-            }
-        }
-
-        sm!.stop()
-        monitoring = sm!.monitor()
-
-        monitoring!.on(processCPU)
-        waitForExpectations(timeout: 10) { error in
-            XCTAssertNil(error)
-        }
+      let expectCPU = expectation(description: "Expect a CPU event after stop and restart")
+      var fulfilled = false;
+      func processCPU(cpu: CPUData) {
+          if(!fulfilled) {
+              fulfilled = true
+              expectCPU.fulfill()
+          }
+      }
+      sm!.stop()
+      monitoring = sm!.monitor()
+      monitoring!.on(processCPU)
+      waitForExpectations(timeout: 10) { error in
+          XCTAssertNil(error)
+      }
     }
 
-    static var allTests : [(String, (SwiftMetricsTests) -> () throws -> Void)] {
+    static var allTests : [(String, (CoreSwiftMetricsTests) -> () throws -> Void)] {
         return [
             ("SwiftMetricsInit", testSwiftMetricsInit),
             ("SwiftMetricsCPU", testSwiftMetricsCPU),

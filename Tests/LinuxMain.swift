@@ -15,10 +15,10 @@
 **/
 
 import XCTest
-@testable import SwiftMetricsTests
+@testable import CoreSwiftMetricsTests
 @testable import SwiftMetricsRESTTests
 
 XCTMain([
-     testCase(SwiftMetricsTests.allTests),
+     testCase(CoreSwiftMetricsTests.allTests),
      testCase(SwiftMetricsRESTTests.allTests),
 ])
