@@ -37,6 +37,7 @@ import Configuration
 
     public struct HttpUrlReport: Codable {
       let url: String
+      let method: String
       var hits: Int = 0
       var averageResponseTime: Double = 0.0
       var longestResponseTime: Double = 0.0
@@ -160,7 +161,7 @@ public class SwiftMetricsREST {
         guard var temp_httpUrlReports = smrCollectionList[key]?.collection.httpUrls else {
           continue;
         }
-        if let index = temp_httpUrlReports.index(where: { $0.url == http.url })  {
+        if let index = temp_httpUrlReports.index(where: { $0.url == http.url && $0.method == http.requestMethod})  {
           temp_httpUrlReports[index].hits += 1
           if (http.duration > temp_httpUrlReports[index].longestResponseTime ) {
             temp_httpUrlReports[index].longestResponseTime = http.duration
@@ -168,7 +169,7 @@ public class SwiftMetricsREST {
           temp_httpUrlReports[index].averageResponseTime = ((temp_httpUrlReports[index].averageResponseTime * Double(temp_httpUrlReports[index].hits - 1)) + http.duration) / Double(temp_httpUrlReports[index].hits)
         } else {
           // if index is nil, then the url wasn't found - add it
-          temp_httpUrlReports.append(HttpUrlReport(url: http.url, hits: 1, averageResponseTime: http.duration, longestResponseTime: http.duration))
+          temp_httpUrlReports.append(HttpUrlReport(url: http.url, method: http.requestMethod, hits: 1, averageResponseTime: http.duration, longestResponseTime: http.duration))
         }
         smrCollectionList[key]!.collection.httpUrls = temp_httpUrlReports
       }
