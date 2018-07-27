@@ -92,8 +92,8 @@ public struct TData: Codable {
 }
 
 public struct TUnits: Codable {
-    var end: String = "UNIX time"
-    var start: String = "UNIX time"
+    var end: String = "UNIX time (ms)"
+    var start: String = "UNIX time (ms)"
 }
 
 public struct SMRCollection: Codable {
