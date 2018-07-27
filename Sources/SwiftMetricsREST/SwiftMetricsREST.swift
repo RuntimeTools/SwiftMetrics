@@ -220,7 +220,7 @@ public class SwiftMetricsREST {
                 temp_httpUrlReports.data[index].averageResponseTime = ((temp_httpUrlReports.data[index].averageResponseTime * Double(temp_httpUrlReports.data[index].hits - 1)) + http.duration) / Double(temp_httpUrlReports.data[index].hits)
             } else {
                 // if index is nil, then the url wasn't found - add it
-                temp_httpUrlReports.data.append(HttpUrlReport(url: http.url, method: http.requestMethod, hits: 1, averageResponseTime: http.duration, longestResponseTime: http.duration))
+                temp_httpUrlReports.data.append(HttpUrlReport(url: http.url, hits: 1, method: http.requestMethod, averageResponseTime: http.duration, longestResponseTime: http.duration))
             }
             smrCollectionList[key]!.collection.httpUrls = temp_httpUrlReports
         }
