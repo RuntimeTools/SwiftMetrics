@@ -15,7 +15,7 @@ import SwiftMetrics
 import SwiftMetricsREST
 
 // Enable SwiftMetrics Monitoring
-let sm = try SwiftMetrics()   
+let sm = try SwiftMetrics()
 
 // Pass SwiftMetrics to SwiftMetricsREST
 let smr = try SwiftMetricsREST(swiftMetricsInstance : sm)
@@ -34,7 +34,7 @@ import SwiftMetricsREST
 var router = Router()
 
 // Enable SwiftMetrics Monitoring
-let sm = try SwiftMetrics()   
+let sm = try SwiftMetrics()
 
 // Pass SwiftMetrics to SwiftMetricsREST
 let smd = try SwiftMetricsDash(swiftMetricsInstance : sm, endpoint: router)
@@ -176,36 +176,61 @@ Returns the metrics from the specified collection.
   Example:
   ```JSON
   {
-    "id": 0,
-    "startTime": 1517491521423,
-    "endTime": 1517491786220,
-    "duration": 264797,
-    "cpu": {
-      "systemMean": 0.05717756509017522,
-      "systemPeak": 0.3007518796992481,
-      "processMean": 0.003432652505553302,
-      "processPeak": 0.18843252600694052
+  "id" : 0,
+  "httpUrls" : {
+    "units" : {
+      "longestResponseTime" : "ms",
+      "hits" : "count",
+      "averageResponseTime" : "ms"
     },
-    "gc": {
-      "gcTime": 2.269366316909319E-4
-    },
-    "memory": {
-      "usedHeapAfterGCPeak": 59146992,
-      "usedNativePeak": 119662312
-    },
-    "httpUrls": [
-      {"url": "http://localhost:9080/myApplication/endpoint1",
-        "hits": 3,
-        "averageResponseTime": 4.0,
-        "longestResponseTime": 4
-      },
-      {"url": "http://localhost:9080/myApplication/endpoint2",
-        "hits": 7,
-        "averageResponseTime": 53.678,
-        "longestResponseTime": 232
+    "data" : [
+      {
+        "averageResponseTime" : 0.78173828125,
+        "longestResponseTime" : 3.496337890625,
+        "url" : "http://localhost:8080/swiftmetrics/api/v1/collections",
+        "hits" : 13
       }
     ]
+  },
+  "memory" : {
+    "units" : {
+      "systemPeak" : "bytes",
+      "processMean" : "bytes",
+      "systemMean" : "bytes",
+      "processPeak" : "bytes"
+    },
+    "data" : {
+      "systemPeak" : 17146236928,
+      "processMean" : 39254697,
+      "systemMean" : 17132246356,
+      "processPeak" : 39403520
+    }
+  },
+  "time" : {
+    "units" : {
+      "end" : "UNIX time (ms)",
+      "start" : "UNIX time (ms)"
+    },
+    "data" : {
+      "start" : 1532621816291,
+      "end" : 1532621835099
+    }
+  },
+  "cpu" : {
+    "units" : {
+      "systemPeak" : "decimal fraction",
+      "processMean" : "decimal fraction",
+      "systemMean" : "decimal fraction",
+      "processPeak" : "decimal fraction"
+    },
+    "data" : {
+      "systemPeak" : 0.099996000528335571,
+      "processMean" : 0.00043332966985569027,
+      "systemMean" : 0.060481000691652298,
+      "processPeak" : 0.0008126390166580677
+    }
   }
+}
   ```
 
 * **Error Responses**
