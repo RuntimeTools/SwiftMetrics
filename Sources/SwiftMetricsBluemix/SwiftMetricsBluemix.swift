@@ -444,10 +444,6 @@ public class SwiftMetricsBluemix {
   private func updateConfiguration(response: Data) {
     do {
         let json = try JSONDecoder().decode(ConfigResponse.self, from: response)
-        
-        print("updateConfig:")
-        print(json)
-        
         Log.debug("[Auto-scaling Agent] attempting to update configuration with \(json)")
         if json.metricsConfig.agent.isEmpty {
             isAgentEnabled = false
