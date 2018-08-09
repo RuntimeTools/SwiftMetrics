@@ -444,13 +444,17 @@ public class SwiftMetricsBluemix {
   private func updateConfiguration(response: Data) {
     do {
         let json = try JSONDecoder().decode(ConfigResponse.self, from: response)
+        
+        print("updateConfig:")
+        print(json)
+        
         Log.debug("[Auto-scaling Agent] attempting to update configuration with \(json)")
-        if json.agent.isEmpty {
+        if json.metricsConfig.agent.isEmpty {
             isAgentEnabled = false
             return
         } else {
             isAgentEnabled = true
-            self.enabledMetrics = json.agent
+            self.enabledMetrics = json.metricsConfig.agent
         }
         self.reportInterval = json.reportInterval
         Log.exit("[Auto-scaling Agent] Updated configuration - enabled metrics: \(enabledMetrics), report interval: \(reportInterval) seconds")
@@ -462,8 +466,12 @@ public class SwiftMetricsBluemix {
     
 }
 
+// Response struct for the configuration
 public struct ConfigResponse: Codable {
-    var agent: [String]
-    var metricsConfig: String
+    var metricsConfig: metrics
     var reportInterval: Int
+    
+    struct metrics: Codable {
+        var agent: [String]
+    }
 }
