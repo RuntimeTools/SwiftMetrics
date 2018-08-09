@@ -466,10 +466,4 @@ public struct ConfigResponse: Codable {
     var agent: [String]
     var metricsConfig: String
     var reportInterval: Int
-    
-    public enum CodingKeys: String, CodingKey {
-        case agent = "agent"
-        case metricsConfig = "metricsConfig"
-        case reportInterval = "reportInterval"
-    }
 }
