@@ -22,7 +22,6 @@ import CloudFoundryEnv
 import SwiftyRequest
 import SwiftMetrics
 import SwiftMetricsKitura
-import SwiftyJSON
 import SwiftBAMDC
 
 fileprivate struct HttpStats {
@@ -443,21 +442,32 @@ public class SwiftMetricsBluemix {
 
   // Update local config from autoscaling service
   private func updateConfiguration(response: Data) {
-    let jsonData = JSON(data: response)
-    Log.debug("[Auto-scaling Agent] attempting to update configuration with \(jsonData)")
-    if (jsonData == nil) {
-      isAgentEnabled = false
-      return
+    do {
+        let json = try JSONDecoder().decode(ConfigResponse.self, from: response)
+        Log.debug("[Auto-scaling Agent] attempting to update configuration with \(json)")
+        if json.metricsConfig.agent.isEmpty {
+            isAgentEnabled = false
+            return
+        } else {
+            isAgentEnabled = true
+            self.enabledMetrics = json.metricsConfig.agent
+        }
+        self.reportInterval = json.reportInterval
+        Log.exit("[Auto-scaling Agent] Updated configuration - enabled metrics: \(enabledMetrics), report interval: \(reportInterval) seconds")
+    } catch {
+        isAgentEnabled = false
+        return
     }
-    if (jsonData["metricsConfig"]["agent"] == nil) {
-      isAgentEnabled = false
-      return
-    } else {
-      isAgentEnabled = true
-      enabledMetrics=jsonData["metricsConfig"]["agent"].arrayValue.map({$0.stringValue})
-    }
-    reportInterval=jsonData["reportInterval"].intValue
-    Log.exit("[Auto-scaling Agent] Updated configuration - enabled metrics: \(enabledMetrics), report interval: \(reportInterval) seconds")
   }
+    
+}
 
+// Response struct for the configuration
+public struct ConfigResponse: Codable {
+    var metricsConfig: metrics
+    var reportInterval: Int
+    
+    struct metrics: Codable {
+        var agent: [String]
+    }
 }

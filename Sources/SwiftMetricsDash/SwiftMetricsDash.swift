@@ -18,7 +18,6 @@ import Kitura
 import SwiftMetricsKitura
 import SwiftMetricsBluemix
 import SwiftMetrics
-import SwiftyJSON
 import KituraNet
 import KituraWebSocket
 import Foundation
