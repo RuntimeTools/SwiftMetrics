@@ -58,7 +58,7 @@ public class SwiftDataCollectorInit {
         self.envData = self.monitor.getEnvironmentData()
 
         if self.envData != nil {
-            Log.debug("[SwiftDataCollector] envData: \(self.envData)")
+            Log.debug("[SwiftDataCollector] envData: \(self.envData ?? [:])")
             for (param, value) in self.envData {
                 switch param {
                 case "environment.VCAP_APPLICATION":
