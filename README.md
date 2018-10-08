@@ -32,6 +32,9 @@ Application Metrics for Swift provides the following built-in data collection so
 
 The Application Metrics for Swift agent supports the following runtime environments:
 
+* **Swift v4.2 GA** on:
+  * 64-bit runtime on Linux (Ubuntu 14.04, 16.04)
+  * 64-bit runtime on macOS (x64)
 * **Swift v4.1 GA** on:
   * 64-bit runtime on Linux (Ubuntu 14.04, 16.04)
   * 64-bit runtime on macOS (x64)
@@ -48,7 +51,7 @@ Application Metrics for Swift can be installed by adding a dependency into your 
 
 ```swift
    dependencies: [
-      .package(url: "https://github.com/RuntimeTools/SwiftMetrics.git", from: "1.2.0")
+      .package(url: "https://github.com/RuntimeTools/SwiftMetrics.git", from: "2.4.0")
    ]
    ...
    targets: [
@@ -287,9 +290,10 @@ This project uses a semver-parsable X.0.Z version number for releases, where X i
 Non-release versions of this project (for example on github.com/RuntimeTools/SwiftMetrics) will use semver-parsable X.0.Z-dev.B version numbers, where X.0.Z is the last release with Z incremented and B is an integer. For further information on the development process go to the  [SwiftMetrics wiki][1]: [Developing](https://github.com/RuntimeTools/SwiftMetrics/wiki/Developing).
 
 ## Version
-2.4.1
+2.4.2
 
 ## Release History
+`2.4.2` - Removal of Swift 4.2 compiler warnings  
 `2.4.1` - Refactoring to remove SwiftyJSON dependency and minor fixes  
 `2.4.0` - New REST interface  
 `2.3.0` - Support Swift 4.1  
