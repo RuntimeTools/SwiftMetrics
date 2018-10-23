@@ -24,7 +24,6 @@ import LoggerAPI
 import Cryptor
 import Foundation
 import Dispatch
-import SwiftyRequest
 import Configuration
 
 /*
@@ -541,21 +540,24 @@ public class BMConfig : IBAMConfig {
                     headerCopy["X-TransactionId"] = UUID().uuidString.lowercased()
                 }*/
 
-                var method = HTTPMethod.put
+                var method = "PUT"
                 if(reqType.uppercased() == "GET") {
-                    method = HTTPMethod.get
+                    method = "GET"
                 }
             
-                let request = RestRequest(method: method, url: urlString)
-
+                guard let url = URL(string: urlString) else { return }
+                var request = URLRequest(url: url)
+                request.httpMethod = method
 
                 //TODO: don't log token in headers, temporarily changed to info
                 //Log.info("Initiating http request  Headers: \(headerCopy) APMData: \(apmData)")
                 Log.debug("[SwiftMetricsBAMConfig] Initiating http request  Headers: \(headers) APMData: \(apmData)")
                 
-                request.messageBody = jsonData
-                request.headerParameters = headers
-                request.response(completionHandler: { (data, response, error) in
+                request.httpBody = jsonData
+                for (key, val) in headers {
+                    request.setValue(val, forHTTPHeaderField: key)
+                }
+                let task = URLSession.shared.dataTask(with: request) { data, response, error in
                  
                     if let e = error {
                         //client side error
@@ -570,18 +572,19 @@ public class BMConfig : IBAMConfig {
                         //var result: String = NSString (data: receivedData, encoding: String.Encoding.utf8.rawValue)
                         let json = try? JSONSerialization.jsonObject(with: receivedData, options: [])
                         
-                        switch (httpResponse.statusCode) {
+                        guard let httpStatus = httpResponse as? HTTPURLResponse else { return }
+                        switch (httpStatus.statusCode) {
                             
                         case 200...299:
                             
                             // Temporarily put to info as static method is disabling it, will debug later
-                            Log.debug("[SwiftMetricsBAMConfig] \(String(describing:request.method)) successful: StatusCode: \(httpResponse.statusCode) Response: \(String(describing:response)), JSON: \(String(describing:json))")
+                            Log.debug("[SwiftMetricsBAMConfig] \(String(describing:request.httpMethod)) successful: StatusCode: \(httpStatus.statusCode) Response: \(String(describing:response)), JSON: \(String(describing:json))")
                             
-                            taskCallback(true, httpResponse.statusCode, json as Any?)
+                            taskCallback(true, httpStatus.statusCode, json as Any?)
                             
                         default:
-                            Log.error("[SwiftMetricsBAMConfig] \(String(describing:request.method)) request got response \(httpResponse.statusCode) and response \(httpResponse)")
-                            taskCallback(false, httpResponse.statusCode, receivedData as Any?)
+                            Log.error("[SwiftMetricsBAMConfig] \(String(describing:request.httpMethod)) request got response \(httpStatus.statusCode) and response \(httpResponse)")
+                            taskCallback(false, httpStatus.statusCode, receivedData as Any?)
                         }
                     }
                     else {
@@ -589,7 +592,7 @@ public class BMConfig : IBAMConfig {
                         taskCallback(false, -1, nil)
                     }
                 }
-                )
+                task.resume()
             
         } catch {
             Log.warning("[SwiftMetricsBAMConfig] Kitura request failed: \(error.localizedDescription)")
