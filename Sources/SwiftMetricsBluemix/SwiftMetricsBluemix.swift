@@ -385,7 +385,10 @@ public class SwiftMetricsBluemix {
     Log.debug("[Auto-scaling Agent] Attempting to send metrics to \(sendMetricsPath)")
 
     
-    guard let url = URL(string: sendMetricsPath) else { return }
+    guard let url = URL(string: sendMetricsPath) else {
+        Log.error("[Auto-scaling Agent] Invalid URL")
+        return
+    }
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -409,7 +412,10 @@ public class SwiftMetricsBluemix {
     let notifyStatusPath = "\(host):443/services/agent/status/\(appID)"
     Log.debug("[Auto-scaling Agent] Attempting notifyStatus request to \(notifyStatusPath)")
     
-    guard let url = URL(string: notifyStatusPath) else { return }
+    guard let url = URL(string: notifyStatusPath) else {
+        Log.error("[Auto-scaling Agent] Invalid URL")
+        return
+    }
     var request = URLRequest(url: url)
     request.httpMethod = "PUT"
     request.setValue("Basic \(authorization)", forHTTPHeaderField: "Authorization")
@@ -429,7 +435,10 @@ public class SwiftMetricsBluemix {
     let refreshConfigPath = "\(host):443/v1/agent/config/\(serviceID)/\(appID)?appType=swift"
     Log.debug("[Auto-scaling Agent] Attempting requestConfig request to \(refreshConfigPath)")
 
-    guard let url = URL(string: refreshConfigPath) else { return }
+    guard let url = URL(string: refreshConfigPath) else {
+        Log.error("[Auto-scaling Agent] Invalid URL")
+        return
+    }
     var request = URLRequest(url: url)
     request.httpMethod = "GET"
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")

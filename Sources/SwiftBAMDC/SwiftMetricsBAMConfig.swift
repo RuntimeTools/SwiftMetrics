@@ -525,7 +525,7 @@ public class BMConfig : IBAMConfig {
 
     private static func makeKituraHttpRequest(apmData: Dictionary<String,Any>, urlString: String, reqType: String, headers: [String:String], taskCallback: @escaping (Bool, Int, Any?) -> () = doNothing) {
 
-        if(urlString == "") {
+        guard let url = URL(string: urlString) else {
             Log.warning("[SwiftMetricsBAMConfig] IngressURL is not set")
             return
         }
@@ -545,7 +545,6 @@ public class BMConfig : IBAMConfig {
                     method = "GET"
                 }
             
-                guard let url = URL(string: urlString) else { return }
                 var request = URLRequest(url: url)
                 request.httpMethod = method
 
@@ -572,19 +571,23 @@ public class BMConfig : IBAMConfig {
                         //var result: String = NSString (data: receivedData, encoding: String.Encoding.utf8.rawValue)
                         let json = try? JSONSerialization.jsonObject(with: receivedData, options: [])
                         
-                        guard let httpStatus = httpResponse as? HTTPURLResponse else { return }
-                        switch (httpStatus.statusCode) {
+                        guard let httpURLResponse = httpResponse as? HTTPURLResponse else {
+                            Log.error("[SwiftMetricsBAMConfig] Failed to convert response to HTTPURLResponse")
+                            taskCallback(false, -1, nil)
+                            return
+                        }
+                        switch httpURLResponse.statusCode {
                             
                         case 200...299:
                             
                             // Temporarily put to info as static method is disabling it, will debug later
-                            Log.debug("[SwiftMetricsBAMConfig] \(String(describing:request.httpMethod)) successful: StatusCode: \(httpStatus.statusCode) Response: \(String(describing:response)), JSON: \(String(describing:json))")
+                            Log.debug("[SwiftMetricsBAMConfig] \(String(describing:request.httpMethod)) successful: StatusCode: \(httpURLResponse.statusCode) Response: \(String(describing:response)), JSON: \(String(describing:json))")
                             
-                            taskCallback(true, httpStatus.statusCode, json as Any?)
+                            taskCallback(true, httpURLResponse.statusCode, json as Any?)
                             
                         default:
-                            Log.error("[SwiftMetricsBAMConfig] \(String(describing:request.httpMethod)) request got response \(httpStatus.statusCode) and response \(httpResponse)")
-                            taskCallback(false, httpStatus.statusCode, receivedData as Any?)
+                            Log.error("[SwiftMetricsBAMConfig] \(String(describing:request.httpMethod)) request got response \(httpURLResponse.statusCode) and response \(httpResponse)")
+                            taskCallback(false, httpURLResponse.statusCode, receivedData as Any?)
                         }
                     }
                     else {
