@@ -19,7 +19,6 @@ import Dispatch
 import LoggerAPI
 import Configuration
 import CloudFoundryEnv
-import SwiftyRequest
 import SwiftMetrics
 import SwiftMetricsKitura
 import SwiftBAMDC
@@ -386,19 +385,26 @@ public class SwiftMetricsBluemix {
     Log.debug("[Auto-scaling Agent] Attempting to send metrics to \(sendMetricsPath)")
 
     
-    let request = RestRequest(method: .post, url: sendMetricsPath)
-    request.headerParameters = ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
+    guard let url = URL(string: sendMetricsPath) else {
+        Log.error("[Auto-scaling Agent] Invalid URL")
+        return
+    }
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.setValue("Basic \(authorization)", forHTTPHeaderField: "Authorization")
     do {
-        request.messageBody = try JSONSerialization.data(withJSONObject: asOBJ, options: .prettyPrinted)
+        request.httpBody = try JSONSerialization.data(withJSONObject: asOBJ, options: .prettyPrinted)
     } catch {
             print("Error converting input to JSON object to post.")
     }
-    request.response { (data, response, error) in
+    let task = URLSession.shared.dataTask(with: request) { data, response, error in
         Log.debug("[Auto-scaling Agent] sendMetrics:Request: \(String(describing:request))")
         Log.debug("[Auto-scaling Agent] sendMetrics:Response: \(String(describing:response))")
         Log.debug("[Auto-scaling Agent] sendMetrics:Data: \(String(describing:data))")
         Log.debug("[Auto-scaling Agent] sendMetrics:Error: \(String(describing: error))")
     }
+    task.resume()
     
   }
 
@@ -406,14 +412,20 @@ public class SwiftMetricsBluemix {
     let notifyStatusPath = "\(host):443/services/agent/status/\(appID)"
     Log.debug("[Auto-scaling Agent] Attempting notifyStatus request to \(notifyStatusPath)")
     
-    let request = RestRequest(method: .put, url: notifyStatusPath)
-    request.headerParameters = ["Authorization":"Basic \(authorization)"]
-    request.response { (data, response, error) in
+    guard let url = URL(string: notifyStatusPath) else {
+        Log.error("[Auto-scaling Agent] Invalid URL")
+        return
+    }
+    var request = URLRequest(url: url)
+    request.httpMethod = "PUT"
+    request.setValue("Basic \(authorization)", forHTTPHeaderField: "Authorization")
+    let task = URLSession.shared.dataTask(with: request) { data, response, error in
         Log.debug("[Auto-scaling Agent] notifyStatus:Request: \(String(describing:request))")
         Log.debug("[Auto-scaling Agent] notifyStatus:Response: \(String(describing:response))")
         Log.debug("[Auto-scaling Agent] notifyStatus:Data: \(String(describing: data))")
         Log.debug("[Auto-scaling Agent] notifyStatus:Error: \(String(describing: error))")
     }
+    task.resume()
     
   }
 
@@ -423,9 +435,15 @@ public class SwiftMetricsBluemix {
     let refreshConfigPath = "\(host):443/v1/agent/config/\(serviceID)/\(appID)?appType=swift"
     Log.debug("[Auto-scaling Agent] Attempting requestConfig request to \(refreshConfigPath)")
 
-    let request = RestRequest(method: .get, url: refreshConfigPath)
-    request.headerParameters = ["Content-Type":"application/json", "Authorization":"Basic \(authorization)"]
-    request.response { (data, response, error) in
+    guard let url = URL(string: refreshConfigPath) else {
+        Log.error("[Auto-scaling Agent] Invalid URL")
+        return
+    }
+    var request = URLRequest(url: url)
+    request.httpMethod = "GET"
+    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.setValue("Basic \(authorization)", forHTTPHeaderField: "Authorization")
+    let task = URLSession.shared.dataTask(with: request) { data, response, error in
         Log.debug("[Auto-scaling Agent] requestConfig:Request: \(String(describing:request))")
         Log.debug("[Auto-scaling Agent] requestConfig:Response: \(String(describing:response))")
         Log.debug("[Auto-scaling Agent] requestConfig:Data: \(String(describing: data))")
@@ -437,6 +455,7 @@ public class SwiftMetricsBluemix {
             print("Error updating configuration. Data doesn't exist.")
         }
     }
+    task.resume()
     
   }
 
