@@ -290,9 +290,10 @@ This project uses a semver-parsable X.0.Z version number for releases, where X i
 Non-release versions of this project (for example on github.com/RuntimeTools/SwiftMetrics) will use semver-parsable X.0.Z-dev.B version numbers, where X.0.Z is the last release with Z incremented and B is an integer. For further information on the development process go to the  [SwiftMetrics wiki][1]: [Developing](https://github.com/RuntimeTools/SwiftMetrics/wiki/Developing).
 
 ## Version
-2.5.0
+2.5.1
 
 ## Release History
+`2.5.1` - Fix compilation warnings  
 `2.5.0` - Removal of `SwiftyRequest` and support for Kitura-NIO  
 `2.4.2` - Removal of Swift 4.2 compiler warnings  
 `2.4.1` - Refactoring to remove SwiftyJSON dependency and minor fixes  
