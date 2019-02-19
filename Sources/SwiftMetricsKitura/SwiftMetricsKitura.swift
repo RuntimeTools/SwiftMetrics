@@ -102,7 +102,7 @@ public extension SwiftMonitor.EventEmitter {
 
 }
 
-public extension SwiftMonitor {
+extension SwiftMonitor {
 
   public func on(_ callback: @escaping httpClosure) {
     EventEmitter.subscribe(callback: callback)
@@ -114,7 +114,7 @@ public extension SwiftMonitor {
 
 }
 
-public extension SwiftMetrics {
+extension SwiftMetrics {
 
   public func emitData(_ data: HTTPData) {
     if let monitor = swiftMon {
