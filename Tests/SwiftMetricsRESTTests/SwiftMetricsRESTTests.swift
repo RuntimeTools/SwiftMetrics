@@ -610,7 +610,12 @@ class SwiftMetricsRESTTests: XCTestCase {
             for tSMRMPCCcollectionUriString in tSMRMPCCresult2.collectionUris {
               let tSMRMPCCsplitCollectionUriString = tSMRMPCCcollectionUriString.split(separator: "/")
               let tSMRMPCCcollectionUriIDString = String(tSMRMPCCsplitCollectionUriString[tSMRMPCCsplitCollectionUriString.count - 1])
-              guard let index = idArray.index(of: tSMRMPCCcollectionUriIDString) else {
+#if swift(>=4.2)
+              let firstIndex = idArray.firstIndex(of: tSMRMPCCcollectionUriIDString)
+#else
+              let firstIndex = idArray.index(of: tSMRMPCCcollectionUriIDString)
+#endif
+              guard let index = firstIndex else {
                 print("\(tSMRMPCCresult2)")
                 XCTFail("Collection ID \(tSMRMPCCcollectionUriIDString) not in expected range [0-2]")
                 return
