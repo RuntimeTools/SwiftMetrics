@@ -1,4 +1,4 @@
-// swift-tools-version:5.0
+// swift-tools-version:4.2
 /**
 * Copyright IBM Corporation 2017-2019
 *
