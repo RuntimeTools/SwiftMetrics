@@ -31,7 +31,7 @@ matrix:
     - os: linux
       dist: trusty
       sudo: required
-      env: KITURA_NIO=1
+      env: SWIFT_SNAPSHOT=4.2.4 KITURA_NIO=1
     - os: osx
       osx_image: xcode9.2
       sudo: required
@@ -48,9 +48,9 @@ matrix:
       osx_image: xcode10.2
       sudo: required
     - os: osx
-      osx_image: xcode10.2
+      osx_image: xcode10.1
       sudo: required
-      env: KITURA_NIO=1
+      env: SWIFT_SNAPSHOT=4.2.1 KITURA_NIO=1
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update && brew install libressl ; fi
