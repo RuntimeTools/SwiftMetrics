@@ -189,7 +189,12 @@ public class SwiftMonitor {
       let values = message.components(separatedBy: "\n")
       var env: [ String : String ] = [:]
       for value in values {
-        if value.contains("="), let firstEquals = value.index(of: "=") {
+#if swift(>=4.2)
+        let firstIndex = value.firstIndex(of: "=")
+#else
+        let firstIndex = value.index(of: "=")
+#endif
+        if value.contains("="), let firstEquals = firstIndex {
           env[String(value[..<firstEquals])] = String(value[value.index(after: firstEquals)...])
         }
       }

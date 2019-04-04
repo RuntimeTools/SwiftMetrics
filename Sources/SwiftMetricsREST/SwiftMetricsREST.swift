@@ -212,7 +212,12 @@ public class SwiftMetricsREST {
             guard var temp_httpUrlReports = smrCollectionList[key]?.collection.httpUrls else {
                 continue;
             }
-            if let index = temp_httpUrlReports.data.index(where: { $0.url == http.url && $0.method == http.requestMethod})  {
+#if swift(>=4.2)
+            let firstIndex = temp_httpUrlReports.data.firstIndex(where: { $0.url == http.url && $0.method == http.requestMethod})
+#else
+            let firstIndex = temp_httpUrlReports.data.index(where: { $0.url == http.url && $0.method == http.requestMethod})
+#endif
+            if let index = firstIndex {
                 temp_httpUrlReports.data[index].hits += 1
                 if (http.duration > temp_httpUrlReports.data[index].longestResponseTime ) {
                     temp_httpUrlReports.data[index].longestResponseTime = http.duration
