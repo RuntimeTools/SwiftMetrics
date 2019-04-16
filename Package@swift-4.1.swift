@@ -21,7 +21,7 @@ import Foundation
 var webSocketPackage: Package.Dependency
 
 if ProcessInfo.processInfo.environment["KITURA_NIO"] != nil {
-    webSocketPackage = .package(url: "https://github.com/IBM-Swift/Kitura-WebSocket.git", .exact("0.1.0-nio"))
+    webSocketPackage = .package(url: "https://github.com/IBM-Swift/Kitura-WebSocket-NIO.git", from: "1.0.0")
 } else {
     webSocketPackage = .package(url: "https://github.com/IBM-Swift/Kitura-WebSocket.git", from: "2.0.0")
 }
@@ -48,11 +48,12 @@ let package = Package(
     .package(url: "https://github.com/IBM-Swift/SwiftyRequest.git", from: "1.0.0"),
     .package(url: "https://github.com/IBM-Swift/Swift-cfenv.git", from: "6.0.0"),
     .package(url: "https://github.com/RuntimeTools/omr-agentcore", .exact("3.2.4-swift4")),
+    .package(url: "https://github.com/IBM-Swift/BlueCryptor.git", from: "1.0.0"),
   ],
   targets: [
       .target(name: "SwiftMetrics", dependencies: ["agentcore", "hcapiplugin", "envplugin", "cpuplugin", "memplugin", "CloudFoundryEnv"]),
       .target(name: "SwiftMetricsKitura", dependencies: ["SwiftMetrics", "Kitura"]),
-      .target(name: "SwiftBAMDC", dependencies: ["SwiftMetricsKitura", "SwiftyRequest", "Kitura-WebSocket"]),
+      .target(name: "SwiftBAMDC", dependencies: ["SwiftMetricsKitura", "SwiftyRequest", "Kitura-WebSocket", "Cryptor"]),
       .target(name: "SwiftMetricsBluemix", dependencies: ["SwiftMetricsKitura","SwiftBAMDC"]),
       .target(name: "SwiftMetricsDash", dependencies: ["SwiftMetricsBluemix"]),
       .target(name: "SwiftMetricsREST", dependencies: ["SwiftMetricsKitura"]),
