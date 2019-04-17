@@ -25,7 +25,7 @@ if ProcessInfo.processInfo.environment["KITURA_NIO"] != nil {
     kituraPackage = .package(url: "https://github.com/IBM-Swift/Kitura.git", .upToNextMinor(from: "2.6.0"))
     webSocketPackage = .package(url: "https://github.com/IBM-Swift/Kitura-WebSocket-NIO.git", from: "1.0.0")
 } else {
-    kituraPackage = .package(url: "https://github.com/IBM-Swift/Kitura.git", from: "2.3.0"),
+    kituraPackage = .package(url: "https://github.com/IBM-Swift/Kitura.git", from: "2.3.0")
     webSocketPackage = .package(url: "https://github.com/IBM-Swift/Kitura-WebSocket.git", from: "2.0.0")
 }
 
