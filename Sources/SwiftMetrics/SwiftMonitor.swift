@@ -128,7 +128,7 @@ public class SwiftMonitor {
                     //cpu: startCPU@#1412609879696@#0.00499877@#0.137468
                     var values:[Substring] = []
                     for value in message.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).split(separator: "#") {
-                        values.append(value.dropLast())
+                        values.append(value.last == "@" ? value.dropLast() : value)
                     }
                     if let timeOfSample = Int(values[1]), let percentUsedByApplication = Float(values[2]),
                         let percentUsedBySystem = Float(values[3]) {
