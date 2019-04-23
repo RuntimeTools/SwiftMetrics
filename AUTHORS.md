@@ -12,3 +12,4 @@ Authors ordered by first contribution:
  - Kye Maloy (https://github.com/kyemaloy97)
  - Jonathan Spruce (https://github.com/jonathan-spruce)
  - Shihab Mehboob (https://github.com/ShihabMehboob)
+ - Vernon Schierding (https://github.com/schlingding)
