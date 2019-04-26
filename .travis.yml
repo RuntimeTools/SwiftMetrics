@@ -26,7 +26,7 @@ matrix:
       sudo: required
       env: SWIFT_SNAPSHOT=4.2.4
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: required
     - os: linux
       dist: xenial
