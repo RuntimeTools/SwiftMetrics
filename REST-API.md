@@ -174,8 +174,8 @@ Returns the metrics from the specified collection.
   * **Code:** `200 (OK)`
   * **Content:** JSON representation of the metrics in the **collection**.
   Example:
-  ```JSON
-  {
+```JSON
+{
   "id" : 0,
   "httpUrls" : {
     "units" : {
@@ -231,7 +231,7 @@ Returns the metrics from the specified collection.
     }
   }
 }
-  ```
+```
 
 * **Error Responses**
 
