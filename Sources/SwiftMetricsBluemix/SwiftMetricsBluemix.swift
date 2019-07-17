@@ -23,6 +23,12 @@ import SwiftMetrics
 import SwiftMetricsKitura
 import SwiftBAMDC
 
+#if swift(>=4.1)
+  #if canImport(FoundationNetworking)
+    import FoundationNetworking
+  #endif
+#endif
+
 fileprivate struct HttpStats {
   fileprivate var count: Double = 0
   fileprivate var duration: Double = 0

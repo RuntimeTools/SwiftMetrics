@@ -20,6 +20,12 @@ import Configuration
 import Foundation
 @testable import SwiftMetricsREST
 
+#if swift(>=4.1)
+  #if canImport(FoundationNetworking)
+    import FoundationNetworking
+  #endif
+#endif
+
 class SwiftMetricsRESTTests: XCTestCase {
 
     let collectionsSubpath = "/swiftmetrics/api/v1/collections"

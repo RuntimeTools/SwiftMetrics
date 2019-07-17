@@ -26,6 +26,12 @@ import Foundation
 import Dispatch
 import Configuration
 
+#if swift(>=4.1)
+  #if canImport(FoundationNetworking)
+    import FoundationNetworking
+  #endif
+#endif
+
 /*
  #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
  import CommonCrypto
