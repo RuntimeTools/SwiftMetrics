@@ -19,8 +19,7 @@
 <meta charset="utf-8">
 
 <link rel="stylesheet" href="graphmetrics/bootstrap-3.3.7-dist/css/bootstrap.min.css">
-<link rel="stylesheet" type="text/css" href="graphmetrics/css/style2.css" title="Light background">
-<link rel="alternate stylesheet" type="text/css" href="graphmetrics/css/style.css" title="Dark background">
+<link rel="stylesheet" type="text/css" href="graphmetrics/css/themes.css" title="Themes">
 
 <head>
     <title>Application Metrics for Swift (Tech Preview)</title>
@@ -31,7 +30,14 @@
     <script src="graphmetrics/d3/d3.v3.min.js"></script>
     <script src="graphmetrics/jquery/jquery-3.1.1.min.js"></script>
     <script src="graphmetrics/bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
-
+    <script>
+      const queryStringValues = new URLSearchParams(window.location.search)
+      if (queryStringValues.get('theme')==='dark') {
+        $('body').addClass( "darkmode" )
+      } else {
+        $('body').addClass( "lightmode" )
+      }
+    </script>
     <div class="headerDiv"><span class="rightHeader"></span><span class="leftHeader"></span></div>
 
     <div id="tabs" class="container">
