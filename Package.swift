@@ -21,9 +21,9 @@ import Foundation
 var webSocketPackage: Package.Dependency
 
 if ProcessInfo.processInfo.environment["KITURA_NIO"] != nil {
-    webSocketPackage = .package(url: "https://github.com/IBM-Swift/Kitura-WebSocket-NIO.git", from: "2.0.0")
+    webSocketPackage = .package(url: "https://github.com/Kitura/Kitura-WebSocket-NIO.git", from: "2.1.200")
 } else {
-    webSocketPackage = .package(url: "https://github.com/IBM-Swift/Kitura-WebSocket.git", from: "2.0.0")
+    webSocketPackage = .package(url: "https://github.com/Kitura/Kitura-WebSocket.git", from: "2.1.200")
 }
 
 let package = Package(
