@@ -79,6 +79,7 @@ public class SwiftMetricsDash {
 }
 class SwiftMetricsService: WebSocketService {
 
+    var connectionTimeout: Int? = nil
     private var connections = [String: WebSocketConnection]()
     var httpAggregateData: HTTPAggregateData = HTTPAggregateData()
     var httpURLData:[String:(totalTime:Double, numHits:Double, longestTime:Double)] = [:]
