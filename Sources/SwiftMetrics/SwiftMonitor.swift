@@ -217,30 +217,30 @@ public class SwiftMonitor {
     }
   }
 
-  public func on(_ callback: @escaping cpuClosure) {
-    swiftMetrics.loaderApi.logMessage(fine, "on(): Subscribing a CPUData observer")
-    EventEmitter.subscribe(callback: callback)
-  }
+  // public func on(_ callback: @escaping cpuClosure) {
+  //   swiftMetrics.loaderApi.logMessage(fine, "on(): Subscribing a CPUData observer")
+  //   EventEmitter.subscribe(callback: callback)
+  // }
 
-  public func on(_ callback: @escaping memoryClosure) {
-    swiftMetrics.loaderApi.logMessage(fine, "on(): Subscribing a MemData observer")
-    EventEmitter.subscribe(callback: callback)
-  }
+  // public func on(_ callback: @escaping memoryClosure) {
+  //   swiftMetrics.loaderApi.logMessage(fine, "on(): Subscribing a MemData observer")
+  //   EventEmitter.subscribe(callback: callback)
+  // }
 
-  public func on(_ callback: @escaping envClosure) {
-    swiftMetrics.loaderApi.logMessage(fine, "on(): Subscribing an EnvData observer")
-    EventEmitter.subscribe(callback: callback)
-  }
+  // public func on(_ callback: @escaping envClosure) {
+  //   swiftMetrics.loaderApi.logMessage(fine, "on(): Subscribing an EnvData observer")
+  //   EventEmitter.subscribe(callback: callback)
+  // }
 
-  public func on(_ callback: @escaping initClosure) {
-    swiftMetrics.loaderApi.logMessage(fine, "on(): Subscribing an InitData observer")
-    EventEmitter.subscribe(callback: callback)
-  }
+  // public func on(_ callback: @escaping initClosure) {
+  //   swiftMetrics.loaderApi.logMessage(fine, "on(): Subscribing an InitData observer")
+  //   EventEmitter.subscribe(callback: callback)
+  // }
 
-  public func on(_ callback: @escaping latencyClosure) {
-    swiftMetrics.loaderApi.logMessage(fine, "on(): Subscribing a LatencyData observer")
-    EventEmitter.subscribe(callback: callback)
-  }
+  // public func on(_ callback: @escaping latencyClosure) {
+  //   swiftMetrics.loaderApi.logMessage(fine, "on(): Subscribing a LatencyData observer")
+  //   EventEmitter.subscribe(callback: callback)
+  // }
 
   public func on<T: SMData>(_ callback: @escaping (T) -> ()) {
     swiftMetrics.loaderApi.logMessage(fine, "on(): Subscribing a \(T.self)) observer")
